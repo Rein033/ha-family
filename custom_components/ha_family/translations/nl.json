@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Family",
+        "description": "Home Assistant voor het hele gezin. Open na deze stap **Gezin beheren** in de zijbalk om gezinsleden toe te voegen en hun telefoons te koppelen.",
+        "data": {
+          "naam": "Naam van jullie huishouden",
+          "type": "Wat zijn jullie?",
+          "dashboard": "Gezinsapp: dashboard in de zijbalk, eenvoudig startscherm en zijbalk per gezinslid",
+          "startscherm": "Gezinsdashboard als startscherm voor iedereen (ook nieuwe gebruikers en een tablet aan de muur)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "HA Family is al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Family",
+        "data": {
+          "naam": "Naam van jullie huishouden",
+          "type": "Wat zijn jullie?",
+          "dashboard": "Gezinsapp: dashboard in de zijbalk, eenvoudig startscherm en zijbalk per gezinslid",
+          "startscherm": "Gezinsdashboard als startscherm voor iedereen (ook nieuwe gebruikers en een tablet aan de muur)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "soort": {
+      "options": {
+        "gezin": "Een gezin (ouders en kinderen)",
+        "huishouden": "Een huishouden (huisgenoten)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "gezin": {
+        "name": "Gezin"
+      }
+    }
+  }
+}

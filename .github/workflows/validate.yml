@@ -1,0 +1,44 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv venv --python 3.13 .venv && VIRTUAL_ENV=.venv uv pip install pytest-homeassistant-custom-component
+      - run: .venv/bin/python -m pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax
+        run: for f in custom_components/ha_family/frontend/*.js; do cp "$f" /tmp/check.mjs && node --check /tmp/check.mjs || exit 1; done
+      - name: Versie in de frontend = versie in manifest.json
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('custom_components/ha_family/manifest.json'))['version'])")
+          grep -q "VERSIE = '$v'" custom_components/ha_family/frontend/family-ui.js
+          ! grep -h "family-ui.js?v=" custom_components/ha_family/frontend/*.js | grep -v "v=$v'"
+      - name: strings.json en vertalingen komen uit scripts/gen_strings.py
+        run: python3 scripts/gen_strings.py && git diff --exit-code

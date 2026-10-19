@@ -1,0 +1,455 @@
+/* HA Family — beheerpaneel 'Gezin beheren' (HA-Family-Management).
+ * Alles wat je anders in de instellingen van Home Assistant moet zoeken, in gewone taal en met wizards:
+ * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
+ * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
+import qrcode from './lib/qrcode.mjs';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.1.0';
+
+const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
+const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
+const APP_IOS = 'https://apps.apple.com/app/home-assistant/id1099568401';
+const APP_ANDROID = 'https://play.google.com/store/apps/details?id=io.homeassistant.companion.android';
+
+const T = {
+  nl: {
+    titel: 'Gezin beheren', leden: 'Gezinsleden', toevoegen: 'Gezinslid toevoegen', welkom: 'Welkom bij HA Family!',
+    welkomTekst: 'Begin met het toevoegen van de mensen in jullie huis. Iedereen krijgt een eigen kleur en emoji, en wie een telefoon heeft, kan meldingen krijgen.',
+    alInHa: 'Al in Home Assistant', alInHaTekst: 'Deze personen bestaan al. Voeg ze met één klik toe:', als: 'als',
+    rollen: { ouder: 'Ouder', kind: 'Kind', huisgenoot: 'Huisgenoot', gast: 'Gast' },
+    rolUitleg: { ouder: 'Beheert mee, ziet alles van het gezin', kind: 'Eenvoudige weergave, eigen klusjes en agenda', huisgenoot: 'Deelt taken, boodschappen en agenda', gast: 'Logeert of past op, ziet alleen het belangrijkste' },
+    gezin: 'Gezin', huishouden: 'Huishouden', wijzig: 'Wijzigen', opslaan: 'Opslaan', annuleren: 'Annuleren', volgende: 'Volgende', terug: 'Terug', klaar: 'Klaar',
+    naam: 'Naam', naamVb: 'bijv. Emma', welkeRol: 'Wie is het?', emoji: 'Emoji', kleur: 'Kleur',
+    telefoonVraag: 'Heeft {x} een eigen telefoon of tablet?', jaAccount: 'Ja, met een eigen account', jaUitleg: 'Krijgt meldingen en ziet zijn eigen dingen.',
+    neeAccount: 'Nee, nu nog niet', neeUitleg: 'Bijvoorbeeld jonge kinderen. Kan later altijd nog.',
+    gebruikersnaam: 'Gebruikersnaam', wachtwoord: 'Wachtwoord', nieuwWw: 'Ander wachtwoord', beheerder: 'Mag alles beheren (beheerder)',
+    beheerderUitleg: 'Alleen voor wie ook gezinsleden, apparaten en instellingen mag aanpassen.',
+    toegevoegd: '{x} is toegevoegd! 🎉', bewaar: 'Bewaar deze inloggegevens, je hebt ze nodig op de telefoon:', nuKoppelen: 'Telefoon nu koppelen', later: 'Later',
+    koppelen: 'Telefoon koppelen', koppelenVan: 'Telefoon van {x} koppelen',
+    stap1: 'Installeer de app', stap1t: 'Scan met de camera van de telefoon, of zoek "Home Assistant" in de App Store of Google Play.',
+    stap2: 'Open de app en verbind met jullie huis', stap2t: 'Kies het gevonden huis, of tik op "Handmatig invoeren" en scan of typ dit adres:',
+    stap3: 'Log in', stap3t: 'Gebruik deze gegevens:', wwVergeten: 'Wachtwoord vergeten? Stel hieronder een nieuw in.',
+    stap4: 'Sta meldingen en locatie toe', stap4t: 'Zo krijgt {x} meldingen, en ziet het gezin of {x} thuis is.',
+    wachten: 'Wachten tot de app is ingelogd…', gekoppeld: '{x} is gekoppeld!', testMelding: 'Stuur testmelding', testVerstuurd: 'Testmelding verstuurd 📱',
+    geenAccount: '{x} heeft nog geen account. Geef {x} eerst een account bij "Bewerken".',
+    bewerken: 'Bewerken', weergave: 'Hoe ziet Home Assistant eruit voor {x}?',
+    weergaven: { eenvoudig: ['Eenvoudig', 'Alleen het gezinsdashboard. Ideaal voor kinderen en gasten.'],
+      normaal: ['Normaal', 'Het gezin, plus agenda, takenlijsten en kaart.'],
+      beheerder: ['Beheerder', 'Het gezin, Gezin beheren en de instellingen.'],
+      expert: ['Expert', 'Home Assistant zoals het is, met alles erop en eraan.'] },
+    lamp: 'Lamp van {x}', lampUitleg: 'Voor knuffels en welterusten (later).', meldingen: 'Meldingen naar', automatisch: 'Automatisch (eerste telefoon)',
+    nieuwWachtwoord: 'Nieuw wachtwoord instellen', wwGewijzigd: 'Wachtwoord gewijzigd', verwijderen: 'Uit het gezin halen', verwijderenAccount: 'Ook account verwijderen',
+    zeker: '{x} uit het gezin halen? Het account en de telefoon blijven gewoon werken.', zekerAccount: '{x} én het account helemaal verwijderen? Dit kan niet ongedaan worden.',
+    account: 'Account', geenLogin: 'Geen eigen account', telefoon: 'Telefoon', geenTelefoon: 'Nog geen telefoon', lampKort: 'Lamp', geenLamp: 'Geen lamp',
+    allesGoed: 'Alles werkt', kanInloggen: 'Inloggen als {x}', jij: 'jij', adresOnbekend: 'Stel eerst het adres van je Home Assistant in (Instellingen → Systeem → Netwerk).',
+    huishoudenNaam: 'Naam van jullie huishouden',
+  },
+  en: {
+    titel: 'Family settings', leden: 'Family members', toevoegen: 'Add family member', welkom: 'Welcome to HA Family!',
+    welkomTekst: 'Start by adding the people in your home. Everyone gets their own colour and emoji, and whoever has a phone can get notifications.',
+    alInHa: 'Already in Home Assistant', alInHaTekst: 'These people already exist. Add them with one click:', als: 'as',
+    rollen: { ouder: 'Parent', kind: 'Child', huisgenoot: 'Housemate', gast: 'Guest' },
+    rolUitleg: { ouder: 'Helps manage, sees everything', kind: 'Simple view, own chores and calendar', huisgenoot: 'Shares tasks, groceries and calendar', gast: 'Staying over or babysitting, sees the essentials' },
+    gezin: 'Family', huishouden: 'Household', wijzig: 'Change', opslaan: 'Save', annuleren: 'Cancel', volgende: 'Next', terug: 'Back', klaar: 'Done',
+    naam: 'Name', naamVb: 'e.g. Emma', welkeRol: 'Who is it?', emoji: 'Emoji', kleur: 'Colour',
+    telefoonVraag: 'Does {x} have their own phone or tablet?', jaAccount: 'Yes, with their own account', jaUitleg: 'Gets notifications and sees their own things.',
+    neeAccount: 'Not yet', neeUitleg: 'For example young children. You can always add it later.',
+    gebruikersnaam: 'Username', wachtwoord: 'Password', nieuwWw: 'Other password', beheerder: 'Can manage everything (administrator)',
+    beheerderUitleg: 'Only for someone who may also change family members, devices and settings.',
+    toegevoegd: '{x} has been added! 🎉', bewaar: 'Keep these login details, you need them on the phone:', nuKoppelen: 'Connect phone now', later: 'Later',
+    koppelen: 'Connect phone', koppelenVan: "Connect {x}'s phone",
+    stap1: 'Install the app', stap1t: 'Scan with the phone camera, or search for "Home Assistant" in the App Store or Google Play.',
+    stap2: 'Open the app and connect to your home', stap2t: 'Pick the home it finds, or tap "Enter address manually" and scan or type this address:',
+    stap3: 'Log in', stap3t: 'Use these details:', wwVergeten: 'Forgot the password? Set a new one below.',
+    stap4: 'Allow notifications and location', stap4t: 'So {x} gets notifications, and the family can see whether {x} is home.',
+    wachten: 'Waiting for the app to log in…', gekoppeld: '{x} is connected!', testMelding: 'Send test notification', testVerstuurd: 'Test notification sent 📱',
+    geenAccount: '{x} has no account yet. Give {x} an account under "Edit" first.',
+    bewerken: 'Edit', weergave: 'What does Home Assistant look like for {x}?',
+    weergaven: { eenvoudig: ['Simple', 'Only the family dashboard. Ideal for children and guests.'],
+      normaal: ['Normal', 'The family, plus calendar, to-do lists and map.'],
+      beheerder: ['Manager', 'The family, Family settings and the settings.'],
+      expert: ['Expert', 'Home Assistant as it is, with everything.'] },
+    lamp: "{x}'s lamp", lampUitleg: 'For hugs and good night (later).', meldingen: 'Notifications to', automatisch: 'Automatic (first phone)',
+    nieuwWachtwoord: 'Set new password', wwGewijzigd: 'Password changed', verwijderen: 'Remove from family', verwijderenAccount: 'Also delete account',
+    zeker: 'Remove {x} from the family? The account and phone keep working.', zekerAccount: 'Delete {x} and the account completely? This cannot be undone.',
+    account: 'Account', geenLogin: 'No own account', telefoon: 'Phone', geenTelefoon: 'No phone yet', lampKort: 'Lamp', geenLamp: 'No lamp',
+    allesGoed: 'Everything works', kanInloggen: 'Logs in as {x}', jij: 'you', adresOnbekend: 'Set the address of your Home Assistant first (Settings → System → Network).',
+    huishoudenNaam: 'Name of your household',
+  },
+};
+
+const qrSvg = (tekst) => { const q = qrcode(0, 'M'); q.addData(tekst); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); };
+const slug = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+class HaFamilyBeheer extends HTMLElement {
+  set hass(hass) {
+    const eerste = !this._hass;
+    this._hass = hass;
+    if (this._menu) { this._menu.hass = hass; }
+    this._forms && this._forms.forEach((f) => { f.hass = hass; });
+    if (eerste) { this._bouw(); this._laad(); }
+  }
+  get hass() { return this._hass; }
+  set narrow(n) { this._narrow = n; if (this._menu) this._menu.narrow = n; }
+  t(k, x) { const v = T[taal(this._hass)][k] ?? T.en[k] ?? k; return typeof v === 'string' && x !== undefined ? v.replaceAll('{x}', x) : v; }
+  connectedCallback() { this._klok = setInterval(() => this._laad(), this._dlg && this._dlg.soort === 'koppel' ? 3000 : 15000); }
+  disconnectedCallback() { clearInterval(this._klok); clearInterval(this._snel); }
+
+  _bouw() {
+    this.attachShadow({ mode: 'open' });
+    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style>
+      <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div></div>
+      <div class="inhoud"><div class="laden">…</div></div><div class="dlg-plek"></div>`;
+    this._menu = document.createElement('ha-menu-button');
+    this._menu.hass = this._hass;
+    this._menu.narrow = this._narrow;
+    this.shadowRoot.querySelector('.menu').append(this._menu);
+    this.shadowRoot.addEventListener('click', (e) => this._klik(e));
+    this.shadowRoot.addEventListener('input', (e) => this._invoer(e));
+    this._forms = [];
+  }
+
+  async _ws(type, data = {}) { return this._hass.callWS({ type, ...data }); }
+  async _laad() {
+    try { this._s = await this._ws('ha_family/status'); this._fout = null; } catch (e) { this._fout = e.message; }
+    this._teken();
+    if (this._dlg) this._tekenDlg();
+  }
+  _melding(message) { this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message }, bubbles: true, composed: true })); }
+  async _doe(type, data, ok) {
+    try { const r = await this._ws(type, data); if (ok) this._melding(ok); await this._laad(); return r ?? true; } catch (e) { this._melding(e.message); return null; }
+  }
+
+  /* ── Overzicht ── */
+  _teken() {
+    const s = this._s, h = this._hass, el = this.shadowRoot.querySelector('.inhoud');
+    if (!s) { el.innerHTML = `<div class="kaart fout">${esc(this._fout || '…')}</div>`; return; }
+    const soort = s.type === 'huishouden' ? this.t('huishouden') : this.t('gezin');
+    const losse = s.losse_personen.length ? `<div class="kaart zacht"><b>${esc(this.t('alInHa'))}</b><p class="fam-sub">${esc(this.t('alInHaTekst'))}</p>
+      <div class="losse">${s.losse_personen.map((p) => `<div class="los"><span class="los-naam">${esc(p.naam)}</span>
+        ${(s.type === 'huishouden' ? ['huisgenoot', 'gast'] : ['ouder', 'kind']).map((r) => `<button class="fam-knop zacht klein" data-a="los" data-person="${esc(p.person)}" data-rol="${r}">+ ${esc(this.t('als'))} ${esc(this.t('rollen')[r].toLowerCase())}</button>`).join('')}</div>`).join('')}</div></div>` : '';
+    el.innerHTML = `
+      <div class="kaart huis">
+        ${this._huisBewerk ? `<div class="huisform"><label>${esc(this.t('huishoudenNaam'))}<input class="veld" id="huisnaam" value="${esc(s.naam)}" maxlength="40"/></label>
+            <div class="keuzes">${['gezin', 'huishouden'].map((k) => `<button class="keuze ${s.type === k ? 'aan' : ''}" data-a="soort" data-k="${k}">${k === 'gezin' ? '👨‍👩‍👧‍👦' : '🏠'} ${esc(this.t(k))}</button>`).join('')}</div>
+            <div class="rij"><button class="fam-knop" data-a="huis-opslaan">${esc(this.t('opslaan'))}</button><button class="fam-knop rand" data-a="huis-annuleer">${esc(this.t('annuleren'))}</button></div></div>`
+        : `<div class="huiskop"><div><div class="huisnaam">${esc(s.naam)}</div><div class="fam-sub">${esc(soort)} · ${s.leden.length} ${esc(this.t('leden').toLowerCase())}</div></div>
+            <button class="fam-knop rand klein" data-a="huis-bewerk"><ha-icon icon="mdi:pencil"></ha-icon>${esc(this.t('wijzig'))}</button></div>`}
+      </div>
+      ${!s.leden.length ? `<div class="kaart welkom"><div class="groot">👋</div><h2>${esc(this.t('welkom'))}</h2><p class="fam-sub">${esc(this.t('welkomTekst'))}</p>
+          <button class="fam-knop" data-a="toevoegen"><ha-icon icon="mdi:account-plus"></ha-icon>${esc(this.t('toevoegen'))}</button></div>` : ''}
+      ${losse}
+      ${s.leden.length ? `<div class="kop2"><h2>${esc(this.t('leden'))}</h2><button class="fam-knop" data-a="toevoegen"><ha-icon icon="mdi:account-plus"></ha-icon>${esc(this.t('toevoegen'))}</button></div>
+        <div class="leden">${s.leden.map((l) => this._lidKaart(l)).join('')}</div>` : ''}`;
+  }
+
+  _lidKaart(l) {
+    const h = this._hass, w = locatie(h, l.person), tel = l.telefoons[0];
+    const lamp = l.lamp && h.states[l.lamp];
+    const punten = l.punten.length ? l.punten.map((p) => `<div class="fam-chip ${p.ernst}"><ha-icon icon="${p.ernst === 'fout' ? 'mdi:alert-circle' : 'mdi:alert'}"></ha-icon>${esc(p.tekst)}</div>`).join('')
+      : `<div class="fam-chip goed"><ha-icon icon="mdi:check-circle"></ha-icon>${esc(this.t('allesGoed'))}</div>`;
+    const wg = this.t('weergaven')[l.weergave] || ['', ''];
+    return `<div class="kaart lid" style="--fam-k:${esc(l.kleur)}">
+      <div class="lidkop">${avatar(l, { grootte: 72, stip: w.bekend ? w.thuis : null })}
+        <div class="lidnaam"><b>${esc(l.naam)}${l.id === this._s.ik ? ` <span class="fam-sub">(${esc(this.t('jij'))})</span>` : ''}</b>
+          <span class="fam-sub">${esc(this.t('rollen')[l.rol] || l.rol)}${w.bekend ? ` · ${esc(w.tekst)}` : ''}</span></div></div>
+      <div class="regels">
+        <div><ha-icon icon="mdi:account"></ha-icon>${l.kan_inloggen ? esc(this.t('kanInloggen', l.gebruikersnaam || '…')) : `<span class="fam-sub">${esc(this.t('geenLogin'))}</span>`}</div>
+        <div><ha-icon icon="mdi:cellphone"></ha-icon>${tel ? esc(tel.naam) + (l.telefoons.length > 1 ? ` +${l.telefoons.length - 1}` : '') : `<span class="fam-sub">${esc(this.t('geenTelefoon'))}</span>`}</div>
+        <div><ha-icon icon="mdi:monitor-dashboard"></ha-icon>${esc(wg[0])}</div>
+        <div><ha-icon icon="mdi:lightbulb"></ha-icon>${lamp ? esc(lamp.attributes.friendly_name || l.lamp) : `<span class="fam-sub">${esc(this.t('geenLamp'))}</span>`}</div>
+      </div>
+      <div class="punten">${punten}</div>
+      <div class="rij">
+        ${l.kan_inloggen && !tel ? `<button class="fam-knop" data-a="koppel" data-id="${l.id}"><ha-icon icon="mdi:qrcode"></ha-icon>${esc(this.t('koppelen'))}</button>` : ''}
+        ${tel ? `<button class="fam-knop zacht" data-a="test" data-id="${l.id}"><ha-icon icon="mdi:bell-ring"></ha-icon>${esc(this.t('testMelding'))}</button>` : ''}
+        <button class="fam-knop rand" data-a="bewerk" data-id="${l.id}"><ha-icon icon="mdi:pencil"></ha-icon>${esc(this.t('bewerken'))}</button>
+      </div></div>`;
+  }
+
+  /* ── Dialogen ── */
+  _open(dlg) { this._dlg = dlg; this._forms = []; this._tekenDlg(); this._snelheid(); }
+  _sluit() { this._dlg = null; this.shadowRoot.querySelector('.dlg-plek').innerHTML = ''; this._forms = []; this._snelheid(); }
+  _snelheid() {
+    clearInterval(this._snel);
+    if (this._dlg && this._dlg.soort === 'koppel') this._snel = setInterval(() => this._laad(), 3000);
+  }
+  _tekenDlg() {
+    const d = this._dlg, plek = this.shadowRoot.querySelector('.dlg-plek');
+    if (!d) return;
+    // velden waarin iemand typt niet weggooien: alleen de koppel-dialoog ververst vanzelf
+    if (d.soort !== 'koppel' && plek.innerHTML && !d.opnieuw) return;
+    d.opnieuw = false;
+    const inhoud = d.soort === 'nieuw' ? this._dlgNieuw(d) : d.soort === 'koppel' ? this._dlgKoppel(d) : this._dlgBewerk(d);
+    plek.innerHTML = `<div class="achter" data-a="sluit-achter"><div class="dlg" role="dialog">${inhoud}</div></div>`;
+    if (d.soort === 'bewerk') this._lampForm(d);
+  }
+  _herteken() { if (this._dlg) { this._dlg.opnieuw = true; this._tekenDlg(); } }
+
+  _kiezers(d) {
+    return `<label class="lbl">${esc(this.t('emoji'))}</label><div class="emoji">${EMOJI.map((e) => `<button class="${d.emoji === e ? 'aan' : ''}" data-a="emoji" data-v="${e}">${e}</button>`).join('')}</div>
+      <label class="lbl">${esc(this.t('kleur'))}</label><div class="kleuren">${KLEUREN.map((k) => `<button class="${d.kleur === k ? 'aan' : ''}" style="--k:${k}" data-a="kleur" data-v="${k}"></button>`).join('')}</div>`;
+  }
+  _rollen(d) {
+    const lijst = this._s.type === 'huishouden' ? ['huisgenoot', 'gast'] : ['ouder', 'kind', 'gast'];
+    const icoon = { ouder: '🧑', kind: '🧒', huisgenoot: '🏠', gast: '👋' };
+    return `<div class="keuzes">${lijst.map((r) => `<button class="keuze ${d.rol === r ? 'aan' : ''}" data-a="rol" data-v="${r}"><span class="ki">${icoon[r]}</span><b>${esc(this.t('rollen')[r])}</b><small>${esc(this.t('rolUitleg')[r])}</small></button>`).join('')}</div>`;
+  }
+
+  _dlgNieuw(d) {
+    const voorbeeld = { naam: d.naam || '?', emoji: d.emoji, kleur: d.kleur };
+    if (d.stap === 1) {
+      return `<h2>${esc(this.t('toevoegen'))}</h2>
+        <div class="voorbeeld">${avatar(voorbeeld, { grootte: 72 })}</div>
+        <label class="lbl">${esc(this.t('naam'))}</label><input class="veld" id="naam" value="${esc(d.naam)}" placeholder="${esc(this.t('naamVb'))}" maxlength="40" autofocus/>
+        <label class="lbl">${esc(this.t('welkeRol'))}</label>${this._rollen(d)}${this._kiezers(d)}
+        ${d.fout ? `<div class="fam-chip fout">${esc(d.fout)}</div>` : ''}
+        <div class="rij eind"><button class="fam-knop rand" data-a="sluit">${esc(this.t('annuleren'))}</button><button class="fam-knop" data-a="nieuw-volgende" ${d.naam && d.rol ? '' : 'disabled'}>${esc(this.t('volgende'))}</button></div>`;
+    }
+    if (d.stap === 2) {
+      return `<h2>${esc(this.t('telefoonVraag', d.naam))}</h2>
+        <div class="keuzes twee">
+          <button class="keuze ${d.inloggen ? 'aan' : ''}" data-a="inloggen" data-v="1"><span class="ki">📱</span><b>${esc(this.t('jaAccount'))}</b><small>${esc(this.t('jaUitleg'))}</small></button>
+          <button class="keuze ${d.inloggen === false ? 'aan' : ''}" data-a="inloggen" data-v="0"><span class="ki">🧸</span><b>${esc(this.t('neeAccount'))}</b><small>${esc(this.t('neeUitleg'))}</small></button></div>
+        ${d.inloggen ? `<label class="lbl">${esc(this.t('gebruikersnaam'))}</label><input class="veld" id="gebruikersnaam" value="${esc(d.gebruikersnaam)}" autocapitalize="off" maxlength="30"/>
+          <label class="lbl">${esc(this.t('wachtwoord'))}</label><div class="rij"><input class="veld groei mono" id="wachtwoord" value="${esc(d.wachtwoord)}" maxlength="64"/>
+            <button class="fam-knop rand klein" data-a="nieuw-ww"><ha-icon icon="mdi:refresh"></ha-icon>${esc(this.t('nieuwWw'))}</button></div>
+          <label class="vink"><input type="checkbox" id="beheerder" ${d.beheerder ? 'checked' : ''}/> <span><b>${esc(this.t('beheerder'))}</b><br/><small class="fam-sub">${esc(this.t('beheerderUitleg'))}</small></span></label>` : ''}
+        ${d.fout ? `<div class="fam-chip fout">${esc(d.fout)}</div>` : ''}
+        <div class="rij eind"><button class="fam-knop rand" data-a="nieuw-terug">${esc(this.t('terug'))}</button>
+          <button class="fam-knop" data-a="nieuw-maak" ${d.inloggen === undefined || d.bezig ? 'disabled' : ''}>${esc(this.t('toevoegen'))}</button></div>`;
+    }
+    return `<div class="voorbeeld">${avatar(voorbeeld, { grootte: 96 })}</div><h2 class="midden">${esc(this.t('toegevoegd', d.naam))}</h2>
+      ${d.inloggen ? `<p class="fam-sub midden">${esc(this.t('bewaar'))}</p><div class="gegevens"><div><small>${esc(this.t('gebruikersnaam'))}</small><b class="mono">${esc(d.gebruikersnaam)}</b></div>
+        <div><small>${esc(this.t('wachtwoord'))}</small><b class="mono">${esc(d.wachtwoord)}</b></div></div>` : ''}
+      <div class="rij eind"><button class="fam-knop rand" data-a="sluit">${esc(d.inloggen ? this.t('later') : this.t('klaar'))}</button>
+        ${d.inloggen ? `<button class="fam-knop" data-a="koppel" data-id="${d.id}"><ha-icon icon="mdi:qrcode"></ha-icon>${esc(this.t('nuKoppelen'))}</button>` : ''}</div>`;
+  }
+
+  _dlgKoppel(d) {
+    const l = this._s.leden.find((x) => x.id === d.id);
+    if (!l) return '';
+    if (!l.kan_inloggen) return `<h2>${esc(this.t('koppelenVan', l.naam))}</h2><p>${esc(this.t('geenAccount', l.naam))}</p><div class="rij eind"><button class="fam-knop" data-a="sluit">${esc(this.t('klaar'))}</button></div>`;
+    const adres = this._s.adres.extern || this._s.adres.intern || location.origin;
+    const tel = l.telefoons[0];
+    const stap = (n, titel, tekst, extra = '') => `<div class="stap"><span class="nr">${n}</span><div><b>${esc(titel)}</b><p class="fam-sub">${esc(tekst)}</p>${extra}</div></div>`;
+    return `<h2>${esc(this.t('koppelenVan', l.naam))}</h2>
+      ${stap(1, this.t('stap1'), this.t('stap1t'), `<div class="qrs"><a href="${APP_IOS}" target="_blank" rel="noopener"><span class="qr">${qrSvg(APP_IOS)}</span><small>iPhone</small></a>
+        <a href="${APP_ANDROID}" target="_blank" rel="noopener"><span class="qr">${qrSvg(APP_ANDROID)}</span><small>Android</small></a></div>`)}
+      ${stap(2, this.t('stap2'), this.t('stap2t'), `<div class="qrs"><span class="qr">${qrSvg(adres)}</span><b class="mono adres">${esc(adres)}</b></div>`)}
+      ${stap(3, this.t('stap3'), this.t('stap3t'), `<div class="gegevens"><div><small>${esc(this.t('gebruikersnaam'))}</small><b class="mono">${esc(l.gebruikersnaam || '')}</b></div>
+        ${d.wachtwoord ? `<div><small>${esc(this.t('wachtwoord'))}</small><b class="mono">${esc(d.wachtwoord)}</b></div>` : `<div><small>${esc(this.t('wachtwoord'))}</small><button class="fam-knop rand klein" data-a="koppel-ww" data-id="${l.id}">${esc(this.t('nieuwWachtwoord'))}</button></div>`}</div>`)}
+      ${stap(4, this.t('stap4'), this.t('stap4t', l.naam))}
+      <div class="status ${tel ? 'klaar' : ''}">${tel ? `<ha-icon icon="mdi:check-circle"></ha-icon><b>${esc(this.t('gekoppeld', tel.naam))}</b>
+          <button class="fam-knop zacht" data-a="test" data-id="${l.id}"><ha-icon icon="mdi:bell-ring"></ha-icon>${esc(this.t('testMelding'))}</button>`
+        : `<span class="spinner"></span>${esc(this.t('wachten'))}`}</div>
+      <div class="rij eind"><button class="fam-knop" data-a="sluit">${esc(this.t('klaar'))}</button></div>`;
+  }
+
+  _dlgBewerk(d) {
+    const l = this._s.leden.find((x) => x.id === d.id);
+    if (!l) return '';
+    const wg = this.t('weergaven');
+    return `<h2>${esc(l.naam)}</h2>
+      <div class="voorbeeld">${avatar({ ...l, emoji: d.emoji, kleur: d.kleur }, { grootte: 72 })}</div>
+      <label class="lbl">${esc(this.t('naam'))}</label><input class="veld" id="naam" value="${esc(d.naam)}" maxlength="40"/>
+      <label class="lbl">${esc(this.t('welkeRol'))}</label>${this._rollen(d)}${this._kiezers(d)}
+      ${l.kan_inloggen ? `<label class="lbl">${esc(this.t('weergave', l.naam))}</label>
+        <div class="keuzes vier">${Object.entries(wg).map(([k, [n, u]]) => `<button class="keuze ${d.weergave === k ? 'aan' : ''}" data-a="weergave" data-v="${k}"><b>${esc(n)}</b><small>${esc(u)}</small></button>`).join('')}</div>` : ''}
+      <label class="lbl">${esc(this.t('lamp', l.naam))}</label><small class="fam-sub">${esc(this.t('lampUitleg'))}</small><div class="lampform"></div>
+      ${l.telefoons.length ? `<label class="lbl">${esc(this.t('meldingen'))}</label><select class="veld" id="notify"><option value="">${esc(this.t('automatisch'))}</option>
+        ${l.telefoons.map((t) => `<option value="${esc(t.notify)}" ${l.notify === t.notify ? 'selected' : ''}>${esc(t.naam)}</option>`).join('')}</select>` : ''}
+      ${d.fout ? `<div class="fam-chip fout">${esc(d.fout)}</div>` : ''}
+      <div class="rij eind"><button class="fam-knop rand" data-a="sluit">${esc(this.t('annuleren'))}</button><button class="fam-knop" data-a="bewerk-opslaan">${esc(this.t('opslaan'))}</button></div>
+      <hr/>
+      <div class="rij">${l.kan_inloggen ? `<button class="fam-knop rand klein" data-a="koppel-ww" data-id="${l.id}"><ha-icon icon="mdi:key"></ha-icon>${esc(this.t('nieuwWachtwoord'))}</button>` : ''}
+        <button class="fam-knop gevaar klein" data-a="verwijder" data-id="${l.id}">${esc(this.t('verwijderen'))}</button>
+        ${l.id !== this._s.ik ? `<button class="fam-knop gevaar klein" data-a="verwijder-account" data-id="${l.id}">${esc(this.t('verwijderenAccount'))}</button>` : ''}</div>`;
+  }
+
+  _lampForm(d) {
+    const plek = this.shadowRoot.querySelector('.lampform');
+    if (!plek) return;
+    const f = document.createElement('ha-form');
+    f.hass = this._hass;
+    f.schema = [{ name: 'lamp', selector: { entity: { domain: 'light' } } }];
+    f.data = { lamp: d.lamp || undefined };
+    f.computeLabel = () => '';
+    f.addEventListener('value-changed', (e) => { d.lamp = e.detail.value.lamp || null; });
+    plek.append(f);
+    this._forms.push(f);
+  }
+
+  _invoer(e) {
+    const d = this._dlg, id = e.target.id;
+    if (!d || !id) return;
+    if (id === 'naam') {
+      d.naam = e.target.value;
+      if (d.soort === 'nieuw' && !d.gebruikersnaamZelf) d.gebruikersnaam = slug(d.naam);
+      const v = this.shadowRoot.querySelector('.voorbeeld .fam-avatar');
+      if (v && !d.emoji) v.textContent = (d.naam || '?').charAt(0);
+      const knop = this.shadowRoot.querySelector('[data-a=nieuw-volgende]');
+      if (knop) knop.disabled = !(d.naam && d.rol);
+    }
+    if (id === 'gebruikersnaam') { d.gebruikersnaam = e.target.value; d.gebruikersnaamZelf = true; }
+    if (id === 'wachtwoord') d.wachtwoord = e.target.value;
+    if (id === 'beheerder') d.beheerder = e.target.checked;
+    if (id === 'notify') d.notify = e.target.value;
+  }
+
+  async _klik(e) {
+    const b = e.target.closest('[data-a]');
+    if (!b) return;
+    const a = b.dataset.a, d = this._dlg, s = this._s;
+    if (a === 'sluit-achter' && e.target !== b) return;           // alleen klikken op de achtergrond zelf
+    if (a === 'sluit' || a === 'sluit-achter') return this._sluit();
+    if (a === 'huis-bewerk') { this._huisBewerk = { soort: s.type }; return this._teken(); }
+    if (a === 'huis-annuleer') { this._huisBewerk = null; return this._teken(); }
+    if (a === 'soort') { this._huisBewerk.soort = b.dataset.k; this.shadowRoot.querySelectorAll('[data-a=soort]').forEach((x) => x.classList.toggle('aan', x === b)); return; }
+    if (a === 'huis-opslaan') {
+      const naam = this.shadowRoot.getElementById('huisnaam').value, soort = this._huisBewerk.soort || s.type;
+      this._huisBewerk = null;
+      return this._doe('ha_family/huishouden', { naam, soort });
+    }
+    if (a === 'los') return this._doe('ha_family/lid/persoon', { person: b.dataset.person, rol: b.dataset.rol });
+    if (a === 'toevoegen') return this._open({ soort: 'nieuw', stap: 1, naam: '', rol: s.type === 'huishouden' ? 'huisgenoot' : null, emoji: EMOJI.find((x) => !s.leden.some((l) => l.emoji === x)), kleur: KLEUREN.find((x) => !s.leden.some((l) => l.kleur === x)) });
+    if (a === 'emoji' && d) { d.emoji = b.dataset.v; return this._herteken(); }
+    if (a === 'kleur' && d) { d.kleur = b.dataset.v; return this._herteken(); }
+    if (a === 'rol' && d) { d.rol = b.dataset.v; return this._herteken(); }
+    if (a === 'weergave' && d) { d.weergave = b.dataset.v; return this._herteken(); }
+    if (a === 'nieuw-volgende') {
+      if (!d.wachtwoord) d.wachtwoord = (await this._ws('ha_family/voorstel')).wachtwoord;
+      if (!d.gebruikersnaam) d.gebruikersnaam = slug(d.naam);
+      d.stap = 2; d.fout = null; if (d.inloggen === undefined && d.rol !== 'kind') d.inloggen = true;
+      return this._herteken();
+    }
+    if (a === 'nieuw-terug') { d.stap = 1; return this._herteken(); }
+    if (a === 'inloggen') { d.inloggen = b.dataset.v === '1'; return this._herteken(); }
+    if (a === 'nieuw-ww') { d.wachtwoord = (await this._ws('ha_family/voorstel')).wachtwoord; return this._herteken(); }
+    if (a === 'nieuw-maak') {
+      d.bezig = true; this._herteken();
+      try {
+        const lid = await this._ws('ha_family/lid/toevoegen', { naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, inloggen: !!d.inloggen,
+          ...(d.inloggen ? { gebruikersnaam: d.gebruikersnaam, wachtwoord: d.wachtwoord, beheerder: !!d.beheerder } : {}) });
+        d.id = lid.id; d.stap = 3; d.fout = null;
+        await this._laad();
+      } catch (er) { d.fout = er.message; }
+      d.bezig = false;
+      return this._herteken();
+    }
+    if (a === 'koppel') {
+      const ww = d && d.soort === 'nieuw' && d.inloggen ? d.wachtwoord : null;
+      return this._open({ soort: 'koppel', id: b.dataset.id, wachtwoord: ww });
+    }
+    if (a === 'koppel-ww') {
+      const ww = (await this._ws('ha_family/voorstel')).wachtwoord;
+      const nieuw = prompt(this.t('nieuwWachtwoord'), ww);
+      if (!nieuw) return;
+      if (await this._doe('ha_family/lid/wachtwoord', { id: b.dataset.id, wachtwoord: nieuw }, this.t('wwGewijzigd'))) {
+        if (d && d.soort === 'koppel') { d.wachtwoord = nieuw; this._herteken(); }
+      }
+      return;
+    }
+    if (a === 'test') return this._doe('ha_family/lid/test_melding', { id: b.dataset.id }, this.t('testVerstuurd'));
+    if (a === 'bewerk') {
+      const l = s.leden.find((x) => x.id === b.dataset.id);
+      return this._open({ soort: 'bewerk', id: l.id, naam: l.naam, rol: l.rol, emoji: l.emoji, kleur: l.kleur, weergave: l.weergave, lamp: l.lamp, notify: l.notify || '' });
+    }
+    if (a === 'bewerk-opslaan') {
+      const l = s.leden.find((x) => x.id === d.id);
+      const data = { id: d.id, naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, lamp: d.lamp || null, notify: d.notify || null };
+      if (l.kan_inloggen) data.weergave = d.weergave;
+      if (await this._doe('ha_family/lid/bijwerken', data)) this._sluit();
+      return;
+    }
+    if (a === 'verwijder' || a === 'verwijder-account') {
+      const l = s.leden.find((x) => x.id === b.dataset.id);
+      if (!confirm(this.t(a === 'verwijder' ? 'zeker' : 'zekerAccount', l.naam))) return;
+      if (await this._doe('ha_family/lid/verwijderen', { id: l.id, ook_account: a === 'verwijder-account' })) this._sluit();
+    }
+  }
+}
+
+const STIJL = `
+  :host { display: block; background: var(--primary-background-color); min-height: 100vh; color: var(--primary-text-color); }
+  .balk { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; height: var(--header-height, 56px); padding: 0 12px;
+    background: var(--app-header-background-color, var(--primary-background-color)); color: var(--app-header-text-color, var(--primary-text-color));
+    border-bottom: var(--app-header-border-bottom, 1px solid var(--divider-color)); }
+  .titel { font-size: 1.25rem; font-weight: 500; }
+  .inhoud { max-width: 1040px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  .kaart { background: var(--card-background-color); border-radius: var(--ha-card-border-radius, 20px); padding: 20px;
+    box-shadow: var(--ha-card-box-shadow, none); border: 1px solid var(--ha-card-border-color, var(--divider-color)); }
+  .kaart.zacht { background: color-mix(in srgb, var(--primary-color) 6%, var(--card-background-color)); }
+  .kaart.fout { color: var(--error-color); }
+  h2 { margin: 0 0 8px; font-size: 1.3rem; }
+  .kop2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .kop2 h2 { margin: 0; }
+  .huiskop { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .huisnaam { font-size: 1.6rem; font-weight: 600; }
+  .welkom { text-align: center; display: grid; justify-items: center; gap: 8px; padding: 32px 20px; }
+  .welkom p { max-width: 520px; margin: 0 0 8px; }
+  .groot { font-size: 3rem; }
+  .leden { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .lid { display: grid; gap: 14px; align-content: start; }
+  .lidkop { display: flex; align-items: center; gap: 14px; }
+  .lidnaam { display: grid; gap: 2px; font-size: 1.15rem; }
+  .lidnaam .fam-sub { font-size: .9rem; }
+  .regels { display: grid; gap: 6px; font-size: .92rem; }
+  .regels div { display: flex; align-items: center; gap: 10px; }
+  .regels ha-icon { --mdc-icon-size: 18px; color: var(--secondary-text-color); }
+  .punten { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rij { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .rij.eind { justify-content: flex-end; margin-top: 16px; }
+  .fam-knop.klein { min-height: 36px; padding: 0 14px; font-size: .9rem; }
+  .losse { display: grid; gap: 8px; margin-top: 8px; }
+  .los { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .los-naam { font-weight: 600; min-width: 120px; }
+  .achter { position: fixed; inset: 0; z-index: 10; background: rgba(0, 0, 0, .45); display: grid; place-items: center; padding: 16px; overflow: auto; }
+  .dlg { background: var(--card-background-color); border-radius: 24px; padding: 24px; width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+  .dlg h2.midden, .midden { text-align: center; }
+  .voorbeeld { display: grid; justify-items: center; margin: 4px 0 8px; }
+  .lbl { display: block; font-weight: 600; margin: 16px 0 6px; }
+  .veld { width: 100%; box-sizing: border-box; font: inherit; font-size: 1rem; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--divider-color);
+    background: var(--secondary-background-color); color: var(--primary-text-color); }
+  .veld:focus { outline: 2px solid var(--primary-color); outline-offset: -1px; }
+  .groei { flex: 1; width: auto; min-width: 160px; }
+  .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .keuzes { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .keuzes.twee { grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  .keuze { border: 1px solid var(--divider-color); background: none; color: inherit; font: inherit; cursor: pointer; text-align: left; border-radius: 16px;
+    padding: 12px 14px; display: grid; gap: 2px; }
+  .keuze small { color: var(--secondary-text-color); font-size: .82rem; line-height: 1.3; }
+  .keuze .ki { font-size: 1.6rem; }
+  .keuze.aan { border-color: var(--primary-color); box-shadow: inset 0 0 0 1px var(--primary-color); background: color-mix(in srgb, var(--primary-color) 8%, transparent); }
+  .emoji { display: flex; flex-wrap: wrap; gap: 4px; }
+  .emoji button { border: 0; background: none; font-size: 1.6rem; width: 44px; height: 44px; border-radius: 12px; cursor: pointer; }
+  .emoji button.aan { background: color-mix(in srgb, var(--primary-color) 18%, transparent); }
+  .kleuren { display: flex; flex-wrap: wrap; gap: 10px; }
+  .kleuren button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--k); cursor: pointer; }
+  .kleuren button.aan { box-shadow: 0 0 0 3px var(--card-background-color), 0 0 0 5px var(--k); }
+  .vink { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; cursor: pointer; }
+  .vink input { width: 20px; height: 20px; margin-top: 2px; }
+  .gegevens { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .gegevens div { background: var(--secondary-background-color); border-radius: 12px; padding: 10px 14px; display: grid; gap: 2px; }
+  .gegevens small { color: var(--secondary-text-color); }
+  .gegevens b { font-size: 1.1rem; word-break: break-all; }
+  .stap { display: grid; grid-template-columns: 36px 1fr; gap: 12px; margin-top: 16px; }
+  .stap .nr { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--primary-color); color: var(--text-primary-color, #fff); }
+  .stap p { margin: 2px 0 8px; }
+  .qrs { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .qrs a { display: grid; justify-items: center; gap: 4px; color: inherit; text-decoration: none; }
+  .qr { display: block; width: 120px; height: 120px; background: #fff; border-radius: 12px; padding: 4px; box-sizing: border-box; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .adres { font-size: 1rem; word-break: break-all; }
+  .status { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; padding: 14px 16px; border-radius: 16px; background: var(--secondary-background-color); }
+  .status.klaar { background: color-mix(in srgb, var(--success-color, #43a047) 14%, transparent); }
+  .status.klaar ha-icon { color: var(--success-color, #43a047); }
+  .spinner { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--divider-color); border-top-color: var(--primary-color); animation: draai 1s linear infinite; }
+  @keyframes draai { to { transform: rotate(360deg); } }
+  hr { border: 0; border-top: 1px solid var(--divider-color); margin: 20px 0 12px; }
+  .huisform { display: grid; gap: 12px; }
+  .huisform label { display: grid; gap: 6px; font-weight: 600; }
+  @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } }
+`;
+
+if (!customElements.get('ha-family-beheer')) customElements.define('ha-family-beheer', HaFamilyBeheer);

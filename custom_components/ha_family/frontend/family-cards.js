@@ -1,0 +1,87 @@
+/* HA Family — kaarten (HA-Family-Cards) en het dashboard dat zichzelf opbouwt (HA-Family-Dashboard).
+ *
+ *   type: custom:family-gezin-card         groet, datum en wie er thuis is (tik op iemand voor details)
+ *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
+ *
+ * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
+import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.1.0';
+
+class FamilyGezinCard extends HTMLElement {
+  setConfig(config) { this._config = { ...config }; }
+  getCardSize() { return 3; }
+  getGridOptions() { return { columns: 12, min_columns: 6, rows: 'auto' }; }
+  set hass(hass) {
+    this._hass = hass;
+    const l = leden(hass);
+    const sleutel = taal(hass) + new Date().getHours() + JSON.stringify(l) + l.map((x) => (hass.states[x.person] || {}).state).join();
+    if (sleutel === this._sleutel) return;
+    this._sleutel = sleutel;
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-person]');
+        if (b) this.dispatchEvent(new CustomEvent('hass-more-info', { detail: { entityId: b.dataset.person }, bubbles: true, composed: true }));
+        const n = e.target.closest('[data-naar]');
+        if (n) { history.pushState(null, '', n.dataset.naar); window.dispatchEvent(new CustomEvent('location-changed')); }
+      });
+    }
+    this._teken();
+  }
+  _teken() {
+    const h = this._hass, l = leden(h), ik = ikLid(h), g = gezinState(h);
+    const nu = new Date();
+    const datum = nu.toLocaleDateString(h.locale?.language || undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+    // alleen tellen wie we kunnen volgen (met een telefoon); weten we van niemand iets, dan zeggen we niets
+    const bekend = l.filter((x) => locatie(h, x.person).bekend), thuis = bekend.filter((x) => locatie(h, x.person).thuis).length;
+    const samen = !bekend.length ? '' : thuis === bekend.length ? t(h, 'iedereenThuis') : thuis === 0 ? t(h, 'niemandThuis') : `${thuis}/${bekend.length} ${t(h, 'zijnThuis')}`;
+    this.shadowRoot.innerHTML = `<style>${CSS}
+      ha-card { padding: 20px; border-radius: var(--ha-card-border-radius, var(--fam-radius)); }
+      .kop { display: flex; align-items: center; gap: 16px; }
+      .groet { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+      .datum { color: var(--secondary-text-color); margin-top: 2px; }
+      .datum::first-letter { text-transform: uppercase; }
+      .wie { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 0 10px; gap: 8px; }
+      .wie b { font-size: 1rem; }
+      .leden { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 12px; }
+      .lid { border: 0; background: none; cursor: pointer; font: inherit; color: inherit; display: grid; justify-items: center; gap: 6px; padding: 8px 4px; border-radius: 16px; }
+      .lid:hover { background: var(--secondary-background-color); }
+      .naam { font-weight: 600; }
+      .waar { font-size: .85rem; color: var(--secondary-text-color); }
+      .waar.thuis { color: var(--success-color, #2e7d32); }
+      .leeg { text-align: center; padding: 12px 0; display: grid; gap: 12px; justify-items: center; }
+    </style><ha-card>
+      <div class="kop">${ik ? avatar(ik, { grootte: 64 }) : ''}<div><div class="groet">${esc(groet(h))}${ik ? `, ${esc(ik.naam)}` : ''} 👋</div><div class="datum">${esc(datum)}</div></div></div>
+      ${!g ? `<div class="leeg fam-sub">${esc(t(h, 'nietIngesteld'))}</div>`
+        : !l.length ? `<div class="leeg"><span class="fam-sub">${esc(t(h, 'geenLeden'))}</span>${h.user && h.user.is_admin ? `<button class="fam-knop" data-naar="/gezin-beheer"><ha-icon icon="mdi:account-plus"></ha-icon>${esc(t(h, 'naarBeheer'))}</button>` : ''}</div>`
+        : `<div class="wie"><b>${esc(t(h, 'wieThuis'))}</b><span class="fam-sub">${esc(samen)}</span></div>
+           <div class="leden">${l.map((x) => { const w = locatie(h, x.person);
+             return `<button class="lid" data-person="${esc(x.person)}">${avatar(x, { grootte: 64, stip: w.bekend ? w.thuis : null })}
+               <span class="naam">${esc(x.naam)}</span>${w.bekend ? `<span class="waar ${w.thuis ? 'thuis' : ''}">${esc(w.tekst)}</span>` : ''}</button>`; }).join('')}</div>`}
+    </ha-card>`;
+  }
+}
+
+/* ── Dashboard-strategie: custom:ha-family ── */
+class FamilyStrategie extends HTMLElement {
+  static async generate(config, hass) {
+    const g = gezinState(hass);
+    const titel = g ? g.attributes.huishouden : 'HA Family';
+    return {
+      title: titel,
+      views: [
+        { title: taal(hass) === 'nl' ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
+          sections: [{ type: 'grid', cards: [{ type: 'custom:family-gezin-card' }] }] },
+      ],
+    };
+  }
+}
+
+registreer([
+  ['ll-strategy-dashboard-ha-family', FamilyStrategie],
+  ['family-gezin-card', FamilyGezinCard],
+]);
+window.customCards = window.customCards || [];
+if (!window.customCards.some((c) => c.type === 'family-gezin-card')) {
+  window.customCards.push({ type: 'family-gezin-card', name: 'HA Family: gezin', description: 'Groet, datum en wie er thuis is.' });
+}
+console.info(`%c HA FAMILY %c ${VERSIE} `, 'background:#7c4dff;color:#fff;font-weight:700', 'background:#333;color:#fff');

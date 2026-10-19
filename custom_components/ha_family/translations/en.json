@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Family",
+        "description": "Home Assistant for the whole family. After this step, open **Family settings** in the sidebar to add your family members and connect their phones.",
+        "data": {
+          "naam": "Name of your household",
+          "type": "What are you?",
+          "dashboard": "Family app: dashboard in the sidebar, simple home screen and sidebar per family member",
+          "startscherm": "Family dashboard as home screen for everyone (also new users and wall tablets)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "HA Family is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Family",
+        "data": {
+          "naam": "Name of your household",
+          "type": "What are you?",
+          "dashboard": "Family app: dashboard in the sidebar, simple home screen and sidebar per family member",
+          "startscherm": "Family dashboard as home screen for everyone (also new users and wall tablets)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "soort": {
+      "options": {
+        "gezin": "A family (parents and children)",
+        "huishouden": "A household (housemates)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "gezin": {
+        "name": "Family"
+      }
+    }
+  }
+}
