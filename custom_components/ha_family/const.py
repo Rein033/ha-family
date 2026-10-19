@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "ha_family"
-PLATFORMS = ["sensor"]
+PLATFORMS = ["calendar", "sensor"]
 STORAGE_VERSION = 1
 
 CONF_NAAM = "naam"

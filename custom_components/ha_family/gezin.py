@@ -175,6 +175,11 @@ class Gezin:
 
     def lid_bijwerken(self, lid_id: str, **velden: Any) -> dict[str, Any]:
         lid = self.lid(lid_id)
+        if "geboortedatum" in velden:
+            g = velden.pop("geboortedatum") or None
+            if g and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", g):
+                raise FamilyFout("Kies een geboortedatum.")
+            lid["geboortedatum"] = g
         for k in ("naam", "rol", "kleur", "emoji", "lamp", "notify", "weergave"):
             if k in velden:
                 v = velden[k]
@@ -284,7 +289,7 @@ class Gezin:
         """Wat iedereen mag zien (sensor en kaarten)."""
         return {"naam": self.naam, "type": self.type, "leden": [
             {"id": l["id"], "naam": l["naam"], "rol": l["rol"], "kleur": l["kleur"], "emoji": l["emoji"], "person": l["person"],
-             "user_id": self.user_id(l)} for l in self.leden]}
+             "user_id": self.user_id(l), "verjaardag": (l.get("geboortedatum") or "")[5:] or None} for l in self.leden]}
 
     async def status(self) -> dict[str, Any]:
         """Alles voor het beheerpaneel, met per lid een gezondheidscheck."""

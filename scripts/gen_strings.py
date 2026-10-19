@@ -25,7 +25,9 @@ def taal(t):
         "options": {"step": {"init": {"title": "HA Family", "data": velden}}},
         "selector": {"soort": {"options": {"gezin": k("A family (parents and children)", "Een gezin (ouders en kinderen)"),
                                            "huishouden": k("A household (housemates)", "Een huishouden (huisgenoten)")}}},
-        "entity": {"sensor": {"gezin": {"name": k("Family", "Gezin")}}},
+        "entity": {"sensor": {"gezin": {"name": k("Family", "Gezin")}, "volgende_afval": {"name": k("Next waste collection", "Volgende afval")}},
+                   "calendar": {"agenda": {"name": k("Family calendar", "Gezinsagenda")}, "verjaardagen": {"name": k("Birthdays", "Verjaardagen")},
+                                "afval": {"name": k("Waste collection", "Afval")}}},
     }
 
 

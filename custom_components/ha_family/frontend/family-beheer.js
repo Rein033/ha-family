@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.1.0';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.2.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -42,6 +42,24 @@ const T = {
     account: 'Account', geenLogin: 'Geen eigen account', telefoon: 'Telefoon', geenTelefoon: 'Nog geen telefoon', lampKort: 'Lamp', geenLamp: 'Geen lamp',
     allesGoed: 'Alles werkt', kanInloggen: 'Inloggen als {x}', jij: 'jij', adresOnbekend: 'Stel eerst het adres van je Home Assistant in (Instellingen → Systeem → Netwerk).',
     huishoudenNaam: 'Naam van jullie huishouden',
+    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda',
+    agendasLeden: "Agenda's per gezinslid", agendasUitleg: 'Afspraken uit deze agenda\'s komen in de gezinsagenda, in de kleur van die persoon.',
+    gezamenlijk: "Gezamenlijke agenda's", gezamenlijkUitleg: 'Bijvoorbeeld school, sport of vakanties: in de kleur van het gezin.',
+    agendaKoppelen: 'Agenda koppelen', geenAgendas: 'Nog geen agenda gekoppeld', agendaVan: 'Agenda koppelen voor {x}', hetGezin: 'het hele gezin',
+    bestaand: 'Een agenda die al in Home Assistant staat', kies: 'Kies een agenda…', koppel: 'Koppelen', ofLink: 'Of plak een agenda-link',
+    linkNaam: 'Naam', linkNaamVb: 'bijv. Werk Noor', linkUrl: 'Link (iCal)', linkToevoegen: 'Link toevoegen', bezigLink: 'Agenda ophalen…',
+    waarLink: 'Waar vind ik die link?', linkGoogle: 'Google Agenda (op de computer): Instellingen → kies je agenda → "Geheim adres in iCal-indeling".',
+    linkIcloud: 'iCloud (iPhone): Agenda-app → Agenda\'s → ⓘ bij je agenda → zet "Openbare agenda" aan → Deel link.',
+    linkOutlook: 'Outlook.com: Instellingen → Agenda → Gedeelde agenda\'s → Een agenda publiceren → ICS-link.',
+    verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
+    geboortedatum: 'Geboortedatum', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
+    meldingOm: 'Melding om', aan: 'Aan',
+    afvalTitel: 'Afvalkalender', afvalUitleg: 'De avond voor het ophalen krijgt het gezin een seintje.',
+    afvalZelf: 'Zelf invullen', afvalZelfUitleg: 'Per soort de volgende ophaaldag en hoe vaak.',
+    afvalLink: 'Link van de gemeente', afvalLinkUitleg: 'Zoek op de site van je gemeente of afvalinzamelaar naar "afvalkalender in je agenda" of "iCal".',
+    afvalBestaand: 'Bestaande agenda', afvalBestaandUitleg: 'Bijvoorbeeld van een afval-integratie die je al hebt.',
+    volgendeKeer: 'Volgende ophaaldag', elke: 'elke', weken: 'weken', week1: 'week', herinneringAan: 'Herinnering de avond ervoor', om: 'om',
+    naarWie: 'Naar wie? (niemand gekozen: iedereen met een telefoon)', bewaren: 'Bewaren', bewaard: 'Bewaard ✓', afvalNu: 'Nu: {x}', geenAfval: 'Nog niet ingesteld',
   },
   en: {
     titel: 'Family settings', leden: 'Family members', toevoegen: 'Add family member', welkom: 'Welcome to HA Family!',
@@ -74,6 +92,24 @@ const T = {
     account: 'Account', geenLogin: 'No own account', telefoon: 'Phone', geenTelefoon: 'No phone yet', lampKort: 'Lamp', geenLamp: 'No lamp',
     allesGoed: 'Everything works', kanInloggen: 'Logs in as {x}', jij: 'you', adresOnbekend: 'Set the address of your Home Assistant first (Settings → System → Network).',
     huishoudenNaam: 'Name of your household',
+    tabLeden: 'Family members', tabAgenda: 'Calendar',
+    agendasLeden: 'Calendars per family member', agendasUitleg: "Events from these calendars appear in the family calendar, in that person's colour.",
+    gezamenlijk: 'Shared calendars', gezamenlijkUitleg: 'For example school, sports or holidays: in the family colour.',
+    agendaKoppelen: 'Connect calendar', geenAgendas: 'No calendar connected yet', agendaVan: 'Connect a calendar for {x}', hetGezin: 'the whole family',
+    bestaand: 'A calendar already in Home Assistant', kies: 'Choose a calendar…', koppel: 'Connect', ofLink: 'Or paste a calendar link',
+    linkNaam: 'Name', linkNaamVb: "e.g. Noor's work", linkUrl: 'Link (iCal)', linkToevoegen: 'Add link', bezigLink: 'Fetching calendar…',
+    waarLink: 'Where do I find that link?', linkGoogle: 'Google Calendar (on a computer): Settings → your calendar → "Secret address in iCal format".',
+    linkIcloud: 'iCloud (iPhone): Calendar app → Calendars → ⓘ next to your calendar → turn on "Public Calendar" → Share Link.',
+    linkOutlook: 'Outlook.com: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.',
+    verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
+    geboortedatum: 'Date of birth', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
+    meldingOm: 'Notification at', aan: 'On',
+    afvalTitel: 'Waste collection', afvalUitleg: 'The evening before collection the family gets a note.',
+    afvalZelf: 'Enter it yourself', afvalZelfUitleg: 'Per type the next collection day and how often.',
+    afvalLink: 'Link from your municipality', afvalLinkUitleg: 'Look on the website of your municipality or waste company for "calendar subscription" or "iCal".',
+    afvalBestaand: 'Existing calendar', afvalBestaandUitleg: 'For example from a waste integration you already have.',
+    volgendeKeer: 'Next collection', elke: 'every', weken: 'weeks', week1: 'week', herinneringAan: 'Reminder the evening before', om: 'at',
+    naarWie: 'To whom? (nobody chosen: everyone with a phone)', bewaren: 'Save', bewaard: 'Saved ✓', afvalNu: 'Now: {x}', geenAfval: 'Not set up yet',
   },
 };
 
@@ -97,7 +133,8 @@ class HaFamilyBeheer extends HTMLElement {
   _bouw() {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style>
-      <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div></div>
+      <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div>
+        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button></div></div>
       <div class="inhoud"><div class="laden">…</div></div><div class="dlg-plek"></div>`;
     this._menu = document.createElement('ha-menu-button');
     this._menu.hass = this._hass;
@@ -105,15 +142,21 @@ class HaFamilyBeheer extends HTMLElement {
     this.shadowRoot.querySelector('.menu').append(this._menu);
     this.shadowRoot.addEventListener('click', (e) => this._klik(e));
     this.shadowRoot.addEventListener('input', (e) => this._invoer(e));
+    this.shadowRoot.addEventListener('change', (e) => this._agendaWijzig(e));
     this._forms = [];
   }
 
   async _ws(type, data = {}) { return this._hass.callWS({ type, ...data }); }
   async _laad() {
-    try { this._s = await this._ws('ha_family/status'); this._fout = null; } catch (e) { this._fout = e.message; }
+    try {
+      this._s = await this._ws('ha_family/status'); this._fout = null;
+      if (this._tab === 'agenda' && !this._typt()) this._ag = await this._ws('ha_family/agenda/instellingen');
+    } catch (e) { this._fout = e.message; }
+    if (this._tab === 'agenda' && this._typt()) return;            // niet hertekenen terwijl iemand in de agenda-instellingen typt
     this._teken();
     if (this._dlg) this._tekenDlg();
   }
+  _typt() { const a = this.shadowRoot && this.shadowRoot.activeElement; return !!a && ['INPUT', 'SELECT', 'TEXTAREA'].includes(a.tagName); }
   _melding(message) { this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message }, bubbles: true, composed: true })); }
   async _doe(type, data, ok) {
     try { const r = await this._ws(type, data); if (ok) this._melding(ok); await this._laad(); return r ?? true; } catch (e) { this._melding(e.message); return null; }
@@ -123,6 +166,8 @@ class HaFamilyBeheer extends HTMLElement {
   _teken() {
     const s = this._s, h = this._hass, el = this.shadowRoot.querySelector('.inhoud');
     if (!s) { el.innerHTML = `<div class="kaart fout">${esc(this._fout || '…')}</div>`; return; }
+    this.shadowRoot.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('aan', b.dataset.tab === (this._tab || 'leden')));
+    if (this._tab === 'agenda') { el.innerHTML = this._agendaTab(); return; }
     const soort = s.type === 'huishouden' ? this.t('huishouden') : this.t('gezin');
     const losse = s.losse_personen.length ? `<div class="kaart zacht"><b>${esc(this.t('alInHa'))}</b><p class="fam-sub">${esc(this.t('alInHaTekst'))}</p>
       <div class="losse">${s.losse_personen.map((p) => `<div class="los"><span class="los-naam">${esc(p.naam)}</span>
@@ -166,6 +211,145 @@ class HaFamilyBeheer extends HTMLElement {
       </div></div>`;
   }
 
+
+  /* ── Agenda-tab ── */
+  _agendaTab() {
+    const a = this._ag, s = this._s, h = this._hass;
+    if (!a) return '<div class="kaart">…</div>';
+    const naam = (e) => (h.states[e] ? h.states[e].attributes.friendly_name : e);
+    const chips = (lijst, voor) => lijst.length ? lijst.map((e) => `<span class="fam-chip">📅 ${esc(naam(e))}<button class="chipx" data-a="agenda-los" data-voor="${voor}" data-entity="${esc(e)}">✕</button></span>`).join('')
+      : `<span class="fam-sub">${esc(this.t('geenAgendas'))}</span>`;
+    const leden = s.leden.map((l) => { const al = (a.leden.find((x) => x.id === l.id) || {}).agendas || [];
+      return `<div class="arij">${avatar(l, { grootte: 40 })}<b class="anaam">${esc(l.naam)}</b><div class="achips">${chips(al, l.id)}</div>
+        <button class="fam-knop zacht klein" data-a="agenda-koppel" data-voor="${l.id}"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('agendaKoppelen'))}</button></div>`; }).join('');
+    const af = a.afval, soorten = a.afvalsoorten;
+    if (!this._afv) this._afv = { modus: af.agenda ? (h.states[af.agenda] && (h.states[af.agenda].attributes.friendly_name || '').toLowerCase().includes('afval') ? 'link' : 'bestaand') : 'zelf',
+      schema: Object.fromEntries(af.schema.map((x) => [x.soort, { ...x }])), agenda: af.agenda || '', herinnering: { ...af.herinnering, leden: [...(af.herinnering.leden || [])] }, link: '', url: '' };
+    const v = this._afv;
+    const afvalNu = af.agenda ? naam(af.agenda) : af.schema.length ? af.schema.map((x) => soorten[x.soort].icoon + ' ' + soorten[x.soort].naam).join(', ') : this.t('geenAfval');
+    const wekenOpties = (w) => [1, 2, 3, 4, 6, 8, 13, 26].map((n) => `<option value="${n}" ${Number(w) === n ? 'selected' : ''}>${n} ${esc(n === 1 ? this.t('week1') : this.t('weken'))}</option>`).join('');
+    const beschikbaar = a.beschikbaar;
+    return `
+      <div class="kaart"><h2>📅 ${esc(this.t('agendasLeden'))}</h2><p class="fam-sub">${esc(this.t('agendasUitleg'))}</p>${leden}
+        <div class="arij"><span class="fam-avatar" style="--k:var(--primary-color);width:40px;height:40px;font-size:20px">🏠</span><b class="anaam">${esc(this.t('gezamenlijk'))}</b>
+          <div class="achips">${chips(a.extra, 'gezin')}</div><button class="fam-knop zacht klein" data-a="agenda-koppel" data-voor="gezin"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('agendaKoppelen'))}</button></div>
+        <p class="fam-sub">${esc(this.t('gezamenlijkUitleg'))}</p></div>
+
+      <div class="kaart"><h2>🎂 ${esc(this.t('verjaardagen'))}</h2><p class="fam-sub">${esc(this.t('verjaardagenUitleg'))}</p>
+        ${s.leden.map((l) => `<div class="arij">${avatar(l, { grootte: 40 })}<b class="anaam">${esc(l.naam)}</b>
+          <label class="klein-lbl">${esc(this.t('geboortedatum'))}<input class="veld smal" type="date" data-a="geboorte" data-id="${l.id}" value="${esc((a.leden.find((x) => x.id === l.id) || {}).geboortedatum || '')}"/></label></div>`).join('')}
+        <h3>${esc(this.t('extraJarigen'))}</h3>
+        ${a.verjaardagen.map((j) => `<div class="arij"><span class="fam-avatar" style="--k:#e91e63;width:40px;height:40px;font-size:20px">🎂</span><b class="anaam">${esc(j.naam)}</b>
+          <span class="fam-sub">${esc(j.datum.length === 10 ? new Date(j.datum + 'T00:00:00').toLocaleDateString(h.locale?.language, { day: 'numeric', month: 'long', year: 'numeric' }) : new Date('2000-' + j.datum + 'T00:00:00').toLocaleDateString(h.locale?.language, { day: 'numeric', month: 'long' }))}</span>
+          <button class="fam-knop gevaar klein" data-a="jarig-weg" data-id="${j.id}">✕</button></div>`).join('')}
+        <div class="rij"><input class="veld groei" id="jarig-naam" placeholder="${esc(this.t('naamJarige'))}" maxlength="60"/><input class="veld smal" type="date" id="jarig-datum"/>
+          <label class="vink kort"><input type="checkbox" id="jarig-geenjaar"/> ${esc(this.t('jaarOnbekend'))}</label>
+          <button class="fam-knop" data-a="jarig-toevoegen"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('toevoegenKort'))}</button></div>
+        <div class="rij"><label class="vink kort"><input type="checkbox" data-a="jarig-melding" ${a.verjaardag_melding.aan ? 'checked' : ''}/> ${esc(this.t('meldingOm'))}</label>
+          <input class="veld smal" type="time" data-a="jarig-tijd" value="${esc(a.verjaardag_melding.tijd)}"/></div></div>
+
+      <div class="kaart"><h2>🗑️ ${esc(this.t('afvalTitel'))}</h2><p class="fam-sub">${esc(this.t('afvalUitleg'))} · <b>${esc(this.t('afvalNu', afvalNu))}</b></p>
+        <div class="keuzes">${[['zelf', '✍️'], ['link', '🔗'], ['bestaand', '📅']].map(([k, i]) => `<button class="keuze ${v.modus === k ? 'aan' : ''}" data-a="afval-modus" data-v="${k}"><span class="ki">${i}</span><b>${esc(this.t(k === 'zelf' ? 'afvalZelf' : k === 'link' ? 'afvalLink' : 'afvalBestaand'))}</b><small>${esc(this.t(k === 'zelf' ? 'afvalZelfUitleg' : k === 'link' ? 'afvalLinkUitleg' : 'afvalBestaandUitleg'))}</small></button>`).join('')}</div>
+        ${v.modus === 'zelf' ? `<div class="afval">${Object.entries(soorten).map(([k, x]) => { const r = v.schema[k];
+            return `<div class="arij"><label class="vink kort"><input type="checkbox" data-a="afval-soort" data-soort="${k}" ${r ? 'checked' : ''}/> <span class="aico">${x.icoon}</span> <b>${esc(x.naam)}</b></label>
+              ${r ? `<label class="klein-lbl">${esc(this.t('volgendeKeer'))}<input class="veld smal" type="date" data-a="afval-start" data-soort="${k}" value="${esc(r.start || '')}"/></label>
+                <label class="klein-lbl">${esc(this.t('elke'))}<select class="veld smal" data-a="afval-weken" data-soort="${k}">${wekenOpties(r.weken || 2)}</select></label>` : ''}</div>`; }).join('')}</div>`
+        : v.modus === 'link' ? `<div class="rij"><input class="veld groei" id="afval-url" placeholder="https://… .ics" value="${esc(v.url)}"/></div>`
+        : `<select class="veld" id="afval-agenda"><option value="">${esc(this.t('kies'))}</option>${beschikbaar.map((b) => `<option value="${esc(b.entity)}" ${v.agenda === b.entity ? 'selected' : ''}>${esc(b.naam)}</option>`).join('')}</select>`}
+        <div class="rij" style="margin-top:14px"><label class="vink kort"><input type="checkbox" data-a="afval-herinnering" ${v.herinnering.aan ? 'checked' : ''}/> ${esc(this.t('herinneringAan'))} ${esc(this.t('om'))}</label>
+          <input class="veld smal" type="time" data-a="afval-tijd" value="${esc(v.herinnering.tijd)}"/></div>
+        <p class="fam-sub">${esc(this.t('naarWie'))}</p>
+        <div class="wie">${s.leden.map((l) => `<button class="${v.herinnering.leden.includes(l.id) ? 'aan' : ''}" style="--k:${esc(l.kleur)}" data-a="afval-wie" data-id="${l.id}">${avatar(l, { grootte: 36 })}<small>${esc(l.naam)}</small></button>`).join('')}</div>
+        <div class="rij eind"><button class="fam-knop" data-a="afval-bewaar" ${v.bezig ? 'disabled' : ''}>${esc(v.bezig ? this.t('bezigLink') : this.t('bewaren'))}</button></div></div>`;
+  }
+
+  _dlgAgenda(d) {
+    const s = this._s, a = this._ag, l = s.leden.find((x) => x.id === d.voor);
+    const al = d.voor === 'gezin' ? a.extra : ((a.leden.find((x) => x.id === d.voor) || {}).agendas || []);
+    const vrij = a.beschikbaar.filter((b) => !al.includes(b.entity));
+    return `<h2>${esc(this.t('agendaVan', l ? l.naam : this.t('hetGezin')))}</h2>
+      <label class="lbl">${esc(this.t('bestaand'))}</label>
+      <div class="rij"><select class="veld groei" id="agenda-kies"><option value="">${esc(this.t('kies'))}</option>${vrij.map((b) => `<option value="${esc(b.entity)}">${esc(b.naam)}</option>`).join('')}</select>
+        <button class="fam-knop" data-a="agenda-kies">${esc(this.t('koppel'))}</button></div>
+      <label class="lbl">${esc(this.t('ofLink'))}</label>
+      <input class="veld" id="agenda-naam" placeholder="${esc(this.t('linkNaamVb'))}" value="${esc(d.naam || (l ? l.naam : ''))}" maxlength="60"/>
+      <input class="veld" id="agenda-url" placeholder="https://… / webcal://…" value="${esc(d.url || '')}" style="margin-top:8px"/>
+      <details class="uitleg"><summary>${esc(this.t('waarLink'))}</summary><ul><li>${esc(this.t('linkGoogle'))}</li><li>${esc(this.t('linkIcloud'))}</li><li>${esc(this.t('linkOutlook'))}</li></ul></details>
+      ${d.fout ? `<div class="fam-chip fout">${esc(d.fout)}</div>` : ''}
+      <div class="rij eind"><button class="fam-knop rand" data-a="sluit">${esc(this.t('annuleren'))}</button>
+        <button class="fam-knop" data-a="agenda-link" ${d.bezig ? 'disabled' : ''}>${esc(d.bezig ? this.t('bezigLink') : this.t('linkToevoegen'))}</button></div>`;
+  }
+
+  async _agendaZet(voor, lijst) {
+    if (voor === 'gezin') return this._doe('ha_family/agenda/extra', { agendas: lijst });
+    return this._doe('ha_family/agenda/lid_agendas', { lid: voor, agendas: lijst });
+  }
+  _huidigeAgendas(voor) {
+    const a = this._ag;
+    return voor === 'gezin' ? [...a.extra] : [...((a.leden.find((x) => x.id === voor) || {}).agendas || [])];
+  }
+
+  async _agendaKlik(a, b) {
+    const v = this._afv;
+    if (a === 'tab') { this._tab = b.dataset.tab; this._ag = null; this._afv = null; this._teken(); return this._laad(); }
+    if (a === 'agenda-koppel') return this._open({ soort: 'agenda', voor: b.dataset.voor });
+    if (a === 'agenda-los') return this._agendaZet(b.dataset.voor, this._huidigeAgendas(b.dataset.voor).filter((x) => x !== b.dataset.entity));
+    if (a === 'agenda-kies') {
+      const e = this.shadowRoot.getElementById('agenda-kies').value; if (!e) return;
+      if (await this._agendaZet(this._dlg.voor, [...this._huidigeAgendas(this._dlg.voor), e])) this._sluit();
+      return;
+    }
+    if (a === 'agenda-link') {
+      const d = this._dlg; d.naam = this.shadowRoot.getElementById('agenda-naam').value; d.url = this.shadowRoot.getElementById('agenda-url').value;
+      d.bezig = true; d.fout = null; this._herteken();
+      try {
+        const r = await this._ws('ha_family/agenda/link', { naam: d.naam, url: d.url });
+        await this._ws(d.voor === 'gezin' ? 'ha_family/agenda/extra' : 'ha_family/agenda/lid_agendas', d.voor === 'gezin' ? { agendas: [...this._huidigeAgendas('gezin'), r.entity] } : { lid: d.voor, agendas: [...this._huidigeAgendas(d.voor), r.entity] });
+        this._sluit(); await this._laad();
+      } catch (er) { d.fout = er.message; d.bezig = false; this._herteken(); }
+      return;
+    }
+    if (a === 'jarig-weg') return this._doe('ha_family/agenda/verjaardag_weg', { verjaardag: b.dataset.id });
+    if (a === 'jarig-toevoegen') {
+      const naam = this.shadowRoot.getElementById('jarig-naam').value, datum = this.shadowRoot.getElementById('jarig-datum').value;
+      const geenJaar = this.shadowRoot.getElementById('jarig-geenjaar').checked;
+      if (!naam || !datum) return;
+      return this._doe('ha_family/agenda/verjaardag', { naam, datum: geenJaar ? datum.slice(5) : datum });
+    }
+    if (a === 'afval-modus') { v.modus = b.dataset.v; return this._teken(); }
+    if (a === 'afval-wie') { const id = b.dataset.id; v.herinnering.leden = v.herinnering.leden.includes(id) ? v.herinnering.leden.filter((x) => x !== id) : [...v.herinnering.leden, id]; return this._teken(); }
+    if (a === 'afval-bewaar') {
+      const data = { herinnering: v.herinnering };
+      try {
+        if (v.modus === 'zelf') { data.schema = Object.values(v.schema); data.agenda = ''; }
+        else if (v.modus === 'bestaand') { data.agenda = this.shadowRoot.getElementById('afval-agenda').value; data.schema = []; }
+        else {
+          v.url = this.shadowRoot.getElementById('afval-url').value; v.bezig = true; this._teken();
+          data.agenda = (await this._ws('ha_family/agenda/link', { naam: taal(this._hass) === 'nl' ? 'Afvalkalender' : 'Waste calendar', url: v.url })).entity; data.schema = [];
+        }
+        await this._ws('ha_family/agenda/afval', data);
+        v.bezig = false; this._afv = null; this._melding(this.t('bewaard')); await this._laad();
+      } catch (er) { v.bezig = false; this._melding(er.message); this._teken(); }
+    }
+  }
+
+  async _agendaWijzig(e) {
+    const a = e.target.dataset.a, v = this._afv;
+    if (!a) return;
+    if (a === 'geboorte') return this._doe('ha_family/lid/bijwerken', { lid: e.target.dataset.id, geboortedatum: e.target.value || null }, this.t('bewaard'));
+    if (a === 'jarig-melding' || a === 'jarig-tijd') {
+      const r = this.shadowRoot;
+      return this._doe('ha_family/agenda/verjaardag_melding', { aan: r.querySelector('[data-a=jarig-melding]').checked, tijd: r.querySelector('[data-a=jarig-tijd]').value || '08:00' }, this.t('bewaard'));
+    }
+    if (!v) return;
+    const k = e.target.dataset.soort;
+    if (a === 'afval-soort') { if (e.target.checked) v.schema[k] = { soort: k, start: '', weken: 2 }; else delete v.schema[k]; return this._teken(); }
+    if (a === 'afval-start') v.schema[k].start = e.target.value;
+    if (a === 'afval-weken') v.schema[k].weken = Number(e.target.value);
+    if (a === 'afval-herinnering') v.herinnering.aan = e.target.checked;
+    if (a === 'afval-tijd') v.herinnering.tijd = e.target.value;
+  }
+
   /* ── Dialogen ── */
   _open(dlg) { this._dlg = dlg; this._forms = []; this._tekenDlg(); this._snelheid(); }
   _sluit() { this._dlg = null; this.shadowRoot.querySelector('.dlg-plek').innerHTML = ''; this._forms = []; this._snelheid(); }
@@ -179,7 +363,7 @@ class HaFamilyBeheer extends HTMLElement {
     // velden waarin iemand typt niet weggooien: alleen de koppel-dialoog ververst vanzelf
     if (d.soort !== 'koppel' && plek.innerHTML && !d.opnieuw) return;
     d.opnieuw = false;
-    const inhoud = d.soort === 'nieuw' ? this._dlgNieuw(d) : d.soort === 'koppel' ? this._dlgKoppel(d) : this._dlgBewerk(d);
+    const inhoud = d.soort === 'nieuw' ? this._dlgNieuw(d) : d.soort === 'koppel' ? this._dlgKoppel(d) : d.soort === 'agenda' ? this._dlgAgenda(d) : this._dlgBewerk(d);
     plek.innerHTML = `<div class="achter" data-a="sluit-achter"><div class="dlg" role="dialog">${inhoud}</div></div>`;
     if (d.soort === 'bewerk') this._lampForm(d);
   }
@@ -300,6 +484,10 @@ class HaFamilyBeheer extends HTMLElement {
     const b = e.target.closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a, d = this._dlg, s = this._s;
+    if (a === 'tab' || a.startsWith('agenda-') || a.startsWith('jarig-') || a.startsWith('afval-')) {
+      if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;              // die gaan via 'change'
+      return this._agendaKlik(a, b);
+    }
     if (a === 'sluit-achter' && e.target !== b) return;           // alleen klikken op de achtergrond zelf
     if (a === 'sluit' || a === 'sluit-achter') return this._sluit();
     if (a === 'huis-bewerk') { this._huisBewerk = { soort: s.type }; return this._teken(); }
@@ -344,19 +532,19 @@ class HaFamilyBeheer extends HTMLElement {
       const ww = (await this._ws('ha_family/voorstel')).wachtwoord;
       const nieuw = prompt(this.t('nieuwWachtwoord'), ww);
       if (!nieuw) return;
-      if (await this._doe('ha_family/lid/wachtwoord', { id: b.dataset.id, wachtwoord: nieuw }, this.t('wwGewijzigd'))) {
+      if (await this._doe('ha_family/lid/wachtwoord', { lid: b.dataset.id, wachtwoord: nieuw }, this.t('wwGewijzigd'))) {
         if (d && d.soort === 'koppel') { d.wachtwoord = nieuw; this._herteken(); }
       }
       return;
     }
-    if (a === 'test') return this._doe('ha_family/lid/test_melding', { id: b.dataset.id }, this.t('testVerstuurd'));
+    if (a === 'test') return this._doe('ha_family/lid/test_melding', { lid: b.dataset.id }, this.t('testVerstuurd'));
     if (a === 'bewerk') {
       const l = s.leden.find((x) => x.id === b.dataset.id);
       return this._open({ soort: 'bewerk', id: l.id, naam: l.naam, rol: l.rol, emoji: l.emoji, kleur: l.kleur, weergave: l.weergave, lamp: l.lamp, notify: l.notify || '' });
     }
     if (a === 'bewerk-opslaan') {
       const l = s.leden.find((x) => x.id === d.id);
-      const data = { id: d.id, naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, lamp: d.lamp || null, notify: d.notify || null };
+      const data = { lid: d.id, naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, lamp: d.lamp || null, notify: d.notify || null };
       if (l.kan_inloggen) data.weergave = d.weergave;
       if (await this._doe('ha_family/lid/bijwerken', data)) this._sluit();
       return;
@@ -364,7 +552,7 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'verwijder' || a === 'verwijder-account') {
       const l = s.leden.find((x) => x.id === b.dataset.id);
       if (!confirm(this.t(a === 'verwijder' ? 'zeker' : 'zekerAccount', l.naam))) return;
-      if (await this._doe('ha_family/lid/verwijderen', { id: l.id, ook_account: a === 'verwijder-account' })) this._sluit();
+      if (await this._doe('ha_family/lid/verwijderen', { lid: l.id, ook_account: a === 'verwijder-account' })) this._sluit();
     }
   }
 }
@@ -449,7 +637,26 @@ const STIJL = `
   hr { border: 0; border-top: 1px solid var(--divider-color); margin: 20px 0 12px; }
   .huisform { display: grid; gap: 12px; }
   .huisform label { display: grid; gap: 6px; font-weight: 600; }
-  @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } }
+  .tabs { margin-left: auto; display: flex; gap: 4px; }
+  .tabs button { border: 0; background: none; color: inherit; font: inherit; font-weight: 500; padding: 0 14px; height: 40px; border-radius: 20px; cursor: pointer; }
+  .tabs button.aan { background: color-mix(in srgb, var(--primary-color) 14%, transparent); color: var(--primary-color); }
+  .arij { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--divider-color); }
+  .arij:last-of-type { border-bottom: 0; }
+  .anaam { min-width: 90px; }
+  .achips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .chipx { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 0 0 4px; font-size: .9rem; }
+  .klein-lbl { display: grid; gap: 4px; font-size: .82rem; color: var(--secondary-text-color); }
+  .veld.smal { width: auto; padding: 8px 10px; }
+  .vink.kort { margin-top: 0; align-items: center; }
+  .aico { font-size: 1.2rem; }
+  h3 { margin: 18px 0 4px; font-size: 1rem; }
+  .uitleg { margin-top: 10px; color: var(--secondary-text-color); font-size: .9rem; }
+  .uitleg summary { cursor: pointer; color: var(--primary-color); }
+  .wie { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wie button { border: 0; background: none; cursor: pointer; font: inherit; color: inherit; display: grid; justify-items: center; gap: 4px; padding: 6px; border-radius: 14px; opacity: .45; }
+  .wie button.aan { opacity: 1; background: color-mix(in srgb, var(--k) 14%, transparent); }
+  .wie small { font-size: .8rem; }
+  @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } .tabs button { padding: 0 10px; } }
 `;
 
 if (!customElements.get('ha-family-beheer')) customElements.define('ha-family-beheer', HaFamilyBeheer);

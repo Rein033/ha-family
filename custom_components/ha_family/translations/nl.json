@@ -41,6 +41,20 @@
     "sensor": {
       "gezin": {
         "name": "Gezin"
+      },
+      "volgende_afval": {
+        "name": "Volgende afval"
+      }
+    },
+    "calendar": {
+      "agenda": {
+        "name": "Gezinsagenda"
+      },
+      "verjaardagen": {
+        "name": "Verjaardagen"
+      },
+      "afval": {
+        "name": "Afval"
       }
     }
   }

@@ -19,7 +19,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from . import weergave, websocket
+from . import herinnering, weergave, websocket
+from .agenda import Agenda
 from .const import BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, PLATFORMS
 from .gezin import Gezin
 
@@ -101,8 +102,10 @@ async def _dashboard(hass: HomeAssistant, titel: str, aan: bool) -> None:
 async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry) -> bool:
     gezin = Gezin(hass, entry)
     await gezin.async_load()
+    gezin.agenda = Agenda(gezin)
     entry.runtime_data = gezin
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(herinnering.start(hass, gezin.agenda))
     versie = await _frontend(hass)
     await _beheer(hass, versie, True)
     opties = entry.options or entry.data

@@ -125,3 +125,107 @@ async def test_websocket_alleen_beheerder(hass: HomeAssistant, gezin, hass_ws_cl
 def test_wachtwoord_voorstel() -> None:
     w = wachtwoord_voorstel()
     assert w.count("-") == 3 and len(w) >= 10
+
+
+async def test_agenda_afspraken_en_herhaling(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    noor = await g.lid_toevoegen("Noor", "ouder")
+    emma = await g.lid_toevoegen("Emma", "kind")
+    a = g.agenda.afspraak({"titel": "Zwemles", "start": "2030-01-07T16:00", "eind": "2030-01-07T17:00", "wie": [emma["id"], "onbekend"], "herhaal": "week"}, noor["id"])
+    assert a["wie"] == [emma["id"]] and a["hele_dag"] is False
+    import datetime as dt
+    ev = g.agenda.eigen_events(dt.date(2030, 1, 1), dt.date(2030, 2, 1))
+    assert [e["start"] for e in ev] == ["2030-01-07T16:00", "2030-01-14T16:00", "2030-01-21T16:00", "2030-01-28T16:00"]
+    with pytest.raises(FamilyFout):
+        g.agenda.afspraak({"titel": "", "start": "2030-01-07"})
+    with pytest.raises(FamilyFout):
+        g.agenda.afspraak({"titel": "Raar", "start": "2030-01-07T16:00", "eind": "2030-01-07T15:00"})
+    # ook zichtbaar als agenda-entiteit
+    await hass.async_block_till_done()
+    r = await hass.services.async_call("calendar", "get_events", {"start_date_time": "2030-01-01 00:00:00", "end_date_time": "2030-01-15 00:00:00"},
+                                       target={"entity_id": "calendar.familie_jansen_gezinsagenda"}, blocking=True, return_response=True)
+    evs = r["calendar.familie_jansen_gezinsagenda"]["events"]
+    assert len(evs) == 2 and "Emma" in evs[0]["description"]
+    g.agenda.afspraak_weg(a["id"])
+    assert g.agenda.eigen_events(dt.date(2030, 1, 1), dt.date(2030, 2, 1)) == []
+
+
+async def test_verjaardagen(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    g = gezin.runtime_data
+    emma = await g.lid_toevoegen("Emma", "kind")
+    g.lid_bijwerken(emma["id"], geboortedatum="2018-03-14")
+    g.agenda.verjaardag("Opa", "1951-07-02")
+    g.agenda.verjaardag("Buurman", "11-30")                 # zonder jaar
+    ev = {e["naam"]: e for e in g.agenda.verjaardag_events(dt.date(2030, 1, 1), dt.date(2031, 1, 1))}
+    assert ev["Emma"]["titel"] == "🎂 Emma wordt 12" and ev["Emma"]["wie"] == [emma["id"]]
+    assert ev["Opa"]["leeftijd"] == 79
+    assert ev["Buurman"]["titel"] == "🎂 Buurman is jarig"
+    with pytest.raises(FamilyFout):
+        g.lid_bijwerken(emma["id"], geboortedatum="14-03-2018")
+
+
+async def test_afval_schema_sensor_en_herinnering(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    from homeassistant.util import dt as dt_util
+    from custom_components.ha_family import herinnering
+
+    g = gezin.runtime_data
+    vandaag = dt_util.now().date()
+    g.agenda.afval_instellen(schema=[{"soort": "gft", "start": (vandaag - dt.timedelta(days=13)).isoformat(), "weken": 2},
+                                     {"soort": "papier", "start": (vandaag + dt.timedelta(days=5)).isoformat(), "weken": 4}])
+    ev = g.agenda.afval_schema_events(vandaag, vandaag + dt.timedelta(days=29))
+    assert [(e["afval"], e["start"]) for e in ev][:2] == [("gft", (vandaag + dt.timedelta(days=1)).isoformat()), ("papier", (vandaag + dt.timedelta(days=5)).isoformat())]
+    await hass.async_block_till_done()
+    s = hass.states.get("sensor.familie_jansen_volgende_afval")
+    assert s.state == "GFT" and s.attributes["wanneer"] == "morgen"
+    # herinnering: melding naar wie een telefoon heeft
+    noor = await g.lid_toevoegen("Noor", "ouder", inloggen=True, gebruikersnaam="noor", wachtwoord="maan-tulp-vos-42")
+    meldingen = []
+    hass.services.async_register("notify", "mobile_app_iphone_van_noor", lambda call: meldingen.append(call.data))
+    MockConfigEntry(domain="mobile_app", data={"user_id": g.user_id(noor), "device_name": "iPhone van Noor"}).add_to_hass(hass)
+    assert await herinnering.afval_herinnering(g.agenda, dt_util.now()) == 1
+    assert "GFT" in meldingen[0]["message"]
+    with pytest.raises(FamilyFout):
+        g.agenda.afval_instellen(schema=[{"soort": "kernafval", "start": "2030-01-01"}])
+
+
+async def test_agenda_samengevoegd_met_kleur_per_lid(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    g = gezin.runtime_data
+    emma = await g.lid_toevoegen("Emma", "kind")
+    g.lid_bijwerken(emma["id"], geboortedatum="2018-03-14")
+    noor = await g.lid_toevoegen("Noor", "ouder")
+    # de verjaardagenagenda als 'eigen agenda' van Noor gebruiken: dan krijgen die afspraken Noors kleur
+    g.agenda.lid_agendas(noor["id"], ["calendar.familie_jansen_verjaardagen"])
+    await hass.async_block_till_done()
+    ev = await g.agenda.events(dt.date(2030, 3, 1), dt.date(2030, 4, 1))
+    van_noor = [e for e in ev if e["soort"] == "agenda"]
+    assert van_noor and van_noor[0]["wie"] == [noor["id"]] and van_noor[0]["bron"] == "calendar.familie_jansen_verjaardagen"
+    assert any(e["soort"] == "verjaardag" for e in ev)
+
+
+async def test_websocket_bewerken_en_agenda(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    """Velden heten 'lid'/'afspraak', niet 'id': dat is in het websocket-protocol het nummer van het bericht."""
+    ws = await hass_ws_client(hass)
+    n = iter(range(1, 100))
+
+    async def stuur(**m):
+        await ws.send_json({"id": next(n), **m})
+        r = await ws.receive_json()
+        assert r["success"], r
+        return r["result"]
+
+    lid = await stuur(type="ha_family/lid/toevoegen", naam="Emma", rol="kind")
+    bij = await stuur(type="ha_family/lid/bijwerken", lid=lid["id"], geboortedatum="2018-03-14", emoji="🦄")
+    assert bij["geboortedatum"] == "2018-03-14" and bij["emoji"] == "🦄"
+    a = await stuur(type="ha_family/agenda/afspraak", titel="Zwemles", start="2030-01-07T16:00", wie=[lid["id"]], herhaal="week")
+    a2 = await stuur(type="ha_family/agenda/afspraak", afspraak=a["id"], titel="Zwemles (diploma A)", start="2030-01-07T16:00", wie=[lid["id"]])
+    assert a2["id"] == a["id"] and a2["herhaal"] == ""
+    ev = await stuur(type="ha_family/agenda", van="2030-01-01", tot="2030-02-01")
+    assert [e["titel"] for e in ev["events"] if e["soort"] == "afspraak"] == ["Zwemles (diploma A)"]
+    await stuur(type="ha_family/agenda/afspraak_weg", afspraak=a["id"])
+    v = await stuur(type="ha_family/agenda/verjaardag", naam="Opa", datum="1951-07-02")
+    await stuur(type="ha_family/agenda/verjaardag_weg", verjaardag=v["id"])
+    await stuur(type="ha_family/lid/verwijderen", lid=lid["id"])
+    assert (await stuur(type="ha_family/gezin"))["leden"] == []

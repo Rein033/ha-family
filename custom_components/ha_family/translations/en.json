@@ -41,6 +41,20 @@
     "sensor": {
       "gezin": {
         "name": "Family"
+      },
+      "volgende_afval": {
+        "name": "Next waste collection"
+      }
+    },
+    "calendar": {
+      "agenda": {
+        "name": "Family calendar"
+      },
+      "verjaardagen": {
+        "name": "Birthdays"
+      },
+      "afval": {
+        "name": "Waste collection"
       }
     }
   }

@@ -69,10 +69,54 @@ het gezin halen (eventueel met het account).
 
 ![Bewerken](docs/images/11-bewerken-weergave.png)
 
+## Gezinsagenda
+
+Alle afspraken van het gezin op één plek, in de kleur van wie het betreft. Ieder kiest zelf hoe de agenda eruitziet
+(Home Assistant onthoudt het per persoon):
+
+- **Maand**: een blokkenkalender met een gekleurd puntje per gezinslid, 🟢🟠🔵 voor afval en 🎂 voor verjaardagen. Tik op
+  een dag voor de afspraken.
+- **Weken**: een weekplanner. Elke week kan een titel krijgen (zoals *Herfstvakantie*), per dag staan de afspraken als
+  labels met de avatar van wie het betreft.
+
+| Maand | Weken | Telefoon |
+|---|---|---|
+| ![Maand](docs/images/24-agenda-maand.png) | ![Weken](docs/images/26-agenda-weken.png) | ![Telefoon](docs/images/30-mobiel-weken.png) |
+
+**Afspraak maken.** Met **+ Afspraak** (of de **+** achter een dag): wat, wanneer, de hele dag of van–tot, **voor wie**
+(tik op de avatars), herhalen (elke week, om de week, elke maand, elk jaar), waar en een notitie. Tik op een afspraak om hem
+te bewerken of te verwijderen. Afspraken uit gekoppelde agenda's kun je bekijken.
+
+![Afspraak bewerken](docs/images/27-afspraak-bewerken.png)
+
+**Wat er allemaal in komt** (in te stellen bij **Gezin beheren → Agenda**):
+
+- **Agenda's per gezinslid**: een agenda die al in Home Assistant staat, of een link (Google Agenda, iCloud, Outlook). Die
+  afspraken krijgen de kleur van dat gezinslid. Waar je de link vindt, staat er gewoon bij.
+- **Gezamenlijke agenda's**: school, sport, vakanties of feestdagen, in de kleur van het gezin.
+- **Verjaardagen**: de geboortedatum van gezinsleden en een lijst met opa, oma en vrienden (jaar mag onbekend zijn). In de
+  agenda staat *🎂 Emma wordt 8*, en 's ochtends krijgt iedereen een seintje (de jarige krijgt een felicitatie).
+- **Afvalkalender**: zelf invullen (per soort de volgende ophaaldag en elke hoeveel weken), een link van de gemeente, of een
+  agenda die je al hebt. De avond ervoor krijgt het gezin *"Morgen: 🟢 GFT. Zet de container vanavond aan de straat."*
+
+![Agenda instellen](docs/images/22-beheer-agenda.png)
+
+Op het tabblad **Thuis** staat een **Vandaag**-kaart: de afspraken van vandaag, welk afval er morgen aan de straat moet en
+wie er binnenkort jarig is.
+
+![Thuis](docs/images/28-thuis.png)
+
+In Home Assistant zelf komen er drie agenda's bij (**Gezinsagenda**, **Verjaardagen**, **Afval**) en een sensor **Volgende
+afval**, voor automatiseringen, Assist en de gewone agenda van Home Assistant.
+
 ## Kaarten
 
 ```yaml
 type: custom:family-gezin-card     # groet, datum en wie er thuis is
+type: custom:family-vandaag-card   # vandaag, afval van morgen, binnenkort jarig
+type: custom:family-agenda-card    # de gezinsagenda
+weergave: maand                    # standaard voor wie nog niets koos: maand of weken
+weken: 6                           # aantal weken in de weekplanner
 ```
 
 Het hele dashboard: `strategy: { type: custom:ha-family }`. Wil je het zelf aanpassen: open het dashboard → ✏️ → **Overnemen**.
@@ -83,7 +127,7 @@ HA Family groeit functie voor functie. Elke functie krijgt een plek in het dashb
 wizard in Gezin beheren.
 
 - [x] **Fundament:** gezin, beheer, telefoons koppelen, weergave per gezinslid, gezinsdashboard
-- [ ] **Gezinsagenda:** een kleur per persoon, maand of weekplanner, verjaardagen, afvalkalender
+- [x] **Gezinsagenda:** een kleur per persoon, maand of weekplanner, verjaardagen, afvalkalender
 - [ ] **Taken en klusjes:** klusjes met punten voor kinderen, boodschappenlijst op looproute
 - [ ] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
 - [ ] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
