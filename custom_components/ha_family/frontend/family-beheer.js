@@ -3,8 +3,8 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.11.0';
-import * as sjabloon from './family-sjabloon.js?v=0.11.0';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.11.1';
+import * as sjabloon from './family-sjabloon.js?v=0.11.1';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -341,7 +341,7 @@ class HaFamilyBeheer extends HTMLElement {
           <label class="klein-lbl">${esc(this.t('geboortedatum'))}<input class="veld smal" type="date" data-a="geboorte" data-id="${l.id}" value="${esc((a.leden.find((x) => x.id === l.id) || {}).geboortedatum || '')}"/></label></div>`).join('')}
         <h3>${esc(this.t('extraJarigen'))}</h3>
         ${a.verjaardagen.map((j) => `<div class="arij"><span class="fam-avatar" style="--k:#e91e63;width:40px;height:40px;font-size:20px">🎂</span><b class="anaam">${esc(j.naam)}</b>
-          <span class="fam-sub">${esc(j.datum.length === 10 ? new Date(j.datum + 'T00:00:00').toLocaleDateString(h.locale?.language, { day: 'numeric', month: 'long', year: 'numeric' }) : new Date('2000-' + j.datum + 'T00:00:00').toLocaleDateString(h.locale?.language, { day: 'numeric', month: 'long' }))}</span>
+          <span class="fam-sub">${esc(j.datum.length === 10 ? new Date(j.datum + 'T00:00:00').toLocaleDateString((h.config?.language || h.locale?.language), { day: 'numeric', month: 'long', year: 'numeric' }) : new Date('2000-' + j.datum + 'T00:00:00').toLocaleDateString((h.config?.language || h.locale?.language), { day: 'numeric', month: 'long' }))}</span>
           <button class="fam-knop gevaar klein" data-a="jarig-weg" data-id="${j.id}">✕</button></div>`).join('')}
         <div class="rij"><input class="veld groei" id="jarig-naam" placeholder="${esc(this.t('naamJarige'))}" maxlength="60"/><input class="veld smal" type="date" id="jarig-datum"/>
           <label class="vink kort"><input type="checkbox" id="jarig-geenjaar"/> ${esc(this.t('jaarOnbekend'))}</label>
@@ -441,7 +441,7 @@ class HaFamilyBeheer extends HTMLElement {
         }
         const r = await this._ws('ha_family/agenda/afval', data);
         v.bezig = false; this._afv = null;
-        this._melding(r && r.eerste ? this.t('afvalGevonden', `${r.dagen} · ${new Date(r.eerste.datum + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { weekday: 'long', day: 'numeric', month: 'long' })}: ${r.eerste.titel}`) : this.t('bewaard'));
+        this._melding(r && r.eerste ? this.t('afvalGevonden', `${r.dagen} · ${new Date(r.eerste.datum + 'T00:00:00').toLocaleDateString((this._hass.config?.language || this._hass.locale?.language), { weekday: 'long', day: 'numeric', month: 'long' })}: ${r.eerste.titel}`) : this.t('bewaard'));
         await this._laad();
       } catch (er) { v.bezig = false; this._melding(er.message); this._teken(); }
     }
@@ -633,7 +633,7 @@ class HaFamilyBeheer extends HTMLElement {
   /* ── Klusjes-tab ── */
   _wanneerTekst(k) {
     const d = this.t('dagenKort');
-    if (!k.dagen.length) return k.datum ? new Date(k.datum + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    if (!k.dagen.length) return k.datum ? new Date(k.datum + 'T00:00:00').toLocaleDateString((this._hass.config?.language || this._hass.locale?.language), { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     if (k.dagen.length === 7) return this.t('klElkeDag');
     if (k.dagen.join() === '0,1,2,3,4') return this.t('klWerkdagen');
     if (k.dagen.join() === '5,6') return this.t('klWeekend');
@@ -675,7 +675,7 @@ class HaFamilyBeheer extends HTMLElement {
           ${[1, 5, -1].map((n) => `<button class="fam-knop ${n > 0 ? 'zacht' : 'rand'} klein" data-a="kl-pt" data-l="${l.id}" data-n="${n}">${n > 0 ? '+' : '−'}${Math.abs(n)}</button>`).join('')}
           <button class="fam-knop rand klein" data-a="kl-pt-anders" data-l="${l.id}">${esc(this.t('ptAnders'))}</button></div>`).join('')}
         ${geschiedenis.length ? `<h3>${esc(this.t('ptRecent'))}</h3>${geschiedenis.map((p) => `<div class="arij">${avatar(lmap[p.lid], { grootte: 26 })}<span class="groei">${esc(p.reden)}</span>
-          <span class="fam-sub">${new Date(p.tijd * 1000).toLocaleString(h.locale?.language, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          <span class="fam-sub">${new Date(p.tijd * 1000).toLocaleString((h.config?.language || h.locale?.language), { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
           <b style="color:${p.punten > 0 ? 'var(--success-color,#2e7d32)' : 'var(--error-color)'}">${p.punten > 0 ? '+' : ''}${p.punten}${p.status === 'wacht' ? ' ⏳' : ''}</b></div>`).join('')}` : ''}</div>
 
       <div class="kaart"><h2>⏰ ${esc(this.t('hrHerinnering'))}</h2><p class="fam-sub">${esc(this.t('hrUitleg'))}</p>

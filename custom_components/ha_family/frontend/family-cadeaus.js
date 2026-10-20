@@ -4,7 +4,7 @@
  *
  * Bovenaan kies je wie: jezelf (je eigen lijstje maken en naar anderen sturen) of iemand anders (zijn lijstje bekijken,
  * afvinken wat jij koopt, en ideeën laten bedenken — met de AI van Home Assistant als die er is). */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.1';
 
 const TEKST = {
   nl: {
@@ -34,7 +34,7 @@ const TEKST = {
     bewaard: 'Saved ✓', helpen: "You're helping with this list.", tipIdeeen: 'Gift ideas for someone else? Tap that person at the top.',
   },
 };
-const taalVan = (h) => (((h && h.locale && h.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+const taalVan = (h) => (((h && (h.config && h.config.language || h.locale && h.locale.language)) || 'en').startsWith('nl') ? 'nl' : 'en');
 const BUDGETTEN = [null, 10, 25, 50, 100, 250];
 const geld = (p) => (p == null ? '' : `€ ${Number(p).toLocaleString('nl-NL', { minimumFractionDigits: p % 1 ? 2 : 0, maximumFractionDigits: 2 })}`);
 
@@ -140,7 +140,7 @@ class FamilyCadeausCard extends HTMLElement {
     const zelf = p.lid === d.ik, naam = p.naam.split(' ')[0];
     const mag = zelf || this._magHelpen(p);
     const lijst = d.lijsten[p.lid] || [];
-    const info = [p.leeftijd != null ? this.t('jaar', p.leeftijd) : null, p.verjaardag ? new Date(p.verjaardag + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { day: 'numeric', month: 'long' }) : null].filter(Boolean).join(' · ');
+    const info = [p.leeftijd != null ? this.t('jaar', p.leeftijd) : null, p.verjaardag ? new Date(p.verjaardag + 'T00:00:00').toLocaleDateString((this._hass.config?.language || this._hass.locale?.language), { day: 'numeric', month: 'long' }) : null].filter(Boolean).join(' · ');
     const wensen = lijst.length ? lijst.map((w) => this._wensRij(w, zelf, mag)).join('') : `<div class="leeg">${esc(zelf ? this.t('leeg') : this.t('leegAnder', naam))}</div>`;
     const links = `<div class="vak"><h3>${esc(zelf ? this.t('mijnLijst') : this.t('lijstVan', naam))} <span class="sub">${esc(info)}</span>
         ${mag && lijst.length ? `<button class="fam-knop zacht knop-r" data-a="sturen">📤 ${esc(this.t('sturen'))}</button>` : ''}</h3>

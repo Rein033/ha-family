@@ -4,13 +4,13 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.11.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.11.0';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.11.0';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.11.0';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.11.0';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.11.0';
-import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.11.0';
+import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.11.1';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.11.1';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.11.1';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.11.1';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.11.1';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.11.1';
+import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.11.1';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -42,7 +42,7 @@ class FamilyGezinCard extends HTMLElement {
     const weerId = this._config.weer || Object.keys(h.states).find((e) => e.startsWith('weather.'));
     const weer = weerId && h.states[weerId] && !['unknown', 'unavailable'].includes(h.states[weerId].state) ? h.states[weerId] : null;
     const nu = new Date();
-    const datum = nu.toLocaleDateString(h.locale?.language || undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+    const datum = nu.toLocaleDateString((h.config?.language || h.locale?.language) || undefined, { weekday: 'long', day: 'numeric', month: 'long' });
     // alleen tellen wie we kunnen volgen (met een telefoon); weten we van niemand iets, dan zeggen we niets
     const bekend = l.filter((x) => locatie(h, x.person).bekend), thuis = bekend.filter((x) => locatie(h, x.person).thuis).length;
     const samen = !bekend.length ? '' : thuis === bekend.length ? t(h, 'iedereenThuis') : thuis === 0 ? t(h, 'niemandThuis') : `${thuis}/${bekend.length} ${t(h, 'zijnThuis')}`;

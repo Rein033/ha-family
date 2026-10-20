@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1 — de taal van het huishouden
+
+- HA Family (kaarten, muurscherm, beheer) volgt nu de taal van Home Assistant zelf, niet die van de browser of het profiel.
+  Een tablet met een Engelse browser toont het muurscherm dus gewoon in het Nederlands.
+
 ## 0.11.0 — kamers aanpassen op het dashboard
 
 - **✏️ Aanpassen** op de kamers-kaart (beheerders): per apparaat met het oogje op of van het dashboard, en apparaten

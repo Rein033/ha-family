@@ -2,7 +2,7 @@
  *
  *   type: custom:family-eten-card        het weekmenu: per dag een gerecht en wie er kookt (compact: true = 'Vanavond eten we')
  *   type: custom:family-recepten-card    recepten: zoeken, bekijken, inplannen, op de boodschappenlijst, importeren van een website */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.1';
 
 const TEKST = {
   nl: {
@@ -36,7 +36,7 @@ const TEKST = {
     lbl: { snel: '⚡ Quick', vega: '🥕 Veggie', vis: '🐟 Fish', kinderen: '🧒 Kids', feest: '🎉 Party', budget: '💶 Budget', oven: '🔥 Oven', soep: '🍲 Soup' },
   },
 };
-const taalVan = (hass) => (((hass && hass.locale && hass.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+const taalVan = (hass) => (((hass && (hass.config && hass.config.language || hass.locale && hass.locale.language)) || 'en').startsWith('nl') ? 'nl' : 'en');
 const pad = (n) => String(n).padStart(2, '0');
 const isoDag = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const maandag = (d) => { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
@@ -140,7 +140,7 @@ class EtenBasis extends HTMLElement {
   /* ── gedeelde dialogen: gerecht kiezen voor een dag, recept bekijken/bewerken/importeren ── */
   _dialoog() {
     const d = this._dlg, h = this._hass, rec = (this._d && this._d.recepten) || [];
-    const dagNaam = (s) => new Date(s + 'T00:00:00').toLocaleDateString(h.locale?.language, { weekday: 'long', day: 'numeric', month: 'long' });
+    const dagNaam = (s) => new Date(s + 'T00:00:00').toLocaleDateString((h.config?.language || h.locale?.language), { weekday: 'long', day: 'numeric', month: 'long' });
     if (d.soort === 'plan') {
       const lijst = rec.filter((r) => (!d.zoek || r.naam.toLowerCase().includes(d.zoek.toLowerCase())) && (!d.label || (r.labels || []).includes(d.label)))
         .sort((a, b) => (b.favoriet - a.favoriet) || a.naam.localeCompare(b.naam));
@@ -310,7 +310,7 @@ class FamilyEtenCard extends EtenBasis {
         <button class="fam-knop zacht" data-a="week-lijst">🛒 ${esc(this.t('weekLijst'))}</button>
         <button class="fam-knop zacht" data-a="week-ai" ${this._denkt ? 'disabled' : ''} title="${esc(this.t('weekAiUitleg'))}">✨ ${esc(this._denkt ? this.t('bezig') : this.t('weekAi'))}</button></div>
       ${d.menu.map((m) => { const dag = new Date(m.datum + 'T00:00:00');
-        const dl = m.datum === vandaag ? this.t('vandaag') : dag.toLocaleDateString(h.locale?.language, { weekday: 'short', day: 'numeric' });
+        const dl = m.datum === vandaag ? this.t('vandaag') : dag.toLocaleDateString((h.config?.language || h.locale?.language), { weekday: 'short', day: 'numeric' });
         return `<button class="dag ${m.datum === vandaag ? 'nu' : ''}" data-a="dag" data-d="${m.datum}"><span class="dl">${esc(dl)}</span><span class="em">${esc(m.emoji || '')}</span>
           <span class="wat ${m.naam ? '' : 'leeg'}">${esc(m.naam || '+ ' + this.t('watEten'))}</span>${m.kok && lmap[m.kok] ? avatar(lmap[m.kok], { grootte: 30 }) : ''}</button>`; }).join('')}
       ${h.user && h.user.is_admin ? (() => { const hi = (d.instellingen && d.instellingen.herinnering) || { aan: false, tijd: '16:00' };

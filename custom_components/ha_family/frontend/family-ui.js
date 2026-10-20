@@ -2,7 +2,7 @@
  * Groot, rustig en duidelijk: grote tikvlakken, ronde vormen, een eigen kleur en emoji per gezinslid.
  * Volgt het thema van Home Assistant (licht en donker) via de gewone thema-variabelen. */
 
-export const VERSIE = '0.11.0';
+export const VERSIE = '0.11.1';
 
 const TEKST = {
   nl: {
@@ -23,7 +23,8 @@ const TEKST = {
   },
 };
 
-export const taal = (hass) => (((hass && hass.locale && hass.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+// de taal van het huishouden: wat Home Assistant zelf als taal heeft (niet de browser van de tablet)
+export const taal = (hass) => ((hass && ((hass.config && hass.config.language) || (hass.locale && hass.locale.language))) || 'en').startsWith('nl') ? 'nl' : 'en';
 export const t = (hass, k) => TEKST[taal(hass)][k] ?? TEKST.en[k] ?? k;
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

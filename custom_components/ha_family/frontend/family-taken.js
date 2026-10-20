@@ -6,7 +6,7 @@
  *   type: custom:family-boodschappen-card  boodschappen op volgorde van de looproute
  *
  * Alles komt uit ha_family/taken; de kaarten verversen zodra een van de lijsten of puntensensoren verandert. */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.11.1';
 
 const TEKST = {
   nl: {
@@ -32,7 +32,7 @@ const TEKST = {
     mijnTaken: 'My tasks', alle: 'See all', tikGekocht: 'Tap what you bought',
   },
 };
-const taalVan = (hass) => (((hass && hass.locale && hass.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+const taalVan = (hass) => (((hass && (hass.config && hass.config.language || hass.locale && hass.locale.language)) || 'en').startsWith('nl') ? 'nl' : 'en');
 
 const STIJL = `
   ha-card { padding: 16px; }
@@ -213,7 +213,7 @@ class FamilyTakenCard extends TakenBasis {
       if (!s) return '';
       const n = Math.round((new Date(s + 'T00:00:00') - vandaag) / 864e5);
       const tekst = n < 0 ? this.t('teLaat') : n === 0 ? this.t('vandaagKort') : n === 1 ? this.t('morgen')
-        : new Date(s + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { weekday: 'short', day: 'numeric', month: 'short' });
+        : new Date(s + 'T00:00:00').toLocaleDateString((this._hass.config?.language || this._hass.locale?.language), { weekday: 'short', day: 'numeric', month: 'short' });
       return `<span class="dl ${n < 0 ? 'laat' : ''}">📅 ${esc(tekst)}</span>`;
     };
     const rij = (t) => `<div class="rij ${t.klaar ? 'klaar' : ''}"><button class="ck" data-a="klaar" data-t="${t.id}" data-k="${t.klaar ? 1 : 0}"></button>

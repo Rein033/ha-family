@@ -3,7 +3,7 @@
  * Wie op de weergave 'Expert' staat, houdt een rustige zijbalk (Familie, Gezin beheren, Admin). Hier staat de rest:
  * Home Assistant zelf (automatiseringen, apparaten, instellingen …), je eigen dashboards, HACS en alle andere plugins
  * en add-ons, en de AI. Alles wordt uit de echte zijbalk van HA gehaald, dus wat je later installeert komt er vanzelf bij. */
-import { CSS, esc } from './family-ui.js?v=0.11.0';
+import { CSS, esc } from './family-ui.js?v=0.11.1';
 
 const NL = {
   titel: 'Admin', zoek: 'Zoeken…', ha: 'Home Assistant', dashboards: 'Mijn dashboards', plugins: 'Plugins, HACS en add-ons', ai: 'AI',
@@ -68,7 +68,7 @@ class HaFamilyAdmin extends HTMLElement {
   set hass(h) { const eerste = !this._hass; this._hass = h; if (eerste || h.panels !== this._panels || this._aiSleutel() !== this._ai) this._teken(); }
   set narrow(n) { this._narrow = n; }
   set panel(p) { this._panel = p; }
-  get t() { return ((this._hass.locale && this._hass.locale.language) || 'en').startsWith('nl') ? NL : EN; }
+  get t() { return ((this._hass.config && this._hass.config.language || this._hass.locale && this._hass.locale.language) || 'en').startsWith('nl') ? NL : EN; }
   _aiSleutel() { return Object.keys(this._hass.states).filter((e) => e.startsWith('ai_task.') || (e.startsWith('conversation.') && e !== 'conversation.home_assistant')).join(); }
 
   _naam(p) {

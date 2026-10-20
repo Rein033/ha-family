@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.11.0';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.11.1';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
@@ -28,7 +28,7 @@ const ICOON = { light: ['mdi:lightbulb-outline', 'mdi:lightbulb'], climate: ['md
 const MODUS_ICOON = { off: '⏻', heat: '🔥', cool: '❄️', heat_cool: '🔄', auto: '🔄', dry: '💧', fan_only: '🌀' };
 const KLEUREN = ['255,180,107', '255,0,0', '255,120,0', '255,214,0', '0,200,83', '0,176,255', '41,98,255', '170,0,255', '255,64,129'];
 const isAan = (s) => !!s && ['on', 'open', 'opening', 'playing', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'].includes(s.state);
-const taalVan = (h) => (((h && h.locale && h.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+const taalVan = (h) => (((h && (h.config && h.config.language || h.locale && h.locale.language)) || 'en').startsWith('nl') ? 'nl' : 'en');
 
 const STIJL = `
   ha-card { padding: 16px; }

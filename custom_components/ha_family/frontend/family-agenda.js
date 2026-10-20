@@ -5,7 +5,7 @@
  *
  * Alle afspraken komen samengevoegd uit HA Family (ha_family/agenda): eigen afspraken, agenda's per gezinslid,
  * gezamenlijke agenda's, verjaardagen en afval. De kleur is die van wie het betreft. */
-import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.11.0';
+import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.11.1';
 
 const TEKST = {
   nl: {
@@ -31,9 +31,9 @@ const TEKST = {
     gepland: 'Today', bezig: 'now', dagen: 'days', over: 'in', wordt: 'turns', isJarig: 'birthday', eind: 'end',
   },
 };
-const taalVan = (hass) => (((hass && hass.locale && hass.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
+const taalVan = (hass) => (((hass && (hass.config && hass.config.language || hass.locale && hass.locale.language)) || 'en').startsWith('nl') ? 'nl' : 'en');
 const tt = (hass, k) => TEKST[taalVan(hass)][k] ?? TEKST.en[k] ?? k;
-const lang = (hass) => (hass && hass.locale && hass.locale.language) || undefined;
+const lang = (hass) => (hass && (hass.config && hass.config.language || hass.locale && hass.locale.language)) || undefined;
 const pad = (n) => String(n).padStart(2, '0');
 const isoDag = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const maandag = (d) => { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
