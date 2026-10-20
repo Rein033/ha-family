@@ -754,3 +754,115 @@ async def test_trouwdagen_en_jubilea(hass: HomeAssistant, gezin) -> None:
     assert ev["gedenkdag"]["titel"] == "🕯️ Oma Truus"
     with pytest.raises(FamilyFout):
         a.verjaardag("x", "2001-01-01", soort="onzin")
+
+
+async def _nep_meldingen(g):
+    verstuurd = []
+
+    async def nep(lid, titel, tekst, **extra):
+        verstuurd.append((lid["naam"], titel, tekst))
+        return True
+    g.melding = nep
+    return verstuurd
+
+
+async def test_waar_is_iedereen(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    noor = await g.lid_toevoegen("Noor", "ouder", inloggen=True, gebruikersnaam="noor", wachtwoord="maan-tulp-vos-42")
+    emma = await g.lid_toevoegen("Emma", "kind")
+    await hass.async_block_till_done()
+    hass.states.async_set("person.noor", "not_home", {"user_id": g.user_id(noor)})
+    hass.states.async_set("person.emma", "home")
+    hass.states.async_set("zone.school", "0", {"friendly_name": "School"})
+    verstuurd = await _nep_meldingen(g)
+    o = await g.waar.ik_kom_eraan(noor, 20, "Ik neem friet mee", None)
+    assert o["gemeld"] == 1 and verstuurd[0][0] == "Emma" and "20 minuten" in verstuurd[0][2] and "friet" in verstuurd[0][2]
+    ov = g.waar.overzicht(noor)
+    assert next(x for x in ov["leden"] if x["lid"] == noor["id"])["onderweg"]["bericht"] == "Ik neem friet mee"
+    # Noor volgt Emma; Emma gaat naar school en komt weer thuis
+    g.waar.volgen(noor, emma["id"], True)
+    with pytest.raises(FamilyFout):
+        g.waar.volgen(noor, noor["id"], True)
+    hass.states.async_set("person.emma", "school")
+    await hass.async_block_till_done()
+    assert next(x for x in g.waar.overzicht(noor)["leden"] if x["lid"] == emma["id"])["plek"] == "School"
+    hass.states.async_set("person.emma", "home")
+    await hass.async_block_till_done()
+    assert verstuurd[-1][:2] == ("Noor", "🏠 Emma is thuis")
+    # Noor komt thuis: 'onderweg' verdwijnt vanzelf
+    hass.states.async_set("person.noor", "home", {"user_id": g.user_id(noor)})
+    await hass.async_block_till_done()
+    assert next(x for x in g.waar.overzicht(noor)["leden"] if x["lid"] == noor["id"])["onderweg"] is None
+
+
+async def test_routines_en_zakgeld(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+
+    g = gezin.runtime_data
+    noor = await g.lid_toevoegen("Noor", "ouder", inloggen=True, gebruikersnaam="noor", wachtwoord="maan-tulp-vos-42")
+    emma = await g.lid_toevoegen("Emma", "kind", inloggen=True, gebruikersnaam="emma", wachtwoord="maan-tulp-vos-43")
+    await hass.async_block_till_done()
+    un, ue = g.user_id(noor), g.user_id(emma)
+    verstuurd = await _nep_meldingen(g)
+    k = g.kinderen
+    r = k.routine(emma["id"])
+    assert r["standaard"] and len(r["ochtend"]) == 5
+    with pytest.raises(FamilyFout):
+        k.routine_instellen(noor["id"], "ochtend", [], 1)               # alleen voor kinderen
+    r = k.routine_instellen(emma["id"], "ochtend", [{"emoji": "🛏️", "titel": "Bed"}, {"emoji": "🦷", "titel": "Tanden"}], 3)
+    s1, s2 = (s["id"] for s in r["ochtend"])
+    assert (await k.stap_af(emma["id"], "ochtend", s1, True, ue))["klaar"] is False
+    assert (await k.stap_af(emma["id"], "ochtend", s2, True, ue))["klaar"] is True
+    assert g.taken.saldo(emma["id"]) == 3 and verstuurd[-1][0] == "Noor"
+    await k.stap_af(emma["id"], "ochtend", s2, False, ue)               # weer uitgevinkt: punten terug
+    assert g.taken.saldo(emma["id"]) == 0
+    with pytest.raises(FamilyFout):
+        await k.stap_af(emma["id"], "ochtend", s1, True, un + "x")     # iemand anders
+    # zakgeld: op de vaste dag één keer erbij
+    k.zakgeld_instellen(emma["id"], True, 2.5, 2)
+    woensdag = dt.datetime(2026, 10, 21, 7, 0, tzinfo=dt.UTC)
+    assert await k.uitbetalen(woensdag) == 1 and await k.uitbetalen(woensdag) == 0
+    assert k.saldo(emma["id"]) == 2.5 and "2,50" in verstuurd[-1][2]
+    await k.boeking(emma["id"], -1, "Snoep", ue)                        # kind houdt zelf bij wat het uitgaf
+    with pytest.raises(FamilyFout):
+        await k.boeking(emma["id"], 5, "Zelf erbij", ue)
+    with pytest.raises(FamilyFout):
+        await k.boeking(emma["id"], -10, "Te veel", ue)
+    await k.boeking(emma["id"], 5, "Oppas-bonus", un)
+    assert k.saldo(emma["id"]) == 6.5
+    ov = await k.overzicht(ue)
+    assert [x["lid"] for x in ov["kinderen"]] == [emma["id"]] and ov["kinderen"][0]["zakgeld"]["saldo"] == 6.5 and not ov["ouder"]
+
+
+async def test_samen_alleen_voor_het_stel(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    a = await g.lid_toevoegen("Noor", "ouder", inloggen=True, gebruikersnaam="noor", wachtwoord="maan-tulp-vos-42")
+    b = await g.lid_toevoegen("Sam", "ouder", inloggen=True, gebruikersnaam="sam", wachtwoord="maan-tulp-vos-43")
+    c = await g.lid_toevoegen("Emma", "kind", inloggen=True, gebruikersnaam="emma", wachtwoord="maan-tulp-vos-44")
+    await hass.async_block_till_done()
+    ua, ub, uc = g.user_id(a), g.user_id(b), g.user_id(c)
+    s = g.samen
+    with pytest.raises(FamilyFout):
+        s.stel_maken(ua, c["id"], None)                                  # geen kind als partner
+    assert [x["lid"] for x in s.overzicht(ua)["kandidaten"]] == [b["id"]]
+    s.stel_maken(ua, b["id"], "2010-06-12")
+    assert g.openbaar()["leden"][0]["partner"] == b["id"]
+    verstuurd = await _nep_meldingen(g)
+    await s.stemming(ua, "🥰", "Fijne dag gehad")
+    assert await s.knuffel(ub, "kus") and verstuurd[-1][0] == "Noor" and "kus" in verstuurd[-1][2]
+    i = s.idee(ua, "Pizza's maken", "🍕")
+    with pytest.raises(FamilyFout):
+        s.idee(ub, "pizza's maken", None)
+    assert (await s.trekken(ub))["id"] == i["id"]
+    s.idee_gedaan(ua, i["id"], True)
+    with pytest.raises(FamilyFout):
+        await s.trekken(ua)                                              # niets meer open in de pot
+    ov = s.overzicht(ub)
+    assert ov["partner"] == a["id"] and ov["stemming"][a["id"]]["emoji"] == "🥰" and ov["knuffels_vandaag"][b["id"]] == 1
+    # het kind ziet niets van het stel
+    assert s.overzicht(uc)["stel"] is None and s.overzicht(uc)["kandidaten"] == []
+    with pytest.raises(FamilyFout):
+        await s.knuffel(uc, "knuffel")
+    assert (await s.ai_ideeen(ua, None))["bron"] == "lijst"
+    s.stel_weg(ub)
+    assert s.overzicht(ua)["stel"] is None

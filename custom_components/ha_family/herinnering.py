@@ -107,6 +107,9 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["eten"] = vandaag
             agenda.gezin.opslaan()
             await eten_herinnering(agenda.gezin, nu)
+        from .kinderen import ZAKGELD_TIJD
+        if klok >= ZAKGELD_TIJD and hasattr(agenda.gezin, "kinderen"):   # zakgeld op de vaste dag (één keer, ook als HA om 7 uur uit stond)
+            await agenda.gezin.kinderen.uitbetalen(nu)
         if klok in ("05:30", "17:30"):                    # afvalkalender van het afvalbedrijf verversen
             from .afvalbedrijf import verversen
             await verversen(agenda.gezin)

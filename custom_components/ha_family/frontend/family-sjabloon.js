@@ -4,8 +4,8 @@
  * Sjabloon: HA Family zet het dashboard één keer neer als gewoon dashboard; daarna bewerk je elke kaart, verplaats je ze
  * en zet je er eigen kaarten bij. Na een update voegt 'Nieuwe onderdelen toevoegen' alleen toe wat er nog niet is
  * (tabbladen, kaarten); wat jij veranderde blijft staan. Terug naar automatisch kan altijd (met een kopie). */
-import { FamilyStrategie } from './family-cards.js?v=0.12.2';
-import { VERSIE } from './family-ui.js?v=0.12.2';
+import { FamilyStrategie } from './family-cards.js?v=0.13.0';
+import { VERSIE } from './family-ui.js?v=0.13.0';
 
 export const URL = 'gezin';
 

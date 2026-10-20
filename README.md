@@ -308,6 +308,9 @@ type: custom:family-eten-card      # het weekmenu (compact: true = 'Vanavond ete
 type: custom:family-recepten-card  # recepten: zoeken, inplannen, op de lijst, importeren van een website
 type: custom:family-kamers-card    # lampen, airco en meer per kamer (compact: true = één rij per kamer; kamer: <ruimte-id>)
 type: custom:family-cadeaus-card   # verlanglijstjes, stiekem afvinken en cadeau-ideeën
+type: custom:family-waar-card      # wie is waar, "ik kom eraan" en een seintje bij thuiskomst (compact: true voor Thuis)
+type: custom:family-kinderen-card  # ochtend- en avondroutines en zakgeld (mijn: true = alleen van wie kijkt)
+type: custom:family-samen-card     # voor stellen: stemming, knuffels en de date-pot (alleen voor jullie twee)
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```
@@ -340,10 +343,10 @@ wizard in Gezin beheren.
 - [x] **Taken en klusjes:** klusjes met punten voor kinderen, boodschappenlijst op looproute
 - [x] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
 - [x] **Kamers:** lampen, airco en meer per kamer, kamers en apparaten instellen zonder HA-instellingen
-- [ ] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
+- [x] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
 - [x] **Cadeaus:** verlanglijstjes, stiekem afvinken, cadeau-ideeën (met AI als die er is)
-- [ ] **Kinderen:** ochtend- en avondroutines, beloningen, zakgeld
-- [ ] **Samen:** voor stellen (stemming, knuffels, date-pot; uit [Ons hokje](https://github.com/Rein033/ha-ons-hokje))
+- [x] **Kinderen:** ochtend- en avondroutines, beloningen, zakgeld
+- [x] **Samen:** voor stellen (stemming, knuffels, date-pot; uit [Ons hokje](https://github.com/Rein033/ha-ons-hokje))
 - [ ] **Systeem:** back-ups en updates in gewone taal, gezinsthema
 
 ## Hoe het in elkaar zit

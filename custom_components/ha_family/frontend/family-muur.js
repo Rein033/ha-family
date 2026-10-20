@@ -3,10 +3,12 @@
  * Volledig scherm zonder balken: links klok, datum, weer en afval; midden de agenda van vandaag en morgen voor het hele
  * gezin; rechts de klusjes per kind, de kamers en wie er thuis is; onderaan de boodschappen. 's Nachts alleen een gedimde klok.
  * Op de tablet zelf (het account 'muur') verdwijnt de zijbalk en blijft het scherm aan waar de browser dat toestaat. */
-import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.12.2';
-import { FamilyKamersCard } from './family-huis.js?v=0.12.2';
+import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.13.0';
+import { FamilyKamersCard } from './family-huis.js?v=0.13.0';
+import { KINDER_KAARTEN } from './family-kinderen.js?v=0.13.0';
 
 if (!customElements.get('family-kamers-card')) customElements.define('family-kamers-card', FamilyKamersCard);
+if (!customElements.get('family-kinderen-card')) customElements.define('family-kinderen-card', KINDER_KAARTEN[0][1]);
 
 const T = {
   nl: { vandaag: 'Vandaag', morgen: 'Morgen', dezeWeek: 'Verder deze week', niks: 'Niks gepland', klusjes: 'Klusjes', thuis: 'Thuis', weg: 'Weg',
@@ -39,6 +41,8 @@ class HaFamilyMuur extends HTMLElement {
     if (eerste) { this._bouw(); this._laadAlles(); }
     const k = this.shadowRoot.querySelector('.r-kamers');
     if (k) { if (!k._config) k.setConfig({ compact: true, muur: true, titel: this.t('kamers') }); k.hass = hass; }
+    const ro = this.shadowRoot.querySelector('.r-routine');            // ochtend- en avondroutine van de kinderen
+    if (ro) { if (!ro._config) ro.setConfig({ muur: true }); ro.hass = hass; }
     if (eerste) return;
     const sleutel = Object.values(hass.states).filter((s) => s.attributes.ha_family).map((s) => s.last_updated).join()
       + leden(hass).map((l) => (hass.states[l.person] || {}).state).join();
@@ -63,7 +67,7 @@ class HaFamilyMuur extends HTMLElement {
 
   _bouw() {
     this.attachShadow({ mode: 'open' });
-    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><div class="muur"><div class="links"></div><div class="midden"></div><div class="rechts"><div class="r-klusjes"></div><family-kamers-card class="r-kamers"></family-kamers-card><div class="r-thuis"></div></div><div class="onder"></div></div>
+    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><div class="muur"><div class="links"></div><div class="midden"></div><div class="rechts"><family-kinderen-card class="r-routine"></family-kinderen-card><div class="r-klusjes"></div><family-kamers-card class="r-kamers"></family-kamers-card><div class="r-thuis"></div></div><div class="onder"></div></div>
       <div class="nacht" hidden><div class="nklok"></div><div class="ndatum"></div><small></small></div>`;
     this.shadowRoot.addEventListener('click', (e) => this._klik(e));
     this.shadowRoot.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'nieuw') this._klik({ target: this.shadowRoot.querySelector('[data-a=erop]') }); });

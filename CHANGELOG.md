@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.0 — waar is iedereen, kinderen en samen
+
+- **Waar is iedereen** (kaart `family-waar-card`, op Thuis): "🚗 Ik kom eraan" met over hoeveel minuten en een berichtje;
+  wie thuis is (of wie je kiest) krijgt een melding. Kom je thuis, dan verdwijnt het vanzelf. Met 🔔 per gezinslid krijg je
+  een seintje als die thuiskomt. Plaatsen komen uit HA (Thuis, Weg of een zone, bijv. via Life360), nooit coördinaten.
+- **Kinderen** (tabblad 🧒 en kaart `family-kinderen-card`): ochtend- en avondroutine met grote knoppen om af te vinken,
+  ook op het muurscherm. Alles af: ouders krijgen een seintje en het kind punten (in te stellen). **Zakgeld**: vast bedrag op
+  een vaste dag (automatisch, ook als HA om 7 uur even uit stond), ouders boeken erbij of eraf, een kind houdt zelf bij wat
+  het uitgaf.
+- **Samen** (tabblad ❤️, kaart `family-samen-card`, uit Ons hokje): voor stellen. Stemming van vandaag, met één tik een
+  knuffel of kus sturen, en een date-pot (ideeën verzamelen, er eentje trekken, ideeën van de AI). Alleen jullie twee zien
+  het, ook een beheerder niet.
+
 ## 0.12.2 — grote knoppen op de telefoon
 
 - Op de telefoon zijn de knoppen per kamer op de startpagina nu groot (twee naast elkaar, met aan/uit), net als op het muurscherm.

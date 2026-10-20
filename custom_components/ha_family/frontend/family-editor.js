@@ -3,7 +3,7 @@
  * Eén editor voor alle kaarten: per kaart een lijstje instellingen, getekend met Home Assistants eigen formulier
  * (ha-form). Alleen wie in HA Family op 'Expert' staat (of een beheerder die geen gezinslid is) ziet de instellingen;
  * de rest krijgt uitleg. Gewone gezinsleden hoeven de kaarten niet aan te passen: het gezinsdashboard bouwt zichzelf. */
-import { esc, leden } from './family-ui.js?v=0.12.2';
+import { esc, leden } from './family-ui.js?v=0.13.0';
 
 const nl = (h) => ((h && (h.config && h.config.language || h.locale && h.locale.language)) || 'en').startsWith('nl');
 const L = {
@@ -36,6 +36,9 @@ export const INSTELLINGEN = {
     schema: () => [{ name: 'compact', selector: { boolean: {} } }, { name: 'mijn', selector: { boolean: {} } }, { name: 'kamer', selector: { area: {} } }, { name: 'titel', selector: { text: {} } }],
   },
   'family-cadeaus-card': { schema: () => [] },
+  'family-waar-card': { schema: () => [{ name: 'compact', selector: { boolean: {} } }] },
+  'family-kinderen-card': { schema: () => [{ name: 'mijn', selector: { boolean: {} } }] },
+  'family-samen-card': { schema: () => [] },
 };
 
 async function laadHaForm() {
@@ -109,8 +112,9 @@ export function metEditor(kaarten) {
 
 /* ── Editor voor het hele gezinsdashboard (✏️ → Dashboard bewerken) ── */
 const TAB_NAMEN = { thuis: ['🏠 Thuis', '🏠 Home'], mijn: ['👤 Eigen tabblad (iedereen zijn eigen knoppen)', '👤 Own tab (everyone their own buttons)'], agenda: ['📅 Agenda', '📅 Calendar'], taken: ['✅ Taken', '✅ Tasks'], eten: ['🍝 Eten', '🍝 Meals'],
-  huis: ['🏠 Huis', '🏠 House'], cadeaus: ['🎁 Cadeaus', '🎁 Gifts'], boodschappen: ['🛒 Boodschappen', '🛒 Groceries'] };
-const THUIS_NAMEN = { gezin: ['Gezin en wie er thuis is', 'Family and who is home'], klusjes: ['Klusjes', 'Chores'], vandaag: ['Vandaag (met dagoverzicht)', 'Today (with day overview)'],
+  kinderen: ['🧒 Kinderen (routines en zakgeld)', '🧒 Kids (routines and pocket money)'], huis: ['🏠 Huis', '🏠 House'], cadeaus: ['🎁 Cadeaus', '🎁 Gifts'],
+  boodschappen: ['🛒 Boodschappen', '🛒 Groceries'], samen: ['❤️ Samen (alleen voor stellen)', '❤️ Together (couples only)'] };
+const THUIS_NAMEN = { gezin: ['Gezin en wie er thuis is', 'Family and who is home'], waar: ['Ik kom eraan / seintje bij thuiskomst', "I'm on my way / alert when home"], klusjes: ['Klusjes', 'Chores'], vandaag: ['Vandaag (met dagoverzicht)', 'Today (with day overview)'],
   eten: ['Vanavond eten we', "Tonight's dinner"], boodschappen: ['Boodschappen', 'Groceries'], kamers: ['Kamers (lampen, airco)', 'Rooms (lights, AC)'],
   taken: ['Mijn taken', 'My tasks'], afval: ['Volgende afval', 'Next waste collection'] };
 const SL = { titel: ['Titel (leeg = naam van het gezin)', 'Title (empty = family name)'], tabs: ['Tabbladen', 'Tabs'], thuis: ['Kaarten op Thuis', 'Cards on Home'],
@@ -144,7 +148,7 @@ export class FamilyStrategieEditor extends FamilyKaartEditor {
       this.shadowRoot.querySelector('.sjabloon').addEventListener('click', async (e) => {
         if (!confirm(n ? 'Het gezinsdashboard wordt een gewoon dashboard dat je vrij kunt bewerken. Doorgaan?' : 'The family dashboard becomes a normal dashboard you can freely edit. Continue?')) return;
         e.target.disabled = true;
-        try { const m = await import('./family-sjabloon.js?v=0.12.2'); await m.naarSjabloon(h); location.reload(); }
+        try { const m = await import('./family-sjabloon.js?v=0.13.0'); await m.naarSjabloon(h); location.reload(); }
         catch (er) { e.target.disabled = false; alert(er.message); }
       });
       this._form = document.createElement('ha-form');

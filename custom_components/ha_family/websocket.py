@@ -51,7 +51,10 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
                 ws_boodschap, ws_boodschap_bij, ws_boodschap_weg,
                 ws_klusjes, ws_klusje, ws_klusje_weg, ws_klusje_gedaan, ws_goedkeuren, ws_punten_geven,
-                ws_beloning, ws_beloning_weg, ws_inwisselen, ws_beloning_goedkeuren, ws_klusjes_instellingen):
+                ws_beloning, ws_beloning_weg, ws_inwisselen, ws_beloning_goedkeuren, ws_klusjes_instellingen,
+                ws_waar, ws_onderweg, ws_thuis, ws_volgen,
+                ws_kinderen, ws_routine, ws_routine_af, ws_zakgeld, ws_zakgeld_boeking,
+                ws_samen, ws_stel, ws_stel_weg, ws_stemming, ws_knuffel, ws_date_idee, ws_date_weg, ws_date_gedaan, ws_date_trek, ws_date_ai):
         websocket_api.async_register_command(hass, cmd)
 
 
@@ -959,3 +962,163 @@ async def ws_dashboard_kopie(hass, connection, msg):
         g.opslaan()
         return {"aantal": len(kopieen)}
     return kopieen[-1] if kopieen else {}
+
+
+# ── 📍 waar is iedereen ──
+def _ik(g: Gezin, connection) -> dict[str, Any]:
+    ik = g.lid_van_user(connection.user.id)
+    if not ik:
+        raise FamilyFout("Je bent (nog) geen gezinslid.")
+    return ik
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/waar"})
+@websocket_api.async_response
+@_antwoord
+async def ws_waar(hass, connection, msg):
+    g = _gezin(hass)
+    return g.waar.overzicht(g.lid_van_user(connection.user.id))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/waar/onderweg", vol.Required("minuten"): vol.Coerce(int),
+                                  vol.Optional("bericht"): vol.Any(None, cv.string), vol.Optional("naar"): [cv.string]})
+@websocket_api.async_response
+@_antwoord
+async def ws_onderweg(hass, connection, msg):
+    g = _gezin(hass)
+    return await g.waar.ik_kom_eraan(_ik(g, connection), msg["minuten"], msg.get("bericht"), msg.get("naar"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/waar/thuis"})
+@websocket_api.async_response
+@_antwoord
+async def ws_thuis(hass, connection, msg):
+    g = _gezin(hass)
+    g.waar.gestopt(_ik(g, connection)["id"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/waar/volgen", vol.Required("lid"): cv.string, vol.Required("aan"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_volgen(hass, connection, msg):
+    g = _gezin(hass)
+    g.waar.volgen(_ik(g, connection), msg["lid"], msg["aan"])
+    return {}
+
+
+# ── 🧒 kinderen: routines en zakgeld ──
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/kinderen"})
+@websocket_api.async_response
+@_antwoord
+async def ws_kinderen(hass, connection, msg):
+    return await _gezin(hass).kinderen.overzicht(connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/routine", vol.Required("lid"): cv.string, vol.Required("deel"): vol.In(["ochtend", "avond"]),
+                                  vol.Required("stappen"): [dict], vol.Optional("punten"): vol.Any(None, vol.Coerce(int))})
+@websocket_api.async_response
+@_antwoord
+async def ws_routine(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    return g.kinderen.routine_instellen(msg["lid"], msg["deel"], msg["stappen"], msg.get("punten"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/routine/af", vol.Required("lid"): cv.string, vol.Required("deel"): cv.string,
+                                  vol.Required("stap"): cv.string, vol.Required("af"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_routine_af(hass, connection, msg):
+    return await _gezin(hass).kinderen.stap_af(msg["lid"], msg["deel"], msg["stap"], msg["af"], connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/zakgeld", vol.Required("lid"): cv.string, vol.Required("aan"): bool,
+                                  vol.Required("bedrag"): vol.Coerce(float), vol.Required("dag"): vol.All(vol.Coerce(int), vol.Range(0, 6))})
+@websocket_api.async_response
+@_antwoord
+async def ws_zakgeld(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    return g.kinderen.zakgeld_instellen(msg["lid"], msg["aan"], msg["bedrag"], msg["dag"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/zakgeld/boeking", vol.Required("lid"): cv.string, vol.Required("bedrag"): vol.Coerce(float),
+                                  vol.Optional("tekst", default=""): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_zakgeld_boeking(hass, connection, msg):
+    return await _gezin(hass).kinderen.boeking(msg["lid"], msg["bedrag"], msg["tekst"], connection.user.id)
+
+
+# ── ❤️ samen ──
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen"})
+@websocket_api.async_response
+@_antwoord
+async def ws_samen(hass, connection, msg):
+    return _gezin(hass).samen.overzicht(connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/stel", vol.Required("partner"): cv.string, vol.Optional("sinds"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_stel(hass, connection, msg):
+    return _gezin(hass).samen.stel_maken(connection.user.id, msg["partner"], msg.get("sinds"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/stel/weg"})
+@websocket_api.async_response
+@_antwoord
+async def ws_stel_weg(hass, connection, msg):
+    _gezin(hass).samen.stel_weg(connection.user.id)
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/stemming", vol.Required("emoji"): cv.string, vol.Optional("tekst"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_stemming(hass, connection, msg):
+    return await _gezin(hass).samen.stemming(connection.user.id, msg["emoji"], msg.get("tekst"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/knuffel", vol.Required("soort"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_knuffel(hass, connection, msg):
+    return {"bezorgd": await _gezin(hass).samen.knuffel(connection.user.id, msg["soort"])}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/idee", vol.Required("titel"): cv.string, vol.Optional("emoji"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_date_idee(hass, connection, msg):
+    return _gezin(hass).samen.idee(connection.user.id, msg["titel"], msg.get("emoji"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/idee/weg", vol.Required("idee"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_date_weg(hass, connection, msg):
+    _gezin(hass).samen.idee_weg(connection.user.id, msg["idee"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/idee/gedaan", vol.Required("idee"): cv.string, vol.Required("gedaan"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_date_gedaan(hass, connection, msg):
+    return _gezin(hass).samen.idee_gedaan(connection.user.id, msg["idee"], msg["gedaan"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/trekken"})
+@websocket_api.async_response
+@_antwoord
+async def ws_date_trek(hass, connection, msg):
+    return await _gezin(hass).samen.trekken(connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/samen/ai", vol.Optional("wens"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_date_ai(hass, connection, msg):
+    return await _gezin(hass).samen.ai_ideeen(connection.user.id, msg.get("wens"))
