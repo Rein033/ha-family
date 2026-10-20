@@ -3,8 +3,8 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.12.0';
-import * as sjabloon from './family-sjabloon.js?v=0.12.0';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.12.1';
+import * as sjabloon from './family-sjabloon.js?v=0.12.1';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -437,7 +437,7 @@ class HaFamilyBeheer extends HTMLElement {
         } else data.bedrijf = null;
         if (v.modus === 'zelf') { data.schema = Object.values(v.schema); data.agenda = ''; }
         else if (v.modus === 'bestaand') { data.agenda = this.shadowRoot.getElementById('afval-agenda').value; data.schema = []; }
-        else {
+        else if (v.modus === 'link') {
           v.url = this.shadowRoot.getElementById('afval-url').value; v.bezig = true; this._teken();
           data.agenda = (await this._ws('ha_family/agenda/link', { naam: taal(this._hass) === 'nl' ? 'Afvalkalender' : 'Waste calendar', url: v.url })).entity; data.schema = [];
         }

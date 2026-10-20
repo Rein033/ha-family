@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.1
+
+- Opgelost: afvalkalender bewaren met *Mijn afvalbedrijf* gaf "Cannot read properties of null (reading 'value')".
+
 ## 0.12.0 — eigen tabblad en trouwdagen
 
 - **Eigen tabblad** voor iedereen (👤 met je eigen naam): de knoppen van je eigen kamer(s), je klusjes en je taken. Ieder
