@@ -360,3 +360,92 @@ async def test_muurscherm_account_en_rechten(hass: HomeAssistant, gezin, hass_ws
         muur.bijwerken(g, {"nacht": {"aan": True, "van": "laat", "tot": "07:00"}})
     await muur.verwijderen(g)
     assert await hass.auth.async_get_user(user.id) is None
+
+
+async def test_maaltijden(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.ha_family.maaltijden import boodschap_van, lees_recept
+
+    g = gezin.runtime_data
+    m = g.maaltijden
+    assert m.startpakket() == 10 and m.startpakket() == 0          # niet dubbel
+    spag = next(r for r in g.data["recepten"] if r["naam"] == "Spaghetti bolognese")
+    noor = await g.lid_toevoegen("Noor", "ouder")
+    vandaag = dt_util.now().date()
+    m.plan(vandaag.isoformat(), recept=spag["id"], kok=noor["id"])
+    m.plan((vandaag + dt.timedelta(days=1)).isoformat(), tekst="Restjes")
+    menu = m.menu(vandaag, 3)
+    assert [x["naam"] for x in menu] == ["Spaghetti bolognese", "Restjes", None] and menu[0]["kok"] == noor["id"]
+    await hass.async_block_till_done()
+    s = hass.states.get("sensor.familie_jansen_eten_vandaag")
+    assert s.state == "Spaghetti bolognese" and s.attributes["kok"] == "Noor" and s.attributes["morgen"] == "Restjes"
+    # ingrediënten zonder hoeveelheden naar de boodschappen, niet dubbel
+    r = m.naar_boodschappen(van=vandaag.isoformat(), dagen=7)
+    assert "gehakt" in r["nieuw"] and "spaghetti" in r["nieuw"] and "knoflook" in r["nieuw"]
+    assert m.naar_boodschappen(recept=spag["id"])["nieuw"] == []
+    gehakt = next(b for b in g.data["boodschappen"] if b["titel"] == "gehakt")
+    assert gehakt["afdeling"] == "vlees"
+    assert boodschap_van("2 tenen knoflook") == "knoflook" and boodschap_van("1 blik tomatenblokjes") == "tomatenblokjes"
+    assert boodschap_van("250 ml slagroom (koud)") == "slagroom"
+    # leegmaken
+    m.plan((vandaag + dt.timedelta(days=1)).isoformat())
+    assert m.menu(vandaag, 2)[1]["naam"] is None
+    # suggestie: niet wat er net op stond
+    assert m.suggestie()["id"] != spag["id"] or len(g.data["recepten"]) == 1
+    # importeren uit JSON-LD
+    pagina = """<html><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage"},
+      {"@type":"Recipe","name":"Shakshuka","recipeYield":"2 personen","recipeIngredient":["4 eieren","1 blik tomaten","1 ui"],
+       "recipeInstructions":[{"@type":"HowToStep","text":"Fruit de ui."},{"@type":"HowToStep","text":"Voeg tomaten en eieren toe."}],
+       "image":{"url":"https://example.com/s.jpg"}}]}</script></html>"""
+    rec = lees_recept(pagina)
+    assert rec["naam"] == "Shakshuka" and rec["personen"] == 2 and rec["ingredienten"][0] == "4 eieren"
+    assert rec["bereiding"].startswith("1. Fruit de ui.") and rec["afbeelding"] == "https://example.com/s.jpg"
+    assert lees_recept("<html>geen recept</html>") is None
+    m.recept_weg(spag["id"])
+    assert m.vandaag()["naam"] is None
+
+
+async def test_kamers_en_apparaten(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
+
+    entreg, devreg = er.async_get(hass), dr.async_get(hass)
+    bron = MockConfigEntry(domain="test")
+    bron.add_to_hass(hass)
+    dev = devreg.async_get_or_create(config_entry_id=bron.entry_id, identifiers={("test", "lamp")}, name="Lamp")
+    lamp = entreg.async_get_or_create("light", "test", "lamp1", device_id=dev.id, suggested_object_id="plafond")
+    hass.states.async_set(lamp.entity_id, "off", {"friendly_name": "Plafondlamp"})
+    hass.states.async_set("light.zonder_id", "on", {"friendly_name": "Losse lamp"})
+    cfg = entreg.async_get_or_create("switch", "test", "cfg", entity_category=er.EntityCategory.CONFIG)
+    hass.states.async_set(cfg.entity_id, "on")
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/kamer", "naam": "Woonkamer", "icoon": "mdi:sofa"})
+    k = (await client.receive_json())["result"]["kamer"]
+    await client.send_json_auto_id({"type": "ha_family/kamer", "naam": "woonkamer"})
+    assert (await client.receive_json())["error"]["code"] == "ha_family_fout"       # dubbele naam
+
+    # apparaat zit via zijn device al in een andere kamer; verplaatsen gaat via de entiteit
+    keuken = ar.async_get(hass).async_create("Keuken")
+    devreg.async_update_device(dev.id, area_id=keuken.id)
+    o = gezin.runtime_data.huis.overzicht()
+    rij = next(a for a in o["apparaten"] if a["entity"] == lamp.entity_id)
+    assert rij["kamer"] == keuken.id and rij["via_apparaat"]
+    assert not next(a for a in o["apparaten"] if a["entity"] == "light.zonder_id")["kan"]
+    assert cfg.entity_id not in {a["entity"] for a in o["apparaten"]}
+
+    await client.send_json_auto_id({"type": "ha_family/kamer/apparaat", "entity": lamp.entity_id, "kamer": k})
+    assert (await client.receive_json())["success"]
+    assert entreg.async_get(lamp.entity_id).area_id == k
+    await client.send_json_auto_id({"type": "ha_family/kamer/apparaat", "entity": lamp.entity_id, "kamer": None})
+    assert (await client.receive_json())["success"]
+    assert next(a for a in gezin.runtime_data.huis.overzicht()["apparaten"] if a["entity"] == lamp.entity_id)["kamer"] is None
+
+    await client.send_json_auto_id({"type": "ha_family/huis/instellingen", "verborgen": [keuken.id]})
+    assert (await client.receive_json())["success"]
+    assert next(x for x in gezin.runtime_data.huis.overzicht()["kamers"] if x["kamer"] == keuken.id)["verborgen"]
+    await client.send_json_auto_id({"type": "ha_family/kamer/weg", "kamer": k})
+    assert (await client.receive_json())["success"]
+    assert ar.async_get(hass).async_get_area(k) is None

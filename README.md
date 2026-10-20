@@ -10,11 +10,11 @@ Installeer HA Family en Home Assistant wordt een gezinsapp. Iedereen opent metee
 hem past, en gezinsleden toevoegen of een telefoon koppelen gaat met een wizard in plaats van met instellingen, YAML en
 entiteiten. Ook voor huishoudens met huisgenoten.
 
-![Startscherm](docs/images/50-thuis-nieuw.png)
+![Startscherm](docs/images/74-thuis-kamers.png)
 
 | Tablet aan de muur | Gezin beheren |
 |---|---|
-| ![Muurscherm](docs/images/55-muurscherm-na.png) | ![Gezin beheren](docs/images/09-overzicht.png) |
+| ![Muurscherm](docs/images/75-muur-kamers.png) | ![Gezin beheren](docs/images/09-overzicht.png) |
 
 ## Wat gebeurt er als je het installeert
 
@@ -74,16 +74,19 @@ het gezin halen (eventueel met het account).
 ## Startscherm
 
 Iedereen opent op **Thuis**: een groet met het weer en wie er thuis is, de klusjes (een kind ziet alleen de eigen, als grote
-tegels), *Vandaag* (afspraken, afval van morgen, wie er binnenkort jarig is), de boodschappen als tikbare lijstjes (tik op
+tegels), *Vandaag* (afspraken, afval van morgen, wie er binnenkort jarig is), *Vanavond eten we*, de kamers met hun lampen
+en airco, de boodschappen als tikbare lijstjes (tik op
 wat je gekocht hebt) en *Mijn taken*. Toevoegen kan meteen vanaf het startscherm.
 
 ## Tablet aan de muur
 
 Een groot scherm voor het hele gezin, zonder knoppen en balken van Home Assistant:
 
-- **links** een grote klok, de datum, het weer met de komende dagen en welk afval er (morgen) aan de straat moet;
+- **links** een grote klok, de datum, het weer met de komende dagen, welk afval er (morgen) aan de straat moet en wat we
+  vanavond eten (en wie er kookt);
 - **midden** de agenda van vandaag en morgen en de rest van de week, in de kleur van wie het betreft;
-- **rechts** de klusjes per kind (aanraken = gedaan, met een feestje) en wie er thuis is;
+- **rechts** de klusjes per kind (aanraken = gedaan, met een feestje), **de kamers** (tik op een lamp of de airco om hem
+  aan of uit te zetten) en wie er thuis is;
 - **onderaan** de boodschappen: tik op wat er gekocht is, of zet er meteen iets bij.
 
 's Nachts staat er alleen een gedimde klok (die langzaam verschuift tegen inbranden); aanraken maakt hem twee minuten
@@ -174,6 +177,47 @@ boodschappenlijst"*.
 **Een account voor later.** Krijgt een kind (of iemand anders zonder account) een eigen telefoon? Open het gezinslid in
 **Gezin beheren → Bewerken** en kies **Geef … een eigen account**; je gaat meteen door naar telefoon koppelen.
 
+## Maaltijdplanner
+
+**Weekmenu.** Op het tabblad **🍝 Eten** staat de week: tik op een dag en kies een recept, typ zelf iets (*Restjes*,
+*Uit eten*) of laat **🎲 Verrassing** kiezen (een gerecht dat de afgelopen twee weken niet op het menu stond; favorieten
+vaker). Kies er meteen bij wie er kookt. Op het startscherm en op het muurscherm staat *Vanavond eten we*.
+
+**Recepten.** Begin met tien bekende gezinsgerechten (één klik), maak zelf een recept (emoji, ingrediënten, bereiding,
+labels zoals ⚡ Snel en 🥕 Vega), of plak de link van een receptensite: HA Family haalt naam, foto, ingrediënten en
+bereiding van de pagina (werkt met de meeste sites, zoals Allerhande en 24Kitchen).
+
+**Naar de boodschappen.** *🛒 Week op de lijst* zet de ingrediënten van de hele week op de boodschappenlijst, of doe het per
+gerecht. Hoeveelheden gaan eraf (`500 g gehakt` → *gehakt*), wat er al op staat komt er niet dubbel op, en alles komt
+meteen op de looproute.
+
+**Herinnering.** 's Middags (standaard 16:00) krijgt de kok een berichtje: *Vanavond kook jij: Pannenkoeken*. Staat er niets,
+dan krijgen de ouders een idee. Aan of uit onder het weekmenu. Ook als sensor *Eten vandaag*, voor eigen automatiseringen.
+
+| Weekmenu en recepten | Gerecht kiezen | Recept |
+|---|---|---|
+| ![Eten](docs/images/62-eten-week.png) | ![Kiezen](docs/images/61-eten-kiezen.png) | ![Recept](docs/images/63-recept.png) |
+
+## Kamers
+
+Lampen, airco en de rest, **per kamer**: op het tabblad **🏠 Huis**, rechts op het muurscherm en op het startscherm. Tik op
+een lamp om hem aan of uit te zetten, schuif voor de helderheid; bij de airco of thermostaat zet je hem aan/uit en de
+temperatuur met − en +; rolluiken gaan op ▲ ■ ▼. *Alles uit* zet alle lampen in een kamer uit.
+
+**Instellen** in **Gezin beheren → Huis**:
+
+1. **Kamer aanmaken**: naam en icoon, of met één klik *Woonkamer*, *Keuken*, *Kinderkamer*, …
+2. **Apparaten toevoegen**: bovenaan staat alles wat nog geen kamer heeft. Vink apparaten aan en zet ze in één keer in een
+   kamer, of kies per apparaat. Filter op lampen, klimaat, ventilatoren, rolluiken, stopcontacten of speakers.
+3. Hernoemen, verbergen (niet op het dashboard en de muur) of verwijderen per kamer.
+
+Kamers zijn gewoon de ruimtes (areas) van Home Assistant: wat je hier doet, zie je ook in de rest van HA, in Assist en in
+automatiseringen, en kamers die je al had staan er meteen.
+
+| Huis | Instellen |
+|---|---|
+| ![Huis](docs/images/73-huis-bediend.png) | ![Instellen](docs/images/71-huis-toegewezen.png) |
+
 ## Kaarten
 
 ```yaml
@@ -183,6 +227,9 @@ type: custom:family-agenda-card    # de gezinsagenda
 type: custom:family-klusjes-card   # klusjes: kind ziet de eigen tegels, ouder ziet iedereen (lid: <id> = altijd die persoon)
 type: custom:family-taken-card     # gezinstaken (compact: true = 'Mijn taken' met snel toevoegen)
 type: custom:family-boodschappen-card   # (compact: true = tikbare lijstjes met snel toevoegen)
+type: custom:family-eten-card      # het weekmenu (compact: true = 'Vanavond eten we')
+type: custom:family-recepten-card  # recepten: zoeken, inplannen, op de lijst, importeren van een website
+type: custom:family-kamers-card    # lampen, airco en meer per kamer (compact: true = één rij per kamer; kamer: <ruimte-id>)
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```
@@ -197,7 +244,8 @@ wizard in Gezin beheren.
 - [x] **Fundament:** gezin, beheer, telefoons koppelen, weergave per gezinslid, gezinsdashboard
 - [x] **Gezinsagenda:** een kleur per persoon, maand of weekplanner, verjaardagen, afvalkalender
 - [x] **Taken en klusjes:** klusjes met punten voor kinderen, boodschappenlijst op looproute
-- [ ] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
+- [x] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
+- [x] **Kamers:** lampen, airco en meer per kamer, kamers en apparaten instellen zonder HA-instellingen
 - [ ] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
 - [ ] **Kinderen:** ochtend- en avondroutines, beloningen, zakgeld
 - [ ] **Samen:** voor stellen (stemming, knuffels, date-pot; uit [Ons hokje](https://github.com/Rein033/ha-ons-hokje))

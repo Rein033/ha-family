@@ -21,6 +21,8 @@ from homeassistant.loader import async_get_integration
 
 from . import herinnering, weergave, websocket
 from .agenda import Agenda
+from .maaltijden import Maaltijden
+from .huis import Huis
 from .taken import Taken, volg_meldingknoppen
 from .const import (BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, MUUR_COMPONENT,
                     MUUR_URL, PLATFORMS)
@@ -110,6 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry) -> bool:
     await gezin.async_load()
     gezin.agenda = Agenda(gezin)
     gezin.taken = Taken(gezin)
+    gezin.maaltijden = Maaltijden(gezin)
+    gezin.huis = Huis(gezin)
     entry.runtime_data = gezin
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(herinnering.start(hass, gezin.agenda))

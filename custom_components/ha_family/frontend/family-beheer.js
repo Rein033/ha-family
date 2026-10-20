@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.4.0';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.5.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -43,14 +43,22 @@ const T = {
     allesGoed: 'Alles werkt', kanInloggen: 'Inloggen als {x}', jij: 'jij', adresOnbekend: 'Stel eerst het adres van je Home Assistant in (Instellingen → Systeem → Netwerk).',
     huishoudenNaam: 'Naam van jullie huishouden',
     accountMaken: 'Geef {x} een eigen account', accountKnop: 'Account maken en telefoon koppelen',
-    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes', tabMuur: 'Muurscherm',
+    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes', tabMuur: 'Muurscherm', tabHuis: 'Huis',
+    huKamers: 'Kamers', huUitleg: 'Kamers zijn de ruimtes van Home Assistant: wat je hier maakt, zie je overal terug. Verborgen kamers staan niet op het dashboard en het muurscherm.',
+    huNaam: 'Naam van de kamer', huNieuw: 'Nieuwe kamer', huToevoegen: 'Kamer toevoegen', huApparaten: 'Apparaten',
+    huApparatenUitleg: 'Vink apparaten aan en zet ze in één keer in een kamer, of kies per apparaat.', huZonder: 'Nog geen kamer', huGeenKamer: '— geen kamer —',
+    huGekozen: 'gekozen', huZetIn: 'Zet in', huZeker: 'Kamer "{x}" verwijderen? De apparaten blijven gewoon bestaan, ze hebben dan geen kamer meer.',
+    huVerbergen: 'Verbergen', huTonen: 'Tonen', huKanNiet: 'Dit apparaat kan geen kamer krijgen (geen vaste ID).', huVia: 'via het apparaat',
+    huGeen: 'Geen lampen, klimaat of andere apparaten gevonden.', huAlles: 'Alles', huApp: 'apparaten', huApp1: 'apparaat', huVerplaatst: 'Verplaatst', huLeeg: 'Nog geen kamers. Begin met bijvoorbeeld Woonkamer, Keuken en Slaapkamer.',
+    huSnel: 'Snel toevoegen', huLos: 'apparaten kunnen geen kamer krijgen (geen vaste ID in Home Assistant)', huDomein: { light: '💡 Lampen', climate: '❄️ Klimaat', fan: '🌀 Ventilatoren', cover: '🪟 Rolluiken', switch: '🔌 Stopcontacten', media_player: '🔊 Speakers' },
+    huVoorbeelden: ['Woonkamer', 'Keuken', 'Slaapkamer', 'Kinderkamer', 'Badkamer', 'Hal', 'Zolder', 'Tuin'],
     muTitel: 'Een tablet aan de muur', muUitleg: 'Een groot scherm voor iedereen: klok, weer, de agenda van vandaag en morgen, de klusjes van de kinderen en de boodschappen. \'s Nachts alleen een gedimde klok.',
     muInstellen: 'Muurscherm instellen', muAccountUitleg: 'De tablet krijgt een eigen account dat alleen thuis kan inloggen. Kinderen kunnen er hun klusjes afvinken; beheren kan er niet.',
     muStap1: 'Open dit adres op de tablet', muStap1t: 'In de browser, de Home Assistant-app of een kiosk-app (zoals Fully Kiosk Browser):',
     muStap2: 'Log in met het muuraccount', muStap2t: 'Vink "Ingelogd blijven" aan.', muStap3: 'Zet de tablet vast aan de lader',
     muStap3t: 'Zet in de instellingen van de tablet "scherm uit" op nooit (of gebruik een kiosk-app). Het muurscherm houdt het scherm zelf ook wakker waar dat kan.',
     muBekijk: 'Bekijk het muurscherm', muInst: 'Instellingen', muNacht: 'Nachtstand: alleen een gedimde klok', muVan: 'van', muTot: 'tot', muWeer: 'Weerbericht',
-    muWeerAuto: 'Automatisch (eerste)', muBlokken: 'Wat staat erop?', muBlok: { agenda: '📅 Agenda', klusjes: '⭐ Klusjes', boodschappen: '🛒 Boodschappen', thuis: '🏠 Wie is er thuis' },
+    muWeerAuto: 'Automatisch (eerste)', muBlokken: 'Wat staat erop?', muBlok: { agenda: '📅 Agenda', eten: '🍽️ Eten', klusjes: '⭐ Klusjes', kamers: '🏠 Kamers', boodschappen: '🛒 Boodschappen', thuis: '🏠 Wie is er thuis' },
     muZijbalk: 'Zijbalk verbergen op de tablet', muAccount: 'Account', muVerwijder: 'Muuraccount verwijderen', muZeker: 'Het muuraccount verwijderen? De tablet wordt uitgelogd.',
     klKlusjes: 'Klusjes', klUitleg: 'Klusjes staan elke dag (of op de gekozen dagen) klaar. Afvinken geeft punten.', klNieuw: 'Klusje',
     klVoorbeelden: 'Voorbeelden: tik om toe te voegen', klGeen: 'Nog geen klusjes. Begin met een voorbeeld hieronder.', klMaak: 'Klusje maken', klBewerk: 'Klusje bewerken',
@@ -111,14 +119,22 @@ const T = {
     allesGoed: 'Everything works', kanInloggen: 'Logs in as {x}', jij: 'you', adresOnbekend: 'Set the address of your Home Assistant first (Settings → System → Network).',
     huishoudenNaam: 'Name of your household',
     accountMaken: 'Give {x} their own account', accountKnop: 'Create account and connect phone',
-    tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores', tabMuur: 'Wall screen',
+    tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores', tabMuur: 'Wall screen', tabHuis: 'Home',
+    huKamers: 'Rooms', huUitleg: 'Rooms are Home Assistant areas: what you create here shows up everywhere. Hidden rooms are not shown on the dashboard and the wall screen.',
+    huNaam: 'Name of the room', huNieuw: 'New room', huToevoegen: 'Add room', huApparaten: 'Devices',
+    huApparatenUitleg: 'Tick devices and put them in a room at once, or choose per device.', huZonder: 'No room yet', huGeenKamer: '— no room —',
+    huGekozen: 'selected', huZetIn: 'Move to', huZeker: 'Delete room "{x}"? The devices stay, they just have no room anymore.',
+    huVerbergen: 'Hide', huTonen: 'Show', huKanNiet: 'This device cannot get a room (no unique ID).', huVia: 'via the device',
+    huGeen: 'No lights, climate or other devices found.', huAlles: 'All', huApp: 'devices', huApp1: 'device', huVerplaatst: 'Moved', huLeeg: 'No rooms yet. Start with, for example, Living room, Kitchen and Bedroom.',
+    huSnel: 'Quick add', huLos: 'devices cannot get a room (no unique ID in Home Assistant)', huDomein: { light: '💡 Lights', climate: '❄️ Climate', fan: '🌀 Fans', cover: '🪟 Covers', switch: '🔌 Plugs', media_player: '🔊 Speakers' },
+    huVoorbeelden: ['Living room', 'Kitchen', 'Bedroom', 'Kids room', 'Bathroom', 'Hallway', 'Attic', 'Garden'],
     muTitel: 'A tablet on the wall', muUitleg: "A big screen for everyone: clock, weather, today's and tomorrow's calendar, the children's chores and the groceries. At night only a dimmed clock.",
     muInstellen: 'Set up the wall screen', muAccountUitleg: 'The tablet gets its own account that can only log in at home. Children can tick off their chores there; it cannot manage anything.',
     muStap1: 'Open this address on the tablet', muStap1t: 'In the browser, the Home Assistant app or a kiosk app (such as Fully Kiosk Browser):',
     muStap2: 'Log in with the wall account', muStap2t: 'Tick "Keep me logged in".', muStap3: 'Keep the tablet on its charger',
     muStap3t: 'Set "screen timeout" to never in the tablet settings (or use a kiosk app). The wall screen also keeps the screen awake where possible.',
     muBekijk: 'View the wall screen', muInst: 'Settings', muNacht: 'Night mode: only a dimmed clock', muVan: 'from', muTot: 'to', muWeer: 'Weather',
-    muWeerAuto: 'Automatic (first)', muBlokken: 'What is on it?', muBlok: { agenda: '📅 Calendar', klusjes: '⭐ Chores', boodschappen: '🛒 Groceries', thuis: "🏠 Who's home" },
+    muWeerAuto: 'Automatic (first)', muBlokken: 'What is on it?', muBlok: { agenda: '📅 Calendar', eten: '🍽️ Dinner', klusjes: '⭐ Chores', kamers: '🏠 Rooms', boodschappen: '🛒 Groceries', thuis: "🏠 Who's home" },
     muZijbalk: 'Hide the sidebar on the tablet', muAccount: 'Account', muVerwijder: 'Delete wall account', muZeker: 'Delete the wall account? The tablet will be logged out.',
     klKlusjes: 'Chores', klUitleg: 'Chores are ready every day (or on the chosen days). Ticking them off earns points.', klNieuw: 'Chore',
     klVoorbeelden: 'Examples: tap to add', klGeen: 'No chores yet. Start with an example below.', klMaak: 'New chore', klBewerk: 'Edit chore',
@@ -170,7 +186,7 @@ class HaFamilyBeheer extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style>
       <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div>
-        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button><button data-a="tab" data-tab="klusjes">⭐ ${esc(this.t('tabKlusjes'))}</button><button data-a="tab" data-tab="muur">📺 ${esc(this.t('tabMuur'))}</button></div></div>
+        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button><button data-a="tab" data-tab="klusjes">⭐ ${esc(this.t('tabKlusjes'))}</button><button data-a="tab" data-tab="huis">🏠 ${esc(this.t('tabHuis'))}</button><button data-a="tab" data-tab="muur">📺 ${esc(this.t('tabMuur'))}</button></div></div>
       <div class="inhoud"><div class="laden">…</div></div><div class="dlg-plek"></div>`;
     this._menu = document.createElement('ha-menu-button');
     this._menu.hass = this._hass;
@@ -188,6 +204,7 @@ class HaFamilyBeheer extends HTMLElement {
       this._s = await this._ws('ha_family/status'); this._fout = null;
       if (this._tab === 'agenda' && !this._typt()) this._ag = await this._ws('ha_family/agenda/instellingen');
       if (this._tab === 'klusjes' && !this._typt()) this._kl = await this._ws('ha_family/taken');
+      if (this._tab === 'huis' && !this._typt()) this._hu = await this._ws('ha_family/huis');
       if (this._tab === 'muur' && !this._typt()) {
         this._mu = await this._ws('ha_family/muur');
         if (!this._mu.heeft_account && !this._muWw) this._muWw = (await this._ws('ha_family/voorstel')).wachtwoord;
@@ -211,6 +228,7 @@ class HaFamilyBeheer extends HTMLElement {
     if (this._tab === 'agenda') { el.innerHTML = this._agendaTab(); return; }
     if (this._tab === 'klusjes') { el.innerHTML = this._klusjesTab(); return; }
     if (this._tab === 'muur') { el.innerHTML = this._muurTab(); return; }
+    if (this._tab === 'huis') { el.innerHTML = this._huisTab(); return; }
     const soort = s.type === 'huishouden' ? this.t('huishouden') : this.t('gezin');
     const losse = s.losse_personen.length ? `<div class="kaart zacht"><b>${esc(this.t('alInHa'))}</b><p class="fam-sub">${esc(this.t('alInHaTekst'))}</p>
       <div class="losse">${s.losse_personen.map((p) => `<div class="los"><span class="los-naam">${esc(p.naam)}</span>
@@ -380,6 +398,9 @@ class HaFamilyBeheer extends HTMLElement {
     const a = e.target.dataset.a, v = this._afv;
     if (!a) return;
     if (a.startsWith('mu-inst')) return this._muurOpslaan();
+    if (a === 'hu-zet') return this._doe('ha_family/kamer/apparaat', { entity: e.target.dataset.e, kamer: e.target.value || null }, this.t('huVerplaatst'));
+    if (a === 'hu-vink') { const z = this._huSel; e.target.checked ? z.add(e.target.dataset.e) : z.delete(e.target.dataset.e); return this._teken(); }
+    if (a === 'hu-allemaal') { this._hu.apparaten.filter((x) => x.kan && (x.kamer || '') === e.target.dataset.k).forEach((x) => (e.target.checked ? this._huSel.add(x.entity) : this._huSel.delete(x.entity))); return this._teken(); }
     if (a === 'kl-herinnering' || a === 'kl-tijd') {
       const r = this.shadowRoot;
       return this._doe('ha_family/klusjes/instellingen', { aan: r.querySelector('[data-a=kl-herinnering]').checked, tijd: r.querySelector('[data-a=kl-tijd]').value || '18:00' }, this.t('bewaard'));
@@ -443,6 +464,92 @@ class HaFamilyBeheer extends HTMLElement {
       this._melding(this.t('bewaard'));
     } catch (e) { this._melding(e.message); }
   }
+  /* ── 🏠 Huis: kamers en apparaten ── */
+  _huisTab() {
+    const h = this._hu;
+    if (!h) return '<div class="kaart">…</div>';
+    const sel = this._huSel || (this._huSel = new Set()), filter = this._huFilter || null;
+    const nu = this._huNieuw || (this._huNieuw = { naam: '', icoon: 'mdi:sofa' });
+    const aantal = (k) => h.apparaten.filter((a) => a.kamer === k).length;
+    const iconen = (gekozen, act) => `<div class="hu-iconen">${h.iconen.map((i) => `<button class="${gekozen === i ? 'aan' : ''}" data-a="${act}" data-i="${i}" title="${esc(i.slice(4))}"><ha-icon icon="${i}"></ha-icon></button>`).join('')}</div>`;
+    const kamerRij = (k) => {
+      if (this._huBewerk === k.kamer) {
+        const b = this._huB;
+        return `<div class="hu-kamer bewerk"><input class="veld" id="hu-b-naam" value="${esc(b.naam)}" maxlength="50"/>${iconen(b.icoon, 'hu-b-icoon')}
+          <div class="rij eind"><button class="fam-knop rand klein" data-a="hu-annuleer">${esc(this.t('annuleren'))}</button><button class="fam-knop klein" data-a="hu-opslaan">${esc(this.t('opslaan'))}</button></div></div>`;
+      }
+      return `<div class="hu-kamer ${k.verborgen ? 'uit' : ''}"><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><b class="groei">${esc(k.naam)}</b>
+        <span class="fam-sub">${aantal(k.kamer)} ${esc(this.t(aantal(k.kamer) === 1 ? 'huApp1' : 'huApp'))}</span>
+        <button class="hu-x" data-a="hu-verberg" data-k="${k.kamer}" title="${esc(k.verborgen ? this.t('huTonen') : this.t('huVerbergen'))}"><ha-icon icon="${k.verborgen ? 'mdi:eye-off' : 'mdi:eye'}"></ha-icon></button>
+        <button class="hu-x" data-a="hu-bewerk" data-k="${k.kamer}"><ha-icon icon="mdi:pencil"></ha-icon></button>
+        <button class="hu-x" data-a="hu-weg" data-k="${k.kamer}"><ha-icon icon="mdi:delete-outline"></ha-icon></button></div>`;
+    };
+    const bestaand = new Set(h.kamers.map((k) => k.naam.toLowerCase()));
+    const snel = this.t('huVoorbeelden').filter((n) => !bestaand.has(n.toLowerCase()));
+    const opties = (k) => `<option value="">${esc(this.t('huGeenKamer'))}</option>${h.kamers.map((x) => `<option value="${x.kamer}" ${x.kamer === k ? 'selected' : ''}>${esc(x.naam)}</option>`).join('')}`;
+    const DICO = { light: 'mdi:lightbulb', climate: 'mdi:air-conditioner', fan: 'mdi:fan', cover: 'mdi:window-shutter', switch: 'mdi:power-socket-eu', media_player: 'mdi:speaker' };
+    const zicht = h.apparaten.filter((a) => !filter || a.domein === filter);
+    const groep = (k, titel, ico) => {
+      const alles = zicht.filter((a) => (a.kamer || '') === k), lijst = alles.filter((a) => a.kan), los = alles.filter((a) => !a.kan);
+      if (!alles.length) return '';
+      const kunnen = lijst.filter((a) => a.kan), alle = kunnen.length && kunnen.every((a) => sel.has(a.entity));
+      return `<div class="hu-groep ${k ? '' : 'zonder'}"><h3><label class="vink kort"><input type="checkbox" data-a="hu-allemaal" data-k="${k}" ${alle ? 'checked' : ''}/></label>
+          <ha-icon icon="${ico}"></ha-icon> ${esc(titel)} <span class="fam-sub">${alles.length}</span></h3>
+        ${[...lijst, ...los].map((a, i) => `${i === lijst.length && los.length ? `<details class="hu-los"><summary class="fam-sub">${los.length} ${esc(this.t('huLos'))}</summary>` : ''}<div class="hu-app"><input type="checkbox" data-a="hu-vink" data-e="${esc(a.entity)}" ${sel.has(a.entity) ? 'checked' : ''} ${a.kan ? '' : 'disabled'}/>
+          <ha-icon icon="${DICO[a.domein]}" class="${(this._hass.states[a.entity] || {}).state === 'on' ? 'aan' : ''}"></ha-icon>
+          <span class="groei">${esc(a.naam)}${a.via_apparaat ? ` <small class="fam-sub">· ${esc(this.t('huVia'))}</small>` : ''}</span>
+          <select class="veld smal" data-a="hu-zet" data-e="${esc(a.entity)}" ${a.kan ? '' : 'disabled'}>${opties(a.kamer)}</select></div>`).join('')}${los.length ? '</details>' : ''}</div>`;
+    };
+    const domeinen = [...new Set(h.apparaten.map((a) => a.domein))];
+    return `<div class="kaart"><h2>🏠 ${esc(this.t('huKamers'))}</h2><p class="fam-sub">${esc(this.t('huUitleg'))}</p>
+        ${h.kamers.length ? h.kamers.map(kamerRij).join('') : `<p>${esc(this.t('huLeeg'))}</p>`}
+        <hr/><b>${esc(this.t('huNieuw'))}</b>
+        <div class="rij" style="margin-top:8px"><input class="veld groei" id="hu-naam" placeholder="${esc(this.t('huNaam'))}" value="${esc(nu.naam)}" maxlength="50"/>
+          <button class="fam-knop" data-a="hu-maak">+ ${esc(this.t('huToevoegen'))}</button></div>
+        ${iconen(nu.icoon, 'hu-icoon')}
+        ${snel.length ? `<div class="vb" style="margin-top:10px"><span class="fam-sub">${esc(this.t('huSnel'))}:</span>${snel.map((n) => `<button class="fam-chip vbk" data-a="hu-snel" data-n="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>` : ''}</div>
+      <div class="kaart"><h2>💡 ${esc(this.t('huApparaten'))}</h2><p class="fam-sub">${esc(this.t('huApparatenUitleg'))}</p>
+        ${h.apparaten.length ? `<div class="vb"><button class="fam-chip vbk ${filter ? '' : 'aan'}" data-a="hu-filter" data-d="">${esc(this.t('huAlles'))}</button>
+          ${domeinen.map((d) => `<button class="fam-chip vbk ${filter === d ? 'aan' : ''}" data-a="hu-filter" data-d="${d}">${esc(this.t('huDomein')[d] || d)}</button>`).join('')}</div>
+        ${sel.size ? `<div class="hu-balk"><b>${sel.size} ${esc(this.t('huGekozen'))}</b><span>${esc(this.t('huZetIn'))}</span>
+          <select class="veld smal" id="hu-bulk">${opties(null)}</select><button class="fam-knop klein" data-a="hu-bulk">OK</button><button class="hu-x" data-a="hu-wis"><ha-icon icon="mdi:close"></ha-icon></button></div>` : ''}
+        ${groep('', this.t('huZonder'), 'mdi:help-circle-outline')}${h.kamers.map((k) => groep(k.kamer, k.naam, k.icoon || 'mdi:home')).join('')}` : `<p>${esc(this.t('huGeen'))}</p>`}</div>`;
+  }
+  async _huisKlik(a, b) {
+    const h = this._hu, q = (id) => this.shadowRoot.getElementById(id);
+    if (a === 'hu-icoon') { this._huNieuw = { naam: q('hu-naam').value, icoon: b.dataset.i }; return this._teken(); }
+    if (a === 'hu-snel') { if (await this._doe('ha_family/kamer', { naam: b.dataset.n, icoon: ICOON_VOOR[b.dataset.n] || 'mdi:home' })) this._melding(`🏠 ${b.dataset.n}`); return; }
+    if (a === 'hu-maak') {
+      const naam = q('hu-naam').value.trim(); if (!naam) return q('hu-naam').focus();
+      if (await this._doe('ha_family/kamer', { naam, icoon: this._huNieuw.icoon })) { this._huNieuw = null; this._teken(); }
+      return;
+    }
+    if (a === 'hu-bewerk') { const k = h.kamers.find((x) => x.kamer === b.dataset.k); this._huBewerk = k.kamer; this._huB = { naam: k.naam, icoon: k.icoon || 'mdi:home' }; return this._teken(); }
+    if (a === 'hu-b-icoon') { this._huB = { naam: q('hu-b-naam').value, icoon: b.dataset.i }; return this._teken(); }
+    if (a === 'hu-annuleer') { this._huBewerk = null; return this._teken(); }
+    if (a === 'hu-opslaan') {
+      if (await this._doe('ha_family/kamer', { kamer: this._huBewerk, naam: q('hu-b-naam').value, icoon: this._huB.icoon }, this.t('bewaard'))) { this._huBewerk = null; this._teken(); }
+      return;
+    }
+    if (a === 'hu-weg') {
+      const k = h.kamers.find((x) => x.kamer === b.dataset.k);
+      if (confirm(this.t('huZeker').replace('{x}', k.naam))) await this._doe('ha_family/kamer/weg', { kamer: k.kamer });
+      return;
+    }
+    if (a === 'hu-verberg') {
+      const v = h.kamers.filter((x) => x.verborgen).map((x) => x.kamer), k = b.dataset.k;
+      return this._doe('ha_family/huis/instellingen', { verborgen: v.includes(k) ? v.filter((x) => x !== k) : [...v, k] });
+    }
+    if (a === 'hu-filter') { this._huFilter = b.dataset.d || null; return this._teken(); }
+    if (a === 'hu-wis') { this._huSel.clear(); return this._teken(); }
+    if (a === 'hu-bulk') {
+      const kamer = q('hu-bulk').value || null, lijst = [...this._huSel];
+      try { for (const entity of lijst) await this._ws('ha_family/kamer/apparaat', { entity, kamer }); this._melding(`${this.t('huVerplaatst')}: ${lijst.length}`); }
+      catch (e) { this._melding(e.message); }
+      this._huSel.clear(); await this._laad();
+    }
+  }
+
   async _muurKlik(a, b) {
     if (a === 'mu-bekijk') { history.pushState(null, '', '/gezin-muur'); window.dispatchEvent(new CustomEvent('location-changed')); return; }
     if (a === 'mu-maak') {
@@ -727,6 +834,10 @@ class HaFamilyBeheer extends HTMLElement {
       if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
       return this._muurKlik(a, b);
     }
+    if (a.startsWith('hu-')) {
+      if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
+      return this._huisKlik(a, b);
+    }
     if (a.startsWith('kl-')) {
       if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
       return this._klusjesKlik(a, b);
@@ -923,7 +1034,34 @@ const STIJL = `
   .dagen { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .dagen button { border: 0; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font: inherit; font-weight: 600; background: var(--secondary-background-color); color: var(--primary-text-color); }
   .dagen button.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); }
+  .hu-kamer { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--divider-color); }
+  .hu-kamer.uit { opacity: .5; }
+  .hu-kamer.bewerk { display: grid; gap: 8px; }
+  .hu-kamer > ha-icon { color: var(--primary-color); }
+  .hu-x { border: 0; background: none; color: var(--secondary-text-color); cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; }
+  .hu-x:hover { background: var(--secondary-background-color); color: var(--primary-text-color); }
+  .hu-iconen { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .hu-iconen button { border: 0; background: var(--secondary-background-color); color: var(--primary-text-color); width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; }
+  .hu-iconen button.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); }
+  .hu-groep { margin-top: 14px; }
+  .hu-groep.zonder { background: color-mix(in srgb, var(--warning-color, #ffa600) 10%, transparent); border-radius: 16px; padding: 4px 12px 8px; }
+  .hu-groep h3 { display: flex; align-items: center; gap: 8px; }
+  .hu-app { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--divider-color); }
+  .hu-app:last-child { border-bottom: 0; }
+  .hu-app input[type=checkbox], .hu-groep h3 input { width: 20px; height: 20px; accent-color: var(--primary-color); }
+  .hu-app ha-icon { color: var(--secondary-text-color); }
+  .hu-app ha-icon.aan { color: var(--state-light-active-color, #ffb300); }
+  .hu-app select { max-width: 45%; }
+  .hu-los summary { cursor: pointer; padding: 8px 0; }
+  .hu-los .hu-app { opacity: .6; }
+  .hu-balk { position: sticky; top: 8px; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding: 10px 14px; border-radius: 16px;
+    background: color-mix(in srgb, var(--primary-color) 14%, var(--card-background-color)); }
+  .vbk.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); }
   @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } .tabs button { padding: 0 10px; } }
 `;
+
+const ICOON_VOOR = { Woonkamer: 'mdi:sofa', 'Living room': 'mdi:sofa', Keuken: 'mdi:silverware-fork-knife', Kitchen: 'mdi:silverware-fork-knife', Slaapkamer: 'mdi:bed-king',
+  Bedroom: 'mdi:bed-king', Kinderkamer: 'mdi:teddy-bear', 'Kids room': 'mdi:teddy-bear', Badkamer: 'mdi:shower', Bathroom: 'mdi:shower', Hal: 'mdi:door', Hallway: 'mdi:door',
+  Zolder: 'mdi:home-roof', Attic: 'mdi:home-roof', Tuin: 'mdi:flower', Garden: 'mdi:flower' };
 
 if (!customElements.get('ha-family-beheer')) customElements.define('ha-family-beheer', HaFamilyBeheer);

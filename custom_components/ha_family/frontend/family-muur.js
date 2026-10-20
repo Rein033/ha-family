@@ -1,19 +1,22 @@
 /* HA Family — muurscherm (HA-Family-Dashboard): een tablet aan de muur.
  *
  * Volledig scherm zonder balken: links klok, datum, weer en afval; midden de agenda van vandaag en morgen voor het hele
- * gezin; rechts de klusjes per kind en wie er thuis is; onderaan de boodschappen. 's Nachts alleen een gedimde klok.
+ * gezin; rechts de klusjes per kind, de kamers en wie er thuis is; onderaan de boodschappen. 's Nachts alleen een gedimde klok.
  * Op de tablet zelf (het account 'muur') verdwijnt de zijbalk en blijft het scherm aan waar de browser dat toestaat. */
-import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.4.0';
+import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.5.0';
+import { FamilyKamersCard } from './family-huis.js?v=0.5.0';
+
+if (!customElements.get('family-kamers-card')) customElements.define('family-kamers-card', FamilyKamersCard);
 
 const T = {
   nl: { vandaag: 'Vandaag', morgen: 'Morgen', dezeWeek: 'Verder deze week', niks: 'Niks gepland', klusjes: 'Klusjes', thuis: 'Thuis', weg: 'Weg',
     boodschappen: 'Boodschappen', erop: 'Erop', watNodig: 'Wat moet er gehaald worden?', leeg: 'Niks nodig 🎉', afvalMorgen: 'Morgen aan de straat',
     afvalVandaag: 'Vandaag wordt opgehaald', jarig: 'is jarig', wordt: 'wordt', heleDag: 'hele dag', alles: 'Alles af! 🎉', nietIngesteld: 'HA Family is nog niet ingesteld.',
-    tikWakker: 'Tik om wakker te maken', wacht: 'wacht', geenKlusjes: 'Vandaag geen klusjes', nog: 'nog' },
+    vanavond: 'Vanavond eten we', kookt: 'kookt', watEten: 'Nog niet bedacht', kamers: 'Kamers', tikWakker: 'Tik om wakker te maken', wacht: 'wacht', geenKlusjes: 'Vandaag geen klusjes', nog: 'nog' },
   en: { vandaag: 'Today', morgen: 'Tomorrow', dezeWeek: 'Later this week', niks: 'Nothing planned', klusjes: 'Chores', thuis: 'Home', weg: 'Away',
     boodschappen: 'Groceries', erop: 'Add', watNodig: 'What do we need?', leeg: 'Nothing needed 🎉', afvalMorgen: 'Put out tomorrow',
     afvalVandaag: 'Collected today', jarig: 'has a birthday', wordt: 'turns', heleDag: 'all day', alles: 'All done! 🎉', nietIngesteld: 'HA Family is not set up yet.',
-    tikWakker: 'Tap to wake', wacht: 'waiting', geenKlusjes: 'No chores today', nog: 'more' },
+    vanavond: 'Tonight', kookt: 'cooks', watEten: 'Not decided yet', kamers: 'Rooms', tikWakker: 'Tap to wake', wacht: 'waiting', geenKlusjes: 'No chores today', nog: 'more' },
 };
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -33,7 +36,10 @@ class HaFamilyMuur extends HTMLElement {
   set hass(hass) {
     const eerste = !this._hass;
     this._hass = hass;
-    if (eerste) { this._bouw(); this._laadAlles(); return; }
+    if (eerste) { this._bouw(); this._laadAlles(); }
+    const k = this.shadowRoot.querySelector('.r-kamers');
+    if (k) { if (!k._config) k.setConfig({ compact: true, muur: true, titel: this.t('kamers') }); k.hass = hass; }
+    if (eerste) return;
     const sleutel = Object.values(hass.states).filter((s) => s.attributes.ha_family).map((s) => s.last_updated).join()
       + leden(hass).map((l) => (hass.states[l.person] || {}).state).join();
     if (sleutel !== this._sleutel) { this._sleutel = sleutel; this._laadSnel(); }
@@ -57,7 +63,7 @@ class HaFamilyMuur extends HTMLElement {
 
   _bouw() {
     this.attachShadow({ mode: 'open' });
-    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><div class="muur"><div class="links"></div><div class="midden"></div><div class="rechts"></div><div class="onder"></div></div>
+    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><div class="muur"><div class="links"></div><div class="midden"></div><div class="rechts"><div class="r-klusjes"></div><family-kamers-card class="r-kamers"></family-kamers-card><div class="r-thuis"></div></div><div class="onder"></div></div>
       <div class="nacht" hidden><div class="nklok"></div><div class="ndatum"></div><small></small></div>`;
     this.shadowRoot.addEventListener('click', (e) => this._klik(e));
     this.shadowRoot.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'nieuw') this._klik({ target: this.shadowRoot.querySelector('[data-a=erop]') }); });
@@ -89,8 +95,9 @@ class HaFamilyMuur extends HTMLElement {
   async _laadSnel() {
     const h = this._hass, nu = new Date(); nu.setHours(0, 0, 0, 0);
     try {
-      const [a, k] = await Promise.all([h.callWS({ type: 'ha_family/agenda', van: isoDag(nu), tot: isoDag(plus(nu, 8)) }), h.callWS({ type: 'ha_family/taken' })]);
-      this._ev = a.events; this._k = k; this._fout = null;
+      const [a, k, e] = await Promise.all([h.callWS({ type: 'ha_family/agenda', van: isoDag(nu), tot: isoDag(plus(nu, 8)) }), h.callWS({ type: 'ha_family/taken' }),
+        h.callWS({ type: 'ha_family/eten', van: isoDag(nu), dagen: 2 }).catch(() => null)]);
+      this._ev = a.events; this._k = k; this._eten = e; this._fout = null;
     } catch (e) { this._fout = e.message; }
     const i = this.shadowRoot.getElementById('nieuw');
     if (i && this.shadowRoot.activeElement === i) return;          // niet storen terwijl iemand typt
@@ -120,9 +127,12 @@ class HaFamilyMuur extends HTMLElement {
     if (!this._m || !this._ev || !this._k) return;
     const b = this._m.blokken, lmap = Object.fromEntries(leden(h).map((l) => [l.id, l]));
     const vandaag = isoDag(new Date()), morgen = isoDag(plus(new Date(), 1));
-    r.querySelector('.links').innerHTML = this._links(vandaag, morgen);
+    r.querySelector('.links').innerHTML = this._links(vandaag, morgen) + (b.eten !== false ? this._etenBlok(lmap) : '');
     r.querySelector('.midden').innerHTML = b.agenda ? this._agenda(lmap, vandaag, morgen) : '';
-    r.querySelector('.rechts').innerHTML = (b.klusjes ? this._klusjes(lmap) : '') + (b.thuis ? this._thuis() : '');
+    r.querySelector('.r-klusjes').innerHTML = b.klusjes ? this._klusjes(lmap) : '';
+    const kamers = r.querySelector('.r-kamers');
+    kamers.hidden = b.kamers === false;
+    r.querySelector('.r-thuis').innerHTML = b.thuis ? this._thuis(!kamers.hidden && kamers.style.display !== 'none') : '';
     r.querySelector('.onder').innerHTML = b.boodschappen ? this._boodschappen() : '';
     r.querySelector('.muur').classList.toggle('zonder-midden', !b.agenda);
     this._klok();
@@ -142,6 +152,15 @@ class HaFamilyMuur extends HTMLElement {
       ${jarig.map((e) => `<div class="blok feest">🎂 <b>${esc(e.naam)}</b> ${e.leeftijd ? `${esc(this.t('wordt'))} ${e.leeftijd}!` : esc(this.t('jarig'))}</div>`).join('')}
       ${afvalV.length || afvalM.length ? `<div class="blok afval"><small>🗑️ ${esc(afvalV.length ? this.t('afvalVandaag') : this.t('afvalMorgen'))}</small>
         <div class="afv">${(afvalV.length ? afvalV : afvalM).map((e) => `<span style="--k:${esc(e.kleur || '#43a047')}">${esc(e.titel)}</span>`).join('')}</div></div>` : ''}`;
+  }
+
+  _etenBlok(lmap) {
+    if (!this._eten) return '';
+    const [v, m] = this._eten.menu, kok = v.kok && lmap[v.kok];
+    return `<div class="blok eten"><small>🍽️ ${esc(this.t('vanavond'))}</small>
+      <div class="gerecht"><span class="em">${esc(v.emoji || '🤔')}</span><b class="${v.naam ? '' : 'niks'}">${esc(v.naam || this.t('watEten'))}</b></div>
+      ${kok ? `<div class="kok">${avatar(kok, { grootte: 26 })}<span>${esc(kok.naam)} ${esc(this.t('kookt'))}</span></div>` : ''}
+      ${m && m.naam ? `<div class="mrg">${esc(this.t('morgen'))}: ${esc(m.emoji || '')} ${esc(m.naam)}</div>` : ''}</div>`;
   }
 
   _rij(e, lmap) {
@@ -169,10 +188,10 @@ class HaFamilyMuur extends HTMLElement {
           <span class="em">${esc(y.emoji)}</span><span class="nm">${esc(y.titel)}</span></button>`).join('')}</div>
         ${open ? '' : `<div class="alles">${esc(this.t('alles'))}</div>`}</div>`; }).join('')}</div>`;
   }
-  _thuis() {
+  _thuis(klein) {
     const h = this._hass;
-    return `<div class="blok klein"><div class="thuis">${leden(h).map((l) => { const w = locatie(h, l.person);
-      return `<div class="pers ${w.bekend && !w.thuis ? 'weg' : ''}">${avatar(l, { grootte: 52, stip: w.bekend ? w.thuis : null })}<span>${esc(l.naam)}</span>${w.bekend ? `<small>${esc(w.tekst)}</small>` : ''}</div>`; }).join('')}</div></div>`;
+    return `<div class="blok klein"><div class="thuis ${klein ? 'smal' : ''}">${leden(h).map((l) => { const w = locatie(h, l.person);
+      return `<div class="pers ${w.bekend && !w.thuis ? 'weg' : ''}">${avatar(l, { grootte: klein ? 36 : 52, stip: w.bekend ? w.thuis : null })}<span>${esc(l.naam)}</span>${w.bekend ? `<small>${esc(w.tekst)}</small>` : ''}</div>`; }).join('')}</div></div>`;
   }
   _boodschappen() {
     const lijst = this._k.boodschappen.filter((b) => !b.klaar);
@@ -216,11 +235,20 @@ const STIJL = `
   .links { grid-area: links; } .midden { grid-area: midden; } .rechts { grid-area: rechts; } .onder { grid-area: onder; }
   .links, .midden, .rechts { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; scrollbar-width: none; }
   .midden > .blok:last-child { flex: 1; }                /* de agenda vult de kolom */
-  .rechts > .blok:last-child:not(:first-child) { margin-top: auto; }   /* wie is er thuis: onderaan */
+  .r-klusjes, .r-thuis { display: contents; }
+  .r-kamers[hidden] { display: none !important; }
+  .r-thuis > .blok { margin-top: auto; }                 /* wie is er thuis: onderaan */
   .links > .blok:last-child { margin-bottom: 0; }
   .blok { background: var(--card-background-color); border-radius: 24px; padding: 16px 18px; box-shadow: var(--ha-card-box-shadow, none);
     border: 1px solid var(--ha-card-border-color, var(--divider-color)); }
   .blok h2 { margin: 0 0 8px; font-size: 1.25rem; display: flex; align-items: baseline; gap: 8px; }
+  .eten small { color: var(--secondary-text-color); }
+  .eten .gerecht { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .eten .em { font-size: 2.4rem; }
+  .eten b { font-size: 1.3rem; line-height: 1.2; }
+  .eten b.niks { color: var(--secondary-text-color); font-weight: 500; font-size: 1.05rem; }
+  .eten .kok { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--secondary-text-color); }
+  .eten .mrg { margin-top: 6px; color: var(--secondary-text-color); font-size: .9rem; }
   .blok h2 small { color: var(--secondary-text-color); font-size: .9rem; font-weight: 500; }
   .klok { font-size: clamp(4rem, 9vw, 7.5rem); font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 6px; }
   .datum { font-size: 1.4rem; color: var(--secondary-text-color); margin-bottom: 4px; }
@@ -264,6 +292,10 @@ const STIJL = `
   .tegel.wacht { background: color-mix(in srgb, #ffb300 18%, transparent); }
   .alles { margin-top: 6px; color: var(--success-color, #2e7d32); font-weight: 600; }
   .thuis { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-around; }
+  .thuis.smal { gap: 6px 12px; }
+  .blok:has(> .thuis.smal) { padding: 10px 18px; }
+  .thuis.smal .pers { flex-direction: row; display: flex; align-items: center; gap: 6px; }
+  .thuis.smal .pers small { display: none; }
   .pers { display: grid; justify-items: center; gap: 2px; font-weight: 600; }
   .pers small { color: var(--secondary-text-color); font-weight: 400; }
   .pers.weg .fam-avatar { opacity: .5; }

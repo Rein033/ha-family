@@ -15,6 +15,7 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 from .const import ALLE_ROLLEN, DOMAIN
 from .afdelingen import AFDELINGEN
 from .agenda import AFVAL
+from .maaltijden import LABELS
 from .taken import VOORBEELDEN
 from . import muur
 from .gezin import FamilyFout, Gezin, wachtwoord_voorstel
@@ -42,6 +43,8 @@ def async_registreer(hass: HomeAssistant) -> None:
     for cmd in (ws_gezin, ws_status, ws_lid_toevoegen, ws_persoon_toevoegen, ws_lid_bijwerken, ws_lid_verwijderen,
                 ws_wachtwoord, ws_test_melding, ws_voorstel, ws_huishouden, ws_account,
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
+                ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
+                ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -587,4 +590,143 @@ async def ws_muur_verwijderen(hass, connection, msg):
 @_antwoord
 async def ws_muur_wachtwoord(hass, connection, msg):
     await muur.wachtwoord(_gezin(hass), msg["wachtwoord"])
+    return {}
+
+
+# ── Maaltijdplanner ──
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten", vol.Optional("van"): cv.date, vol.Optional("dagen", default=7): vol.All(int, vol.Range(min=1, max=31))})
+@websocket_api.async_response
+@_antwoord
+async def ws_eten(hass, connection, msg):
+    g = _gezin(hass)
+    from homeassistant.util import dt as dt_util
+
+    ik = g.lid_van_user(connection.user.id)
+    return {"menu": g.maaltijden.menu(msg.get("van") or dt_util.now().date(), msg["dagen"]), "recepten": g.data["recepten"], "labels": LABELS,
+            "instellingen": g.data["eten_instellingen"], "ik": ik["id"] if ik else None}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/recept", vol.Optional("recept"): cv.string, vol.Required("naam"): cv.string,
+                                  vol.Optional("emoji"): cv.string, vol.Optional("ingredienten", default=[]): vol.Any([cv.string], cv.string),
+                                  vol.Optional("personen", default=4): vol.Coerce(int), vol.Optional("bereiding", default=""): cv.string,
+                                  vol.Optional("link"): vol.Any(None, cv.string), vol.Optional("labels", default=[]): [cv.string], vol.Optional("favoriet"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_recept(hass, connection, msg):
+    g = _gezin(hass)
+    door = _magschrijven(g, connection)
+    data = {k: v for k, v in msg.items() if k not in ("type", "id", "recept")}
+    data["id"] = msg.get("recept")
+    return g.maaltijden.recept(data, door)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/recept/weg", vol.Required("recept"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_recept_weg(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    g.maaltijden.recept_weg(msg["recept"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/recept/import", vol.Required("url"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_recept_import(hass, connection, msg):
+    g = _gezin(hass)
+    return await g.maaltijden.importeren(msg["url"], _magschrijven(g, connection))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/recept/startpakket"})
+@websocket_api.async_response
+@_antwoord
+async def ws_startpakket(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    return {"toegevoegd": g.maaltijden.startpakket()}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten/plan", vol.Required("datum"): cv.string, vol.Optional("recept"): vol.Any(None, cv.string),
+                                  vol.Optional("tekst"): vol.Any(None, cv.string), vol.Optional("kok"): vol.Any(None, cv.string),
+                                  vol.Optional("notitie"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_plan(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    return g.maaltijden.plan(msg["datum"], msg.get("recept"), msg.get("tekst"), msg.get("kok"), msg.get("notitie"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten/boodschappen", vol.Optional("recept"): cv.string, vol.Optional("van"): cv.string,
+                                  vol.Optional("dagen", default=1): vol.All(int, vol.Range(min=1, max=31))})
+@websocket_api.async_response
+@_antwoord
+async def ws_eten_boodschappen(hass, connection, msg):
+    g = _gezin(hass)
+    return g.maaltijden.naar_boodschappen(msg.get("recept"), msg.get("van"), msg["dagen"], _magschrijven(g, connection))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten/suggestie", vol.Optional("label"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_suggestie(hass, connection, msg):
+    return {"recept": _gezin(hass).maaltijden.suggestie(msg.get("label"))}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten/instellingen", vol.Required("aan"): bool, vol.Required("tijd"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_eten_instellingen(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    g.data["eten_instellingen"] = {"herinnering": {"aan": msg["aan"], "tijd": msg["tijd"]}}
+    g.opslaan()
+    return {}
+
+
+# ── 🏠 Kamers en apparaten ──
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/huis"})
+@websocket_api.async_response
+@_antwoord
+async def ws_huis(hass, connection, msg):
+    return _gezin(hass).huis.overzicht()
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/kamer", vol.Optional("kamer"): cv.string, vol.Required("naam"): cv.string,
+                                  vol.Optional("icoon"): vol.Any(None, cv.string)})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_kamer(hass, connection, msg):
+    return _gezin(hass).huis.kamer(msg.get("kamer"), msg["naam"], msg.get("icoon"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/kamer/weg", vol.Required("kamer"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_kamer_weg(hass, connection, msg):
+    _gezin(hass).huis.kamer_weg(msg["kamer"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/kamer/apparaat", vol.Required("entity"): cv.entity_id,
+                                  vol.Required("kamer"): vol.Any(None, cv.string)})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_kamer_apparaat(hass, connection, msg):
+    _gezin(hass).huis.apparaat(msg["entity"], msg["kamer"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/huis/instellingen", vol.Optional("verborgen"): [cv.string],
+                                  vol.Optional("volgorde"): [cv.string]})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_huis_instellingen(hass, connection, msg):
+    _gezin(hass).huis.instellingen(msg.get("verborgen"), msg.get("volgorde"))
     return {}

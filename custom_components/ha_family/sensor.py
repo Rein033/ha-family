@@ -8,7 +8,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_track_time_change, async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from . import FamilyEntry
@@ -18,7 +18,7 @@ from .gezin import Gezin
 
 async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry, async_add_entities: AddConfigEntryEntitiesCallback) -> None:
     g = entry.runtime_data
-    async_add_entities([GezinSensor(g), VolgendeAfval(g), *(Punten(g, l) for l in g.leden)])
+    async_add_entities([GezinSensor(g), VolgendeAfval(g), EtenVandaag(g), *(Punten(g, l) for l in g.leden)])
     bekend = {l["id"] for l in g.leden}
 
     @callback
@@ -129,3 +129,37 @@ class Punten(SensorEntity):
         open_ = [k for k in self.gezin.taken.klusjes_vandaag() if k["lid"] == self.lid_id]
         return {"ha_family": "punten", "lid": self.lid_id, "klusjes_vandaag": len(open_),
                 "klusjes_open": sum(1 for k in open_ if k["status"] == "open")}
+
+
+class EtenVandaag(SensorEntity):
+    """Wat er vandaag gegeten wordt (en wie kookt); morgen staat in de attributen."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_translation_key = "eten_vandaag"
+    _attr_icon = "mdi:silverware-fork-knife"
+
+    def __init__(self, gezin: Gezin) -> None:
+        self.gezin = gezin
+        self._attr_unique_id = f"{gezin.entry.entry_id}_eten_vandaag"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, gezin.entry.entry_id)}, name=gezin.naam,
+                                            entry_type=DeviceEntryType.SERVICE, manufacturer="HA Family")
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self.gezin.add_listener(self.async_write_ha_state))
+        self.async_on_remove(async_track_time_change(self.hass, self._nieuwe_dag, hour=0, minute=0, second=5))
+
+    @callback
+    def _nieuwe_dag(self, _: dt.datetime) -> None:
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> str | None:
+        return self.gezin.maaltijden.vandaag()["naam"]
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        v, m = self.gezin.maaltijden.menu(dt_util.now().date(), 2)
+        namen = {l["id"]: l["naam"] for l in self.gezin.leden}
+        return {"ha_family": "eten", "emoji": v["emoji"], "kok": namen.get(v["kok"]), "recept": v["recept"],
+                "morgen": m["naam"], "morgen_emoji": m["emoji"], "morgen_kok": namen.get(m["kok"])}

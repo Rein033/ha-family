@@ -47,6 +47,9 @@
       },
       "punten": {
         "name": "Punten {naam}"
+      },
+      "eten_vandaag": {
+        "name": "Eten vandaag"
       }
     },
     "todo": {

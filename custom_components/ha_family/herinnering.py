@@ -58,6 +58,30 @@ async def verjaardag_herinnering(agenda: Agenda, nu: dt.datetime) -> int:
     return n
 
 
+async def eten_herinnering(gezin, nu: dt.datetime) -> int:
+    """'s Middags: de kok weet wat hij maakt; staat er niks, dan krijgen de ouders een idee."""
+    m = gezin.maaltijden
+    v = m.vandaag()
+    if v["naam"]:
+        if not v["kok"]:
+            return 0
+        lid = gezin.lid(v["kok"])
+        try:
+            return int(await gezin.melding(lid, f"{v['emoji'] or '🍽️'} Vanavond kook jij", f"Op het menu: {v['naam']}."))
+        except FamilyFout:
+            return 0
+    idee = m.suggestie()
+    tekst = "Er staat nog niks op het menu voor vanavond." + (f" Wat dacht je van {idee['emoji']} {idee['naam']}?" if idee else "")
+    n = 0
+    for lid in gezin.leden:
+        if lid["rol"] in ("ouder", "huisgenoot"):
+            try:
+                n += int(await gezin.melding(lid, "🍽️ Wat eten we?", tekst))
+            except FamilyFout:
+                pass
+    return n
+
+
 @callback
 def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
     async def _elke_minuut(_: dt.datetime) -> None:
@@ -74,6 +98,11 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["klusjes"] = vandaag
             agenda.gezin.opslaan()
             await taken_herinnering(agenda.gezin.taken, nu)
+        e = agenda.gezin.data.get("eten_instellingen", {}).get("herinnering", {})
+        if e.get("aan") and klok == e.get("tijd") and verstuurd.get("eten") != vandaag:
+            verstuurd["eten"] = vandaag
+            agenda.gezin.opslaan()
+            await eten_herinnering(agenda.gezin, nu)
         v = agenda.gezin.data["verjaardag_melding"]
         if v.get("aan") and klok == v.get("tijd") and verstuurd.get("verjaardag") != vandaag:
             verstuurd["verjaardag"] = vandaag

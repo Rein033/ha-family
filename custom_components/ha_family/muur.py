@@ -14,7 +14,7 @@ from homeassistant.auth.providers import homeassistant as auth_ha
 from .gezin import FamilyFout, Gezin
 
 STANDAARD = {"nacht": {"aan": True, "van": "22:30", "tot": "06:30"}, "weer": None, "zijbalk_weg": True,
-             "blokken": {"agenda": True, "klusjes": True, "boodschappen": True, "thuis": True}}
+             "blokken": {"agenda": True, "eten": True, "klusjes": True, "kamers": True, "boodschappen": True, "thuis": True}}
 
 
 def instellingen(gezin: Gezin) -> dict[str, Any]:

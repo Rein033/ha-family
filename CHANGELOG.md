@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 — maaltijdplanner en kamers
+
+- **Weekmenu** (tabblad *🍝 Eten*): per dag een recept of eigen tekst, wie er kookt, *🎲 Verrassing*, week vooruit/terug.
+- **Recepten**: zelf maken (emoji, ingrediënten, bereiding, labels, favoriet), startpakket met tien gezinsgerechten, of
+  importeren via de link van een receptensite (schema.org/Recipe).
+- **Ingrediënten naar de boodschappen**: per gerecht of de hele week, zonder hoeveelheden en zonder dubbele, op looproute.
+- **Vanavond eten we** op het startscherm en op het muurscherm; sensor *Eten vandaag*; herinnering voor de kok.
+- **Kamers** (tabblad *🏠 Huis*, rechts op het muurscherm en op het startscherm): lampen (met helderheid), airco/thermostaat
+  (aan/uit en temperatuur), ventilatoren, rolluiken, stopcontacten en speakers per kamer; *Alles uit*.
+- **Gezin beheren → Huis**: kamers aanmaken (naam en icoon, of snel toevoegen), apparaten aanvinken en in één keer in een
+  kamer zetten, hernoemen, verbergen en verwijderen. Kamers zijn de ruimtes van Home Assistant.
+- Muurscherm: onderdelen *Eten* en *Kamers* aan/uit te zetten.
+
 ## 0.4.0 — nieuw startscherm en het muurscherm
 
 - **Muurscherm** voor een tablet aan de muur (`/gezin-muur`): klok, datum, weer met de komende dagen, afval, de agenda van
