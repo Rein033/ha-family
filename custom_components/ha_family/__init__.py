@@ -25,9 +25,10 @@ from .maaltijden import Maaltijden
 from .huis import Huis
 from .cadeaus import Cadeaus
 from .taken import Taken, volg_meldingknoppen
-from .const import (BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, MUUR_COMPONENT,
+from .const import (ADMIN_COMPONENT, ADMIN_URL, BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, MUUR_COMPONENT,
                     MUUR_URL, PLATFORMS)
 from .gezin import Gezin
+from . import persoonlijk
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -57,11 +58,20 @@ async def _beheer(hass: HomeAssistant, versie: str | None, aan: bool) -> None:
     if not aan:
         frontend.async_remove_panel(hass, BEHEER_URL, warn_if_unknown=False)
         frontend.async_remove_panel(hass, MUUR_URL, warn_if_unknown=False)
+        frontend.async_remove_panel(hass, ADMIN_URL, warn_if_unknown=False)
         return
-    if versie is None or BEHEER_URL in hass.data.get(frontend.DATA_PANELS, {}):
+    if versie is None:
         return
     from homeassistant.components import panel_custom
 
+    al = hass.data.get(frontend.DATA_PANELS, {})
+    if ADMIN_URL not in al:
+        # Admin: voor experts al het andere van Home Assistant (automatiseringen, dashboards, HACS, plugins) op één plek
+        await panel_custom.async_register_panel(hass, frontend_url_path=ADMIN_URL, webcomponent_name=ADMIN_COMPONENT,
+                                                sidebar_title="Admin", sidebar_icon="mdi:shield-crown-outline",
+                                                module_url=f"{FRONTEND_URL}/family-admin.js?v={versie}", require_admin=True)
+    if BEHEER_URL in al:
+        return
     await panel_custom.async_register_panel(hass, frontend_url_path=BEHEER_URL, webcomponent_name=BEHEER_COMPONENT,
                                             sidebar_title="Gezin beheren", sidebar_icon="mdi:account-cog",
                                             module_url=f"{FRONTEND_URL}/family-beheer.js?v={versie}", require_admin=True,
@@ -124,6 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry) -> bool:
     await _beheer(hass, versie, True)
     opties = entry.options or entry.data
     await _dashboard(hass, gezin.naam, opties.get(CONF_DASHBOARD, True))
+    await persoonlijk.start(gezin)
     # Van HA een gezinsapp maken: startscherm en zijbalk per gezinslid, en het gezin als startscherm voor iedereen
     if opties.get(CONF_DASHBOARD, True):
         await weergave.systeem_startscherm(gezin, opties.get(CONF_STARTSCHERM, True))
@@ -145,6 +156,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: FamilyEntry) -> bool:
     if ok:
         await entry.runtime_data.async_flush()
         await _beheer(hass, None, False)
+        persoonlijk.stop(entry.runtime_data)
         await _dashboard(hass, "", False)
     return ok
 

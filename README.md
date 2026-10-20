@@ -71,6 +71,26 @@ het gezin halen (eventueel met het account).
 
 ![Bewerken](docs/images/11-bewerken-weergave.png)
 
+## Weergave per gezinslid
+
+Per gezinslid kies je in **Gezin beheren → Bewerken** hoe Home Assistant eruitziet:
+
+| Weergave | Zijbalk |
+|---|---|
+| Eenvoudig | alleen het gezinsdashboard (kinderen, gasten) |
+| Normaal | gezin, agenda, takenlijsten en kaart |
+| Beheerder | gezin, Gezin beheren en de instellingen |
+| **Expert** | gezin, je persoonlijke dashboard, Gezin beheren, **Admin** en HACS |
+| Zoals het was | Home Assistant zonder aanpassingen |
+
+**Admin** zet al het andere op één plek, met een zoekveld: automatiseringen, scripts, apparaten, instellingen, je eigen
+dashboards, HACS en alle plugins en add-ons, en de AI. Wat je later installeert, komt er vanzelf bij. Wie al een account
+had toen HA Family erbij kwam, staat eerst op *Zoals het was*.
+
+**Persoonlijk dashboard.** In Bewerken maak je voor iemand een eigen dashboard (gewoon te bewerken) of koppel je een
+bestaand dashboard, bijvoorbeeld met je 3D-printers. Het staat alleen in de zijbalk van die persoon. Let op: Home
+Assistant kent geen dashboards per gebruiker; wie het adres weet, kan het openen.
+
 ## Startscherm
 
 Iedereen opent op **Thuis**: een groet met het weer en wie er thuis is, de klusjes (een kind ziet alleen de eigen, als grote
@@ -143,6 +163,11 @@ wie er binnenkort jarig is.
 
 In Home Assistant zelf komen er drie agenda's bij (**Gezinsagenda**, **Verjaardagen**, **Afval**) en een sensor **Volgende
 afval**, voor automatiseringen, Assist en de gewone agenda van Home Assistant.
+
+**Afval van je afvalbedrijf.** In **Gezin beheren → Agenda → Afvalkalender** kies je *Mijn afvalbedrijf*, vult
+postcode en huisnummer in, en de ophaaldagen komen er vanzelf in (twee keer per dag bijgewerkt). Nu: **ROVA** (Amersfoort,
+Zwolle, Utrechtse Heuvelrug en meer); andere bedrijven kunnen erbij. Zelf invullen, een iCal-link of een bestaande agenda
+kan ook nog.
 
 ## Klusjes, taken en boodschappen
 

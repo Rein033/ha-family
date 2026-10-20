@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0 — Admin, persoonlijk dashboard en afval van ROVA
+
+- **Expert** heeft nu een rustige zijbalk: gezin, persoonlijk dashboard, Gezin beheren, **Admin** en HACS. In Admin staat al
+  het andere (automatiseringen, apparaten, instellingen, dashboards, plugins, add-ons en de AI), met zoeken.
+- Nieuwe weergave **Zoals het was** (Home Assistant zonder aanpassingen); bestaande accounts beginnen daarop.
+- **Persoonlijk dashboard** per gezinslid: nieuw maken of een bestaand dashboard koppelen; alleen in de eigen zijbalk.
+- **Afvalkalender van je afvalbedrijf**: postcode en huisnummer, de rest gaat vanzelf. Eerst: ROVA.
+- Kamerknoppen (startscherm en muurscherm) hebben nu een naam; namen worden korter (kamernaam, dubbele woorden en
+  "Socket 1" eraf).
+- Cadeaus: tip waar de cadeau-ideeën (met AI) staan.
+
 ## 0.6.1 — visuele editor (voor experts)
 
 - Alle kaarten hebben een **visuele editor** in de dashboard-editor (weerbericht, agenda-weergave en aantal weken, klusjes

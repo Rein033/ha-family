@@ -6,9 +6,10 @@ welke items in de zijbalk staan ('sidebar' → hiddenPanels/panelOrder). HA Fami
 - eenvoudig: alleen het gezinsdashboard (kinderen, gasten)
 - normaal: gezin plus kalender, takenlijsten en kaart
 - beheerder: gezin, 'Gezin beheren' en instellingen
-- expert: Home Assistant zoals het was
+- expert: gezin, 'Gezin beheren' en 'Admin'; in Admin al het andere (automatiseringen, dashboards, HACS en plugins)
+- origineel: Home Assistant zoals het was
 
-Wat er eerst stond, bewaren we, zodat 'expert' of het verwijderen van HA Family alles terugzet. Komen er later nieuwe
+Wat er eerst stond, bewaren we, zodat 'origineel' of het verwijderen van HA Family alles terugzet. Komen er later nieuwe
 items in de zijbalk (bv. via HACS), dan verbergen we die ook (event panels_updated)."""
 from __future__ import annotations
 
@@ -17,15 +18,16 @@ from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
 
-from .const import BEHEER_URL, DASHBOARD_URL, MUUR_URL
+from .const import ADMIN_URL, BEHEER_URL, DASHBOARD_URL, MUUR_URL
 
 _LOGGER = logging.getLogger(__name__)
 
-WEERGAVEN = ["eenvoudig", "normaal", "beheerder", "expert"]
+WEERGAVEN = ["eenvoudig", "normaal", "beheerder", "expert", "origineel"]
 ZICHTBAAR = {
     "eenvoudig": [DASHBOARD_URL],
     "normaal": [DASHBOARD_URL, "calendar", "todo", "map"],
     "beheerder": [DASHBOARD_URL, BEHEER_URL, "config"],
+    "expert": [DASHBOARD_URL, BEHEER_URL, ADMIN_URL, "hacs"],
 }
 # Deze staan niet in de lijst van panelen of kunnen niet weg; nooit aanraken
 NOOIT = {"profile", "notfound", "developer-tools-legacy"}
@@ -59,7 +61,7 @@ async def toepassen(gezin, lid: dict[str, Any]) -> None:
     store = await _user_store(hass, uid)
     data = store.data or {}
     origineel = gezin.data.setdefault("origineel", {})
-    if w == "expert":
+    if w == "origineel":
         if uid in origineel:                      # terug naar hoe het was
             o = origineel.pop(uid)
             await store.async_set_item("core", o.get("core"))
@@ -69,7 +71,10 @@ async def toepassen(gezin, lid: dict[str, Any]) -> None:
     if uid not in origineel:
         origineel[uid] = {"core": data.get("core"), "sidebar": data.get("sidebar")}
         gezin.opslaan()
-    zichtbaar = [p for p in ZICHTBAAR[w] if p in _panelen(hass) or p == DASHBOARD_URL]
+    lijst = list(ZICHTBAAR[w])
+    if lid.get("dashboard"):                       # persoonlijk dashboard: direct onder het gezin
+        lijst.insert(1, lid["dashboard"])
+    zichtbaar = [p for p in lijst if p in _panelen(hass) or p == DASHBOARD_URL]
     verborgen = [p for p in _panelen(hass) if p not in zichtbaar]
     core = {**(data.get("core") or {}), "default_panel": DASHBOARD_URL}
     sidebar = {**(data.get("sidebar") or {}), "panelOrder": zichtbaar, "hiddenPanels": verborgen}
@@ -147,7 +152,7 @@ async def systeem_startscherm(gezin, aan: bool) -> None:
 
 @callback
 def volg_panelen(hass: HomeAssistant, gezin):
-    """Nieuwe zijbalkitems (bv. na een HACS-installatie) meteen ook verbergen bij wie niet 'expert' is."""
+    """Nieuwe zijbalkitems (bv. na een HACS-installatie) meteen ook verbergen bij wie niet 'origineel' heeft."""
     async def _opnieuw(event: Event) -> None:
         await alles_toepassen(gezin)
 

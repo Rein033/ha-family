@@ -2,7 +2,7 @@
  * Groot, rustig en duidelijk: grote tikvlakken, ronde vormen, een eigen kleur en emoji per gezinslid.
  * Volgt het thema van Home Assistant (licht en donker) via de gewone thema-variabelen. */
 
-export const VERSIE = '0.6.1';
+export const VERSIE = '0.7.0';
 
 const TEKST = {
   nl: {

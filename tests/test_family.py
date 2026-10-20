@@ -83,8 +83,13 @@ async def test_weergave_en_terugzetten(hass: HomeAssistant, gezin) -> None:
     assert lid["weergave"] == "normaal"
     assert store.data["core"] == {"default_panel": "gezin", "iets": 1}
     assert store.data["sidebar"]["panelOrder"][0] == "gezin"
-    # expert: terug naar hoe het was
+    # expert: eigen zijmenu met Admin, de rest staat verborgen (en in het Admin-paneel)
     g.lid_bijwerken(lid["id"], weergave="expert")
+    await g.weergave_zetten(lid)
+    assert store.data["sidebar"]["panelOrder"][0] == "gezin"
+    assert "calendar" in store.data["sidebar"]["hiddenPanels"] and "gezin-admin" not in store.data["sidebar"]["hiddenPanels"]
+    # zoals het was: terug naar hoe het was
+    g.lid_bijwerken(lid["id"], weergave="origineel")
     await g.weergave_zetten(lid)
     assert store.data["core"] == {"default_panel": "lovelace", "iets": 1}
     # systeemstartscherm staat aan, en gaat terug bij verwijderen
@@ -488,7 +493,7 @@ async def test_bestaande_persoon_met_account_houdt_zijn_ha(hass: HomeAssistant, 
     await client.send_json_auto_id({"type": "ha_family/lid/persoon", "person": "person.papa", "rol": "ouder"})
     r = await client.receive_json()
     assert r["success"], r
-    assert r["result"]["weergave"] == "expert"
+    assert r["result"]["weergave"] == "origineel"
     assert (store.data or {}).get("sidebar") == voor.get("sidebar")
 
 
@@ -609,3 +614,46 @@ async def test_verlanglijst_herinnering_twee_weken_vooraf(hass: HomeAssistant, g
     assert await verlanglijst_herinnering(g, nu) == 1
     assert verstuurd[0][0] == "Rein" and "Tekenset" in verstuurd[0][1]
     assert await verlanglijst_herinnering(g, nu + dt.timedelta(days=1)) == 0      # alleen precies twee weken vooraf
+
+
+async def test_afvalkalender_van_rova(hass: HomeAssistant, gezin, hass_ws_client, aioclient_mock) -> None:
+    import datetime as dt
+
+    aioclient_mock.get("https://www.rova.nl/api/waste-calendar/upcoming", json=[
+        {"date": "2026-10-22T00:00:00Z", "wasteType": {"code": "GFT", "title": "Gft"}},
+        {"date": "2026-11-13T00:00:00Z", "wasteType": {"code": "PAP", "title": "Oud papier en karton"}},
+        {"date": "2026-11-20T00:00:00Z", "wasteType": {"code": "XYZ", "title": "Grofvuil"}}])
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/agenda/afval", "bedrijf": {"bedrijf": "rova", "postcode": "3812 kt", "huisnummer": 17}})
+    r = await client.receive_json()
+    assert r["success"], r
+    assert r["result"]["dagen"] == 3 and r["result"]["eerste"]["soort"] == "gft"
+    g = gezin.runtime_data
+    assert g.data["afval"]["bedrijf"]["postcode"] == "3812KT"
+    ev = g.agenda.afval_schema_events(dt.date(2026, 10, 1), dt.date(2026, 12, 1))
+    assert [e["afval"] for e in ev] == ["gft", "papier", None] and ev[2]["titel"] == "🗑️ Grofvuil"
+    await client.send_json_auto_id({"type": "ha_family/agenda/afval", "bedrijf": {"bedrijf": "rova", "postcode": "abc", "huisnummer": "17"}})
+    assert (await client.receive_json())["error"]["code"] == "ha_family_fout"
+
+
+async def test_persoonlijk_dashboard(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    from homeassistant.components.frontend import DATA_PANELS
+
+    assert await async_setup_component(hass, "lovelace", {})
+    g = gezin.runtime_data
+    rein = await g.lid_toevoegen("Rein Test", "ouder", inloggen=True, gebruikersnaam="rein", wachtwoord="maan-tulp-vos-42")
+    noor = await g.lid_toevoegen("Noor", "ouder", inloggen=True, gebruikersnaam="noor", wachtwoord="maan-tulp-vos-42")
+    g.lid_bijwerken(rein["id"], weergave="expert")
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/lid/dashboard", "lid": rein["id"], "actie": "maak"})
+    r = await client.receive_json()
+    assert r["success"], r
+    url = r["result"]["dashboard"]
+    assert url == "gezin-rein" and url in hass.data[DATA_PANELS]
+    rs = (await async_user_store(hass, g.user_id(rein))).data["sidebar"]
+    ns = (await async_user_store(hass, g.user_id(noor))).data["sidebar"]
+    assert rs["panelOrder"][:2] == ["gezin", "gezin-rein"] and "gezin-rein" not in rs["hiddenPanels"]
+    assert "gezin-rein" in ns["hiddenPanels"]                 # Noor ziet het dashboard van Rein niet in haar zijbalk
+    await client.send_json_auto_id({"type": "ha_family/lid/dashboard", "lid": rein["id"], "actie": "los"})
+    assert (await client.receive_json())["success"]
+    assert url not in hass.data[DATA_PANELS] and g.lid(rein["id"])["dashboard"] is None

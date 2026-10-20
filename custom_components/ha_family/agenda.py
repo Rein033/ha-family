@@ -45,6 +45,12 @@ def afval_soort(titel: str) -> str | None:
     return None
 
 
+def _bedrijven() -> dict[str, dict[str, str]]:
+    from .afvalbedrijf import BEDRIJVEN
+
+    return {k: {"naam": v["naam"], "gemeenten": v["gemeenten"]} for k, v in BEDRIJVEN.items()}
+
+
 def _datum(s: str) -> dt.date:
     return dt.date.fromisoformat(s[:10])
 
@@ -224,6 +230,8 @@ class Agenda:
                     uit.append({"id": f"afval-{s['soort']}-{d.isoformat()}", "titel": f"{a['icoon']} {a['naam']}", "start": d.isoformat(), "eind": None,
                                 "hele_dag": True, "wie": [], "soort": "afval", "afval": s["soort"], "icoon": a["icoon"], "kleur": a["kleur"], "bewerkbaar": False})
                 d += stap
+        from . import afvalbedrijf
+        uit += afvalbedrijf.events(self.gezin, van, tot)        # rechtstreeks van het afvalbedrijf (bijv. ROVA)
         return sorted(uit, key=lambda e: e["start"])
 
     # ── agenda's koppelen ──
@@ -325,4 +333,4 @@ class Agenda:
         d = self.gezin.data
         return {"leden": [{"id": l["id"], "agendas": l.get("agendas") or [], "geboortedatum": l.get("geboortedatum")} for l in self.gezin.leden],
                 "extra": d["agendas_extra"], "verjaardagen": d["verjaardagen"], "afval": d["afval"], "verjaardag_melding": d["verjaardag_melding"],
-                "beschikbaar": self.beschikbare_agendas(), "afvalsoorten": {k: {x: a[x] for x in ("naam", "icoon", "kleur")} for k, a in AFVAL.items()}}
+                "beschikbaar": self.beschikbare_agendas(), "afvalbedrijven": _bedrijven(), "afvalsoorten": {k: {x: a[x] for x in ("naam", "icoon", "kleur")} for k, a in AFVAL.items()}}

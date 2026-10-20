@@ -17,7 +17,7 @@ from .afdelingen import AFDELINGEN
 from .agenda import AFVAL
 from .maaltijden import LABELS
 from .taken import VOORBEELDEN
-from . import muur
+from . import afvalbedrijf, muur
 from .gezin import FamilyFout, Gezin, wachtwoord_voorstel
 from .weergave import WEERGAVEN
 
@@ -45,7 +45,7 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
                 ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen, ws_apparaat_tonen, ws_kamer_samenvoegen,
-                ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
+                ws_lid_dashboard, ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -125,7 +125,7 @@ async def ws_persoon_toevoegen(hass, connection, msg):
     lid = g.persoon_toevoegen(msg["person"], msg["rol"], msg.get("kleur"), msg.get("emoji"))
     if g.user_id(lid):
         # wie al een account had, houdt zijn Home Assistant zoals hij het kent; een eenvoudiger weergave kies je zelf
-        lid = g.lid_bijwerken(lid["id"], weergave="expert")
+        lid = g.lid_bijwerken(lid["id"], weergave="origineel")
     await g.weergave_zetten(lid)
     return lid
 
@@ -327,13 +327,20 @@ async def ws_verjaardag_weg(hass, connection, msg):
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ha_family/agenda/afval",
-                                  vol.Optional("schema"): [dict], vol.Optional("agenda"): vol.Any(None, cv.string), vol.Optional("herinnering"): dict})
+                                  vol.Optional("schema"): [dict], vol.Optional("agenda"): vol.Any(None, cv.string), vol.Optional("herinnering"): dict,
+                                  vol.Optional("bedrijf"): vol.Any(None, {vol.Required("bedrijf"): cv.string, vol.Required("postcode"): cv.string,
+                                                                         vol.Required("huisnummer"): vol.Coerce(str), vol.Optional("toevoeging", default=""): cv.string})})
 @websocket_api.require_admin
 @websocket_api.async_response
 @_antwoord
 async def ws_afval(hass, connection, msg):
-    _gezin(hass).agenda.afval_instellen(msg.get("schema"), msg.get("agenda") if "agenda" in msg else None, msg.get("herinnering"))
-    return {}
+    g = _gezin(hass)
+    if "bedrijf" in msg:                                     # eerst het adres controleren, dan pas de rest veranderen
+        b = msg["bedrijf"]
+        await afvalbedrijf.instellen(g, b and b["bedrijf"], **({k: b[k] for k in ("postcode", "huisnummer", "toevoeging")} if b else {}))
+    g.agenda.afval_instellen(msg.get("schema"), msg.get("agenda") if "agenda" in msg else None, msg.get("herinnering"))
+    b = g.data["afval"].get("bedrijf")
+    return {"dagen": len(b["dagen"]) if b else 0, "eerste": b["dagen"][0] if b and b["dagen"] else None}
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ha_family/agenda/verjaardag_melding", vol.Required("aan"): bool, vol.Required("tijd"): cv.string})
@@ -865,3 +872,26 @@ async def ws_idee_weg(hass, connection, msg):
     g = _gezin(hass)
     g.cadeaus.idee_weg(_ik(g, connection)["id"], msg["idee"])
     return {}
+
+
+# ── 📌 Persoonlijk dashboard ──
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/lid/dashboard", vol.Required("lid"): cv.string,
+                                  vol.Required("actie"): vol.In(["maak", "koppel", "los"]), vol.Optional("url_path"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_lid_dashboard(hass, connection, msg):
+    from . import persoonlijk
+    from .weergave import alles_toepassen
+
+    g = _gezin(hass)
+    lid = g.lid(msg["lid"])
+    if msg["actie"] == "maak":
+        await persoonlijk.maken(g, lid)
+    elif msg["actie"] == "koppel":
+        persoonlijk.koppelen(g, lid, msg.get("url_path") or "")
+    else:
+        persoonlijk.loskoppelen(g, lid)
+    await alles_toepassen(g)                                # bij hem bovenaan, bij de anderen weg
+    return {"dashboard": lid.get("dashboard"), "eigen": lid.get("dashboard_eigen", False)}

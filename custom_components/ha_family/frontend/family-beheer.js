@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.6.1';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.7.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -35,7 +35,8 @@ const T = {
     weergaven: { eenvoudig: ['Eenvoudig', 'Alleen het gezinsdashboard. Ideaal voor kinderen en gasten.'],
       normaal: ['Normaal', 'Het gezin, plus agenda, takenlijsten en kaart.'],
       beheerder: ['Beheerder', 'Het gezin, Gezin beheren en de instellingen.'],
-      expert: ['Expert', 'Home Assistant zoals het is, met alles erop en eraan.'] },
+      expert: ['Expert', 'Gezin, Gezin beheren en Admin. In Admin staat al het andere: automatiseringen, dashboards, HACS en plugins.'],
+      origineel: ['Zoals het was', 'Home Assistant zonder aanpassingen, met alles in de zijbalk.'] },
     lamp: 'Lamp van {x}', lampUitleg: 'Voor knuffels en welterusten (later).', meldingen: 'Meldingen naar', automatisch: 'Automatisch (eerste telefoon)',
     nieuwWachtwoord: 'Nieuw wachtwoord instellen', wwGewijzigd: 'Wachtwoord gewijzigd', verwijderen: 'Uit het gezin halen', verwijderenAccount: 'Ook account verwijderen',
     zeker: '{x} uit het gezin halen? Het account en de telefoon blijven gewoon werken.', zekerAccount: '{x} én het account helemaal verwijderen? Dit kan niet ongedaan worden.',
@@ -78,9 +79,11 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Agenda-app → Agenda\'s → ⓘ bij je agenda → zet "Openbare agenda" aan → Deel link.',
     linkOutlook: 'Outlook.com: Instellingen → Agenda → Gedeelde agenda\'s → Een agenda publiceren → ICS-link.',
     verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
-    geboortedatum: 'Geboortedatum', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
+    geboortedatum: 'Geboortedatum', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
     meldingOm: 'Melding om', aan: 'Aan',
     afvalTitel: 'Afvalkalender', afvalUitleg: 'De avond voor het ophalen krijgt het gezin een seintje.',
+    afvalBedrijf: 'Mijn afvalbedrijf', afvalBedrijfUitleg: 'Postcode en huisnummer, de rest gaat vanzelf.', afvalBedrijfKies: 'Afvalbedrijf',
+    postcode: 'Postcode', huisnummer: 'Huisnummer', toevoeging: 'Toevoeging', afvalBedrijfGemeenten: 'Haalt op in: {x}.', afvalGevonden: '🚛 Gevonden: {x}',
     afvalZelf: 'Zelf invullen', afvalZelfUitleg: 'Per soort de volgende ophaaldag en hoe vaak.',
     afvalLink: 'Link van de gemeente', afvalLinkUitleg: 'Zoek op de site van je gemeente of afvalinzamelaar naar "afvalkalender in je agenda" of "iCal".',
     afvalBestaand: 'Bestaande agenda', afvalBestaandUitleg: 'Bijvoorbeeld van een afval-integratie die je al hebt.',
@@ -111,7 +114,8 @@ const T = {
     weergaven: { eenvoudig: ['Simple', 'Only the family dashboard. Ideal for children and guests.'],
       normaal: ['Normal', 'The family, plus calendar, to-do lists and map.'],
       beheerder: ['Manager', 'The family, Family settings and the settings.'],
-      expert: ['Expert', 'Home Assistant as it is, with everything.'] },
+      expert: ['Expert', 'Family, Family settings and Admin. Admin holds everything else: automations, dashboards, HACS and plugins.'],
+      origineel: ['As it was', 'Home Assistant unchanged, with everything in the sidebar.'] },
     lamp: "{x}'s lamp", lampUitleg: 'For hugs and good night (later).', meldingen: 'Notifications to', automatisch: 'Automatic (first phone)',
     nieuwWachtwoord: 'Set new password', wwGewijzigd: 'Password changed', verwijderen: 'Remove from family', verwijderenAccount: 'Also delete account',
     zeker: 'Remove {x} from the family? The account and phone keep working.', zekerAccount: 'Delete {x} and the account completely? This cannot be undone.',
@@ -154,9 +158,11 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Calendar app → Calendars → ⓘ next to your calendar → turn on "Public Calendar" → Share Link.',
     linkOutlook: 'Outlook.com: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.',
     verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
-    geboortedatum: 'Date of birth', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
+    geboortedatum: 'Date of birth', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
     meldingOm: 'Notification at', aan: 'On',
     afvalTitel: 'Waste collection', afvalUitleg: 'The evening before collection the family gets a note.',
+    afvalBedrijf: 'My waste company', afvalBedrijfUitleg: 'Postcode and house number, the rest is automatic.', afvalBedrijfKies: 'Waste company',
+    postcode: 'Postcode', huisnummer: 'House number', toevoeging: 'Addition', afvalBedrijfGemeenten: 'Collects in: {x}.', afvalGevonden: '🚛 Found: {x}',
     afvalZelf: 'Enter it yourself', afvalZelfUitleg: 'Per type the next collection day and how often.',
     afvalLink: 'Link from your municipality', afvalLinkUitleg: 'Look on the website of your municipality or waste company for "calendar subscription" or "iCal".',
     afvalBestaand: 'Existing calendar', afvalBestaandUitleg: 'For example from a waste integration you already have.',
@@ -284,10 +290,10 @@ class HaFamilyBeheer extends HTMLElement {
       return `<div class="arij">${avatar(l, { grootte: 40 })}<b class="anaam">${esc(l.naam)}</b><div class="achips">${chips(al, l.id)}</div>
         <button class="fam-knop zacht klein" data-a="agenda-koppel" data-voor="${l.id}"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('agendaKoppelen'))}</button></div>`; }).join('');
     const af = a.afval, soorten = a.afvalsoorten;
-    if (!this._afv) this._afv = { modus: af.agenda ? (h.states[af.agenda] && (h.states[af.agenda].attributes.friendly_name || '').toLowerCase().includes('afval') ? 'link' : 'bestaand') : 'zelf',
-      schema: Object.fromEntries(af.schema.map((x) => [x.soort, { ...x }])), agenda: af.agenda || '', herinnering: { ...af.herinnering, leden: [...(af.herinnering.leden || [])] }, link: '', url: '' };
+    if (!this._afv) this._afv = { modus: af.bedrijf ? 'bedrijf' : af.agenda ? (h.states[af.agenda] && (h.states[af.agenda].attributes.friendly_name || '').toLowerCase().includes('afval') ? 'link' : 'bestaand') : 'zelf',
+      schema: Object.fromEntries(af.schema.map((x) => [x.soort, { ...x }])), agenda: af.agenda || '', herinnering: { ...af.herinnering, leden: [...(af.herinnering.leden || [])] }, link: '', url: '', bedrijf: { bedrijf: 'rova', postcode: '', huisnummer: '', toevoeging: '', ...(af.bedrijf || {}) } };
     const v = this._afv;
-    const afvalNu = af.agenda ? naam(af.agenda) : af.schema.length ? af.schema.map((x) => soorten[x.soort].icoon + ' ' + soorten[x.soort].naam).join(', ') : this.t('geenAfval');
+    const afvalNu = af.bedrijf ? `${(a.afvalbedrijven[af.bedrijf.bedrijf] || {}).naam || af.bedrijf.bedrijf} · ${af.bedrijf.postcode} ${af.bedrijf.huisnummer}${af.bedrijf.toevoeging || ''}` : af.agenda ? naam(af.agenda) : af.schema.length ? af.schema.map((x) => soorten[x.soort].icoon + ' ' + soorten[x.soort].naam).join(', ') : this.t('geenAfval');
     const wekenOpties = (w) => [1, 2, 3, 4, 6, 8, 13, 26].map((n) => `<option value="${n}" ${Number(w) === n ? 'selected' : ''}>${n} ${esc(n === 1 ? this.t('week1') : this.t('weken'))}</option>`).join('');
     const beschikbaar = a.beschikbaar;
     return `
@@ -310,8 +316,14 @@ class HaFamilyBeheer extends HTMLElement {
           <input class="veld smal" type="time" data-a="jarig-tijd" value="${esc(a.verjaardag_melding.tijd)}"/></div></div>
 
       <div class="kaart"><h2>🗑️ ${esc(this.t('afvalTitel'))}</h2><p class="fam-sub">${esc(this.t('afvalUitleg'))} · <b>${esc(this.t('afvalNu', afvalNu))}</b></p>
-        <div class="keuzes">${[['zelf', '✍️'], ['link', '🔗'], ['bestaand', '📅']].map(([k, i]) => `<button class="keuze ${v.modus === k ? 'aan' : ''}" data-a="afval-modus" data-v="${k}"><span class="ki">${i}</span><b>${esc(this.t(k === 'zelf' ? 'afvalZelf' : k === 'link' ? 'afvalLink' : 'afvalBestaand'))}</b><small>${esc(this.t(k === 'zelf' ? 'afvalZelfUitleg' : k === 'link' ? 'afvalLinkUitleg' : 'afvalBestaandUitleg'))}</small></button>`).join('')}</div>
-        ${v.modus === 'zelf' ? `<div class="afval">${Object.entries(soorten).map(([k, x]) => { const r = v.schema[k];
+        <div class="keuzes">${[['bedrijf', '🚛'], ['zelf', '✍️'], ['link', '🔗'], ['bestaand', '📅']].map(([k, i]) => `<button class="keuze ${v.modus === k ? 'aan' : ''}" data-a="afval-modus" data-v="${k}"><span class="ki">${i}</span><b>${esc(this.t({ bedrijf: 'afvalBedrijf', zelf: 'afvalZelf', link: 'afvalLink', bestaand: 'afvalBestaand' }[k]))}</b><small>${esc(this.t({ bedrijf: 'afvalBedrijfUitleg', zelf: 'afvalZelfUitleg', link: 'afvalLinkUitleg', bestaand: 'afvalBestaandUitleg' }[k]))}</small></button>`).join('')}</div>
+        ${v.modus === 'bedrijf' ? `<div class="rij" style="align-items:end">
+            <label class="klein-lbl">${esc(this.t('afvalBedrijfKies'))}<select class="veld smal" id="ab-bedrijf">${Object.entries(a.afvalbedrijven).map(([k, x]) => `<option value="${k}" ${v.bedrijf.bedrijf === k ? 'selected' : ''}>${esc(x.naam)}</option>`).join('')}</select></label>
+            <label class="klein-lbl">${esc(this.t('postcode'))}<input class="veld smal" id="ab-postcode" value="${esc(v.bedrijf.postcode)}" placeholder="1234 AB" maxlength="7" style="width:110px"/></label>
+            <label class="klein-lbl">${esc(this.t('huisnummer'))}<input class="veld smal" id="ab-nr" value="${esc(v.bedrijf.huisnummer)}" inputmode="numeric" maxlength="5" style="width:80px"/></label>
+            <label class="klein-lbl">${esc(this.t('toevoeging'))}<input class="veld smal" id="ab-toev" value="${esc(v.bedrijf.toevoeging)}" maxlength="6" style="width:70px"/></label></div>
+          <p class="fam-sub">${esc(this.t('afvalBedrijfGemeenten', (a.afvalbedrijven[v.bedrijf.bedrijf] || {}).gemeenten || ''))}</p>`
+        : v.modus === 'zelf' ? `<div class="afval">${Object.entries(soorten).map(([k, x]) => { const r = v.schema[k];
             return `<div class="arij"><label class="vink kort"><input type="checkbox" data-a="afval-soort" data-soort="${k}" ${r ? 'checked' : ''}/> <span class="aico">${x.icoon}</span> <b>${esc(x.naam)}</b></label>
               ${r ? `<label class="klein-lbl">${esc(this.t('volgendeKeer'))}<input class="veld smal" type="date" data-a="afval-start" data-soort="${k}" value="${esc(r.start || '')}"/></label>
                 <label class="klein-lbl">${esc(this.t('elke'))}<select class="veld smal" data-a="afval-weken" data-soort="${k}">${wekenOpties(r.weken || 2)}</select></label>` : ''}</div>`; }).join('')}</div>`
@@ -382,14 +394,21 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'afval-bewaar') {
       const data = { herinnering: v.herinnering };
       try {
+        const q = (id) => this.shadowRoot.getElementById(id);
+        if (v.modus === 'bedrijf') {
+          v.bedrijf = { bedrijf: q('ab-bedrijf').value, postcode: q('ab-postcode').value, huisnummer: q('ab-nr').value, toevoeging: q('ab-toev').value };
+          data.bedrijf = v.bedrijf; data.schema = []; data.agenda = ''; v.bezig = true; this._teken();
+        } else data.bedrijf = null;
         if (v.modus === 'zelf') { data.schema = Object.values(v.schema); data.agenda = ''; }
         else if (v.modus === 'bestaand') { data.agenda = this.shadowRoot.getElementById('afval-agenda').value; data.schema = []; }
         else {
           v.url = this.shadowRoot.getElementById('afval-url').value; v.bezig = true; this._teken();
           data.agenda = (await this._ws('ha_family/agenda/link', { naam: taal(this._hass) === 'nl' ? 'Afvalkalender' : 'Waste calendar', url: v.url })).entity; data.schema = [];
         }
-        await this._ws('ha_family/agenda/afval', data);
-        v.bezig = false; this._afv = null; this._melding(this.t('bewaard')); await this._laad();
+        const r = await this._ws('ha_family/agenda/afval', data);
+        v.bezig = false; this._afv = null;
+        this._melding(r && r.eerste ? this.t('afvalGevonden', `${r.dagen} · ${new Date(r.eerste.datum + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { weekday: 'long', day: 'numeric', month: 'long' })}: ${r.eerste.titel}`) : this.t('bewaard'));
+        await this._laad();
       } catch (er) { v.bezig = false; this._melding(er.message); this._teken(); }
     }
   }
@@ -802,6 +821,12 @@ class HaFamilyBeheer extends HTMLElement {
           <label class="lbl">${esc(this.t('wachtwoord'))}</label><input class="veld mono" id="acc-wachtwoord" value="${esc(d.account.wachtwoord)}" maxlength="64"/>
           <div class="rij eind"><button class="fam-knop" data-a="account-maak">${esc(this.t('accountKnop'))}</button></div></div>`
         : `<div class="rij" style="margin-top:16px"><button class="fam-knop zacht" data-a="account-start"><ha-icon icon="mdi:cellphone-plus"></ha-icon>${esc(this.t('accountMaken', l.naam))}</button></div>`}
+      <div class="kaart zacht" style="margin-top:16px"><b>📌 ${esc(this.t('pdTitel'))}</b><p class="fam-sub" style="margin:4px 0 8px">${esc(this.t('pdUitleg', l.naam.split(' ')[0]))}</p>
+        ${l.dashboard ? `<div class="rij"><ha-icon icon="mdi:account-star"></ha-icon><b class="groei">${esc(l.dashboard_eigen ? this.t('pdEigen', l.naam.split(' ')[0]) : ((this._s.dashboards.find((x) => x.url_path === l.dashboard) || {}).titel || l.dashboard))}</b>
+            <a class="fam-knop rand klein" href="/${esc(l.dashboard)}" data-a="pd-open">${esc(this.t('pdOpen'))}</a><button class="fam-knop gevaar klein" data-a="pd-los" data-id="${l.id}">${esc(this.t('pdLos'))}</button></div>`
+          : `<div class="rij"><button class="fam-knop zacht" data-a="pd-maak" data-id="${l.id}"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('pdMaak'))}</button>
+            ${this._s.dashboards.length ? `<span class="fam-sub">${esc(this.t('pdOf'))}</span><select class="veld smal" id="pd-kies"><option value="">${esc(this.t('pdKies'))}</option>${this._s.dashboards.map((x) => `<option value="${esc(x.url_path)}">${esc(x.titel)}</option>`).join('')}</select>
+            <button class="fam-knop rand klein" data-a="pd-koppel" data-id="${l.id}">${esc(this.t('pdKoppel'))}</button>` : ''}</div>`}</div>
       <label class="lbl">${esc(this.t('lamp', l.naam))}</label><small class="fam-sub">${esc(this.t('lampUitleg'))}</small><div class="lampform"></div>
       ${l.telefoons.length ? `<label class="lbl">${esc(this.t('meldingen'))}</label><select class="veld" id="notify"><option value="">${esc(this.t('automatisch'))}</option>
         ${l.telefoons.map((t) => `<option value="${esc(t.notify)}" ${l.notify === t.notify ? 'selected' : ''}>${esc(t.naam)}</option>`).join('')}</select>` : ''}
@@ -934,6 +959,13 @@ class HaFamilyBeheer extends HTMLElement {
         return this._open({ soort: 'koppel', id: d.id, wachtwoord: ww });           // meteen door naar telefoon koppelen
       } catch (er) { d.fout = er.message; return this._herteken(); }
     }
+    if (a === 'pd-maak' || a === 'pd-los' || a === 'pd-koppel') {
+      const url_path = a === 'pd-koppel' ? this.shadowRoot.getElementById('pd-kies').value : undefined;
+      if (a === 'pd-koppel' && !url_path) return;
+      if (await this._doe('ha_family/lid/dashboard', { lid: b.dataset.id, actie: { 'pd-maak': 'maak', 'pd-los': 'los', 'pd-koppel': 'koppel' }[a], ...(url_path ? { url_path } : {}) }, this.t('bewaard'))) this._herteken();
+      return;
+    }
+    if (a === 'pd-open') { e.preventDefault && e.preventDefault(); history.pushState(null, '', b.getAttribute('href')); window.dispatchEvent(new CustomEvent('location-changed')); return; }
     if (a === 'bewerk-opslaan') {
       const l = s.leden.find((x) => x.id === d.id);
       this._leesOver(d);

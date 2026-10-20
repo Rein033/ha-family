@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc } from './family-ui.js?v=0.6.1';
+import { CSS, esc } from './family-ui.js?v=0.7.0';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
@@ -48,13 +48,20 @@ const STIJL = `
   .rond ha-icon, .tegel.aan .rond ha-icon { --mdc-icon-size: 20px; color: inherit; }
   .knoppen3 { display: flex; gap: 6px; margin-top: 4px; }
   /* compact */
-  .rij { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 8px 0; border-top: 1px solid var(--divider-color); }
+  .rij { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--divider-color); }
   .rij:first-of-type { border-top: 0; }
-  .rij .nm { display: flex; align-items: center; gap: 8px; min-width: 7.5em; flex: 1 1 7.5em; font-weight: 600; }
+  .rij .nm { display: flex; align-items: center; gap: 8px; font-weight: 600; }
   .rij .nm ha-icon { color: var(--primary-color); --mdc-icon-size: 22px; flex: none; }
   .rij .nm span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rij .nm small { color: var(--secondary-text-color); font-weight: 500; }
-  .rij .apps { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+  .rij .apps { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pil { border: 0; cursor: pointer; font: inherit; font-size: .85rem; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px;
+    border-radius: 999px; background: var(--secondary-background-color); color: var(--primary-text-color); max-width: 100%; }
+  .pil ha-icon { --mdc-icon-size: 20px; color: var(--secondary-text-color); flex: none; }
+  .pil span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 11em; }
+  .pil small { color: var(--secondary-text-color); }
+  .pil.aan { background: color-mix(in srgb, var(--k) 22%, var(--card-background-color)); font-weight: 600; }
+  .pil.aan ha-icon { color: var(--k); }
   .rij .rond { width: 42px; height: 42px; }
   .rij .rond.lbl { width: auto; padding: 0 12px; border-radius: 21px; font-size: .9rem; font-weight: 600; gap: 4px; display: inline-flex; }
   .leeg { color: var(--secondary-text-color); text-align: center; padding: 8px 0; display: grid; gap: 8px; justify-items: center; }
@@ -63,8 +70,7 @@ const STIJL = `
   :host([muur]) .kop .titel { font-size: 1.25rem; }
   :host([muur]) .kop { margin-bottom: 2px; }
   :host([muur]) .rij { padding: 5px 0; }
-  :host([muur]) .rij .rond { width: 38px; height: 38px; }
-  :host([muur]) .rij .rond.lbl { border-radius: 19px; }
+  :host([muur]) .pil { font-size: .8rem; padding: 5px 10px 5px 7px; }
 `;
 
 export class FamilyKamersCard extends HTMLElement {
@@ -102,9 +108,14 @@ export class FamilyKamersCard extends HTMLElement {
       .filter((k) => k.apps.length);
     return per;
   }
-  _kort(naam, kamer) {                               // 'Woonkamer plafondlamp' in de woonkamer → 'Plafondlamp'
-    const n = naam.replace(new RegExp(`^${kamer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]?\\s*`, 'i'), '');
-    return /[\p{L}\p{N}]/u.test(n) ? n.charAt(0).toUpperCase() + n.slice(1) : naam;   // 'Gang beneden.' in 'Gang beneden' → niet '.'
+  _kort(naam, kamer) {
+    // 'Verwarming Slaapkamer Rafi' in Slaapkamer Rafi → 'Verwarming'; 'air conditioner Air Conditioner' → 'Air conditioner'; 'Kast Socket 1' → 'Kast'
+    const weg = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let n = naam.replace(new RegExp(`\\s*${weg(kamer)}\\s*[-:]?\\s*`, 'ig'), ' ').replace(/\s+socket\s*\d*\s*$/i, '').trim();
+    const gezien = new Set();
+    n = n.split(/\s+/).filter((w) => { const k = w.toLowerCase(); if (gezien.has(k)) return false; gezien.add(k); return true; }).join(' ');
+    if (!/[\p{L}\p{N}]/u.test(n)) return naam;
+    return n.charAt(0).toUpperCase() + n.slice(1);
   }
   _temp(k) { const s = k.temperatuur && this._hass.states[k.temperatuur]; return s && !isNaN(parseFloat(s.state)) ? `${Math.round(parseFloat(s.state) * 10) / 10}°` : ''; }
 
@@ -161,16 +172,19 @@ export class FamilyKamersCard extends HTMLElement {
       ${dimbaar && aan ? `<input type="range" min="1" max="100" value="${pct || 100}" data-a="dim" data-e="${a.entity}"/>` : ''}</div>`;
   }
   _rij(k) {
+    // compact: kamernaam met temperatuur, daaronder knoppen mét naam (wat is wat), aan = gekleurd
     const h = this._hass;
     return `<div class="rij"><div class="nm"><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><span>${esc(k.naam)}</span><small>${esc(this._temp(k))}</small></div>
       <div class="apps">${k.apps.map((a) => {
         const s = h.states[a.entity], aan = isAan(s), naam = this._kort(a.naam, k.naam), at = s.attributes;
         if (a.domein === 'climate') {
           const doel = at.temperature ?? at.target_temp_high;
-          return `<button class="rond lbl ${aan ? 'aan' : ''}" style="--k:${s.state === 'heat' ? '#f4511e' : '#039be5'}" data-a="klimaat-aan" data-e="${a.entity}" title="${esc(naam)}"><ha-icon icon="mdi:air-conditioner"></ha-icon>${doel != null && aan ? `${doel}°` : ''}</button>`;
+          return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${s.state === 'heat' ? '#f4511e' : '#039be5'}" data-a="klimaat-aan" data-e="${a.entity}" title="${esc(a.naam)}">
+            <ha-icon icon="mdi:air-conditioner"></ha-icon><span>${esc(naam)}</span>${aan && doel != null ? `<b>${doel}°</b>` : `<small>${esc(this.t('uit'))}</small>`}</button>`;
         }
-        const kleur = a.domein === 'light' ? (at.rgb_color ? `rgb(${at.rgb_color.join(',')})` : '#ffb300') : a.domein === 'cover' ? '#7e57c2' : a.domein === 'fan' ? '#26a69a' : '#43a047';
-        return `<button class="rond ${aan ? 'aan' : ''}" style="--k:${kleur}" data-a="${a.domein === 'cover' ? 'cover-wissel' : 'schakel'}" data-e="${a.entity}" title="${esc(naam)}"><ha-icon icon="${esc(at.icon || ICOON[a.domein][aan ? 1 : 0])}"></ha-icon></button>`;
+        const kleur = a.domein === 'light' ? (at.rgb_color ? `rgb(${at.rgb_color.join(',')})` : '#ffb300') : a.domein === 'cover' ? '#7e57c2' : a.domein === 'fan' ? '#26a69a' : a.domein === 'media_player' ? '#5c6bc0' : '#43a047';
+        return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${kleur}" data-a="${a.domein === 'cover' ? 'cover-wissel' : 'schakel'}" data-e="${a.entity}" title="${esc(a.naam)}">
+          <ha-icon icon="${esc(at.icon || ICOON[a.domein][aan ? 1 : 0])}"></ha-icon><span>${esc(naam)}</span></button>`;
       }).join('')}</div></div>`;
   }
 

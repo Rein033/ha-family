@@ -4,7 +4,7 @@
  *
  * Bovenaan kies je wie: jezelf (je eigen lijstje maken en naar anderen sturen) of iemand anders (zijn lijstje bekijken,
  * afvinken wat jij koopt, en ideeën laten bedenken — met de AI van Home Assistant als die er is). */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.6.1';
+import { CSS, avatar, esc, leden } from './family-ui.js?v=0.7.0';
 
 const TEKST = {
   nl: {
@@ -18,7 +18,7 @@ const TEKST = {
     ai: '✨ met AI', geenAi: 'Tip: koppel een AI in Home Assistant (bijv. Ollama) voor slimmere ideeën.', interesses: 'Mijn interesses',
     interessesVan: 'Interesses van {x}', geenInteresses: 'Nog geen interesses: dan worden de ideeën algemener.', bewerkInteresses: 'Aanpassen', klaar: 'Klaar',
     zeker: '"{x}" van het lijstje halen?', geenGezinslid: 'Je bent (nog) geen gezinslid, dus je hebt geen eigen lijstje.', wijzig: 'Wijzigen', weg: 'Weg',
-    bewaard: 'Bewaard ✓', helpen: 'Je helpt mee met dit lijstje.',
+    bewaard: 'Bewaard ✓', helpen: 'Je helpt mee met dit lijstje.', tipIdeeen: 'Cadeau-ideeën voor iemand anders? Tik bovenaan op die persoon.',
   },
   en: {
     cadeaus: 'Gifts', ik: 'you', jarigOver: 'birthday in {x} days', jarigMorgen: 'birthday tomorrow! 🎂', jarigVandaag: 'birthday today! 🎉', jaar: '{x} years',
@@ -31,7 +31,7 @@ const TEKST = {
     ai: '✨ with AI', geenAi: 'Tip: connect an AI in Home Assistant (e.g. Ollama) for smarter ideas.', interesses: 'My interests',
     interessesVan: "{x}'s interests", geenInteresses: 'No interests yet: ideas will be more general.', bewerkInteresses: 'Edit', klaar: 'Done',
     zeker: 'Remove "{x}" from the list?', geenGezinslid: "You're not a family member (yet), so you have no list of your own.", wijzig: 'Edit', weg: 'Remove',
-    bewaard: 'Saved ✓', helpen: "You're helping with this list.",
+    bewaard: 'Saved ✓', helpen: "You're helping with this list.", tipIdeeen: 'Gift ideas for someone else? Tap that person at the top.',
   },
 };
 const taalVan = (h) => (((h && h.locale && h.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
@@ -148,7 +148,8 @@ class FamilyCadeausCard extends HTMLElement {
       ${wensen}
       ${mag ? this._wensForm() : ''}
       ${!zelf ? `<p class="sub" style="margin:10px 0 0">${esc(this.t('geheim', naam))}</p>` : ''}
-      ${this._interesses(p, zelf || mag, naam)}</div>`;
+      ${this._interesses(p, zelf || mag, naam)}
+      ${zelf ? `<p class="sub" style="margin:14px 0 0">💡 ${esc(this.t('tipIdeeen'))}${this._d.ai ? ` <span class="badge">${esc(this.t('ai'))}</span>` : ''}</p>` : ''}</div>`;
     const rechts = zelf ? '' : this._ideeenVak(p, naam);
     return `<div class="wie">${wie}</div><div class="twee" style="${zelf ? 'grid-template-columns:1fr' : ''}">${links}${rechts}</div>`;
   }

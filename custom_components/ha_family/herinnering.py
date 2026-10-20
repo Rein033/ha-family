@@ -103,6 +103,9 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["eten"] = vandaag
             agenda.gezin.opslaan()
             await eten_herinnering(agenda.gezin, nu)
+        if klok in ("05:30", "17:30"):                    # afvalkalender van het afvalbedrijf verversen
+            from .afvalbedrijf import verversen
+            await verversen(agenda.gezin)
         v = agenda.gezin.data["verjaardag_melding"]
         if v.get("aan") and klok == v.get("tijd") and verstuurd.get("verjaardag") != vandaag:
             verstuurd["verjaardag"] = vandaag
