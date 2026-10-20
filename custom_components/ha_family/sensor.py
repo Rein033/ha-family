@@ -5,7 +5,7 @@ import datetime as dt
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
@@ -17,7 +17,19 @@ from .gezin import Gezin
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry, async_add_entities: AddConfigEntryEntitiesCallback) -> None:
-    async_add_entities([GezinSensor(entry.runtime_data), VolgendeAfval(entry.runtime_data)])
+    g = entry.runtime_data
+    async_add_entities([GezinSensor(g), VolgendeAfval(g), *(Punten(g, l) for l in g.leden)])
+    bekend = {l["id"] for l in g.leden}
+
+    @callback
+    def _nieuwe_leden() -> None:
+        """Een nieuw gezinslid krijgt meteen een puntensensor."""
+        nieuw = [l for l in g.leden if l["id"] not in bekend]
+        if nieuw:
+            bekend.update(l["id"] for l in nieuw)
+            async_add_entities([Punten(g, l) for l in nieuw])
+
+    entry.async_on_unload(g.add_listener(_nieuwe_leden))
 
 
 class GezinSensor(SensorEntity):
@@ -82,3 +94,38 @@ class VolgendeAfval(SensorEntity):
             self._attr_native_value = None
             self._attr_extra_state_attributes = {"ha_family": "volgende_afval"}
         self.async_write_ha_state()
+
+
+class Punten(SensorEntity):
+    """Punten van één gezinslid (verdiend met klusjes, min ingewisselde beloningen)."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_translation_key = "punten"
+    _attr_icon = "mdi:star-circle"
+    _attr_native_unit_of_measurement = "punten"
+
+    def __init__(self, gezin: Gezin, lid: dict[str, Any]) -> None:
+        self.gezin = gezin
+        self.lid_id = lid["id"]
+        self._attr_unique_id = f"{gezin.entry.entry_id}_punten_{lid['id']}"
+        self._attr_translation_placeholders = {"naam": lid["naam"]}
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, gezin.entry.entry_id)}, name=gezin.naam,
+                                            entry_type=DeviceEntryType.SERVICE, manufacturer="HA Family")
+
+    async def async_added_to_hass(self) -> None:
+        self.async_on_remove(self.gezin.add_listener(self.async_write_ha_state))
+
+    @property
+    def available(self) -> bool:
+        return any(l["id"] == self.lid_id for l in self.gezin.leden)
+
+    @property
+    def native_value(self) -> int:
+        return self.gezin.taken.saldo(self.lid_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        open_ = [k for k in self.gezin.taken.klusjes_vandaag() if k["lid"] == self.lid_id]
+        return {"ha_family": "punten", "lid": self.lid_id, "klusjes_vandaag": len(open_),
+                "klusjes_open": sum(1 for k in open_ if k["status"] == "open")}

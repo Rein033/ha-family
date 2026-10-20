@@ -129,25 +129,7 @@ class Gezin:
             raise FamilyFout("Onbekende rol.")
         if any(p["name"].lower() == naam.lower() for p in self._persoon_items()):
             raise FamilyFout(f"Er is al een persoon '{naam}' in Home Assistant. Voeg die toe bij 'Al in Home Assistant'.")
-        user_id = None
-        if inloggen:
-            gebruikersnaam = (gebruikersnaam or slugify(naam).replace("_", "")).strip().lower()
-            if not re.fullmatch(r"[a-z0-9._-]{2,30}", gebruikersnaam or ""):
-                raise FamilyFout("Een gebruikersnaam mag alleen kleine letters, cijfers, punt, streepje en liggend streepje hebben.")
-            if not wachtwoord or len(wachtwoord) < 6:
-                raise FamilyFout("Kies een wachtwoord van minstens 6 tekens.")
-            try:
-                provider = auth_ha.async_get_provider(self.hass)
-            except RuntimeError as ex:
-                raise FamilyFout("Inloggen met gebruikersnaam en wachtwoord staat uit in deze Home Assistant.") from ex
-            try:
-                await provider.async_add_auth(gebruikersnaam, wachtwoord)
-            except auth_ha.InvalidUser as ex:
-                raise FamilyFout(f"De gebruikersnaam '{gebruikersnaam}' bestaat al. Kies een andere.") from ex
-            user = await self.hass.auth.async_create_user(naam, group_ids=[GROUP_ID_ADMIN if beheerder else GROUP_ID_USER])
-            cred = await provider.async_get_or_create_credentials({"username": gebruikersnaam})
-            await self.hass.auth.async_link_user(user, cred)
-            user_id = user.id
+        user_id = await self._maak_gebruiker(naam, gebruikersnaam, wachtwoord, beheerder) if inloggen else None
         from homeassistant.components.person import async_create_person
 
         await async_create_person(self.hass, naam, user_id=user_id)
@@ -227,6 +209,40 @@ class Gezin:
                     await coll.async_delete_item(p["id"])
         self.leden.remove(lid)
         self.opslaan()
+
+    async def _maak_gebruiker(self, naam: str, gebruikersnaam: str | None, wachtwoord: str | None, beheerder: bool) -> str:
+        """HA-gebruiker met gebruikersnaam en wachtwoord; geeft het user_id."""
+        gebruikersnaam = (gebruikersnaam or slugify(naam).replace("_", "")).strip().lower()
+        if not re.fullmatch(r"[a-z0-9._-]{2,30}", gebruikersnaam or ""):
+            raise FamilyFout("Een gebruikersnaam mag alleen kleine letters, cijfers, punt, streepje en liggend streepje hebben.")
+        if not wachtwoord or len(wachtwoord) < 6:
+            raise FamilyFout("Kies een wachtwoord van minstens 6 tekens.")
+        try:
+            provider = auth_ha.async_get_provider(self.hass)
+        except RuntimeError as ex:
+            raise FamilyFout("Inloggen met gebruikersnaam en wachtwoord staat uit in deze Home Assistant.") from ex
+        try:
+            await provider.async_add_auth(gebruikersnaam, wachtwoord)
+        except auth_ha.InvalidUser as ex:
+            raise FamilyFout(f"De gebruikersnaam '{gebruikersnaam}' bestaat al. Kies een andere.") from ex
+        user = await self.hass.auth.async_create_user(naam, group_ids=[GROUP_ID_ADMIN if beheerder else GROUP_ID_USER])
+        cred = await provider.async_get_or_create_credentials({"username": gebruikersnaam})
+        await self.hass.auth.async_link_user(user, cred)
+        return user.id
+
+    async def account_aanmaken(self, lid_id: str, gebruikersnaam: str | None, wachtwoord: str, beheerder: bool = False) -> dict[str, Any]:
+        """Een gezinslid zonder account (bv. een kind dat nu een telefoon heeft) alsnog laten inloggen."""
+        lid = self.lid(lid_id)
+        if self.user_id(lid):
+            raise FamilyFout(f"{lid['naam']} heeft al een account.")
+        uid = await self._maak_gebruiker(lid["naam"], gebruikersnaam, wachtwoord, beheerder)
+        coll = self.hass.data["person"][1]
+        item = next((p for p in coll.async_items() if self._persoon_entity(p["id"]) == lid["person"]), None)
+        if item is None:
+            raise FamilyFout("De persoon van dit gezinslid bestaat niet meer.")
+        await coll.async_update_item(item["id"], {"user_id": uid})
+        await self.hass.async_block_till_done()
+        return lid
 
     async def wachtwoord_wijzigen(self, lid_id: str, wachtwoord: str) -> None:
         if len(wachtwoord) < 6:

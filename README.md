@@ -109,12 +109,48 @@ wie er binnenkort jarig is.
 In Home Assistant zelf komen er drie agenda's bij (**Gezinsagenda**, **Verjaardagen**, **Afval**) en een sensor **Volgende
 afval**, voor automatiseringen, Assist en de gewone agenda van Home Assistant.
 
+## Klusjes, taken en boodschappen
+
+**Klusjes met punten.** Een ouder maakt klusjes aan in **Gezin beheren → Klusjes** (of kiest een voorbeeld, zoals
+*🍽️ Tafel dekken*): hoeveel punten, voor wie, en wanneer (elke dag, werkdagen, weekend, bepaalde dagen of één keer).
+Een kind ziet zijn klusjes van vandaag als grote tegels op het startscherm. Tik erop en het is gedaan, met een feestje en
+sterren.
+
+- **Goedkeuren**: zet je bij een klusje *Een ouder moet het goedkeuren* aan, dan krijgen de ouders een melding met de knoppen
+  **Goedkeuren** en **Nog niet**, direct op de telefoon. In het dashboard staat het onder *Wacht op jou*.
+- **Beloningen**: zoals *🍦 IJsje = 15 sterren* of *🎬 Film kiezen = 20*. Het kind ziet hoe ver het nog is; heeft het genoeg,
+  dan vraagt het de beloning aan en keurt een ouder goed.
+- **Extra punten**: geef (of haal af) met één tik, bijvoorbeeld voor goed helpen.
+- **Herinnering**: 's avonds een seintje aan wie nog klusjes open heeft.
+
+| Kind (telefoon) | Ouder: wacht op jou | Na goedkeuren |
+|---|---|---|
+| ![Kind](docs/images/45-emma-voor.png) | ![Ouder](docs/images/47-ouder-wacht.png) | ![Goedgekeurd](docs/images/48-emma-goedgekeurd.png) |
+
+![Klusjes instellen](docs/images/43-klusjes-ingesteld.png)
+
+**Taken.** Gezinstaken met *voor wie* (tik op de avatars) en een deadline. Te laat staat in het rood. Ook een gewone
+to-do-lijst in Home Assistant, dus ook te gebruiken met Assist: *"Zet fietsband plakken op Taken"*.
+
+**Boodschappen.** Typ wat er nodig is; met komma's zet je meer dingen tegelijk op de lijst (`melk, brood, tomaten`). De lijst
+sorteert zichzelf op de looproute in de winkel: groente & fruit, brood, zuivel, vlees, pasta & rijst, snoep, diepvries,
+drinken, huishouden, verzorging. Staat iets bij de verkeerde afdeling, tik dan op 🏷️. Ook met Assist: *"Zet melk op de
+boodschappenlijst"*.
+
+![Boodschappen](docs/images/44-boodschappen.png)
+
+**Een account voor later.** Krijgt een kind (of iemand anders zonder account) een eigen telefoon? Open het gezinslid in
+**Gezin beheren → Bewerken** en kies **Geef … een eigen account**; je gaat meteen door naar telefoon koppelen.
+
 ## Kaarten
 
 ```yaml
 type: custom:family-gezin-card     # groet, datum en wie er thuis is
 type: custom:family-vandaag-card   # vandaag, afval van morgen, binnenkort jarig
 type: custom:family-agenda-card    # de gezinsagenda
+type: custom:family-klusjes-card   # klusjes: kind ziet de eigen tegels, ouder ziet iedereen (lid: <id> = altijd die persoon)
+type: custom:family-taken-card     # gezinstaken
+type: custom:family-boodschappen-card
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```
@@ -128,7 +164,7 @@ wizard in Gezin beheren.
 
 - [x] **Fundament:** gezin, beheer, telefoons koppelen, weergave per gezinslid, gezinsdashboard
 - [x] **Gezinsagenda:** een kleur per persoon, maand of weekplanner, verjaardagen, afvalkalender
-- [ ] **Taken en klusjes:** klusjes met punten voor kinderen, boodschappenlijst op looproute
+- [x] **Taken en klusjes:** klusjes met punten voor kinderen, boodschappenlijst op looproute
 - [ ] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
 - [ ] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
 - [ ] **Kinderen:** ochtend- en avondroutines, beloningen, zakgeld

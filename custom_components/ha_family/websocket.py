@@ -13,7 +13,9 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .const import ALLE_ROLLEN, DOMAIN
+from .afdelingen import AFDELINGEN
 from .agenda import AFVAL
+from .taken import VOORBEELDEN
 from .gezin import FamilyFout, Gezin, wachtwoord_voorstel
 from .weergave import WEERGAVEN
 
@@ -37,9 +39,13 @@ def _antwoord(fn):
 @callback
 def async_registreer(hass: HomeAssistant) -> None:
     for cmd in (ws_gezin, ws_status, ws_lid_toevoegen, ws_persoon_toevoegen, ws_lid_bijwerken, ws_lid_verwijderen,
-                ws_wachtwoord, ws_test_melding, ws_voorstel, ws_huishouden,
+                ws_wachtwoord, ws_test_melding, ws_voorstel, ws_huishouden, ws_account,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
-                ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding):
+                ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
+                ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
+                ws_boodschap, ws_boodschap_bij, ws_boodschap_weg,
+                ws_klusjes, ws_klusje, ws_klusje_weg, ws_klusje_gedaan, ws_goedkeuren, ws_punten_geven,
+                ws_beloning, ws_beloning_weg, ws_inwisselen, ws_beloning_goedkeuren, ws_klusjes_instellingen):
         websocket_api.async_register_command(hass, cmd)
 
 
@@ -328,3 +334,206 @@ async def ws_verjaardag_melding(hass, connection, msg):
     g.data["verjaardag_melding"] = {"aan": msg["aan"], "tijd": msg["tijd"]}
     g.opslaan()
     return {}
+
+
+# ── Taken, boodschappen en klusjes ──
+async def _ouder(g: Gezin, connection) -> None:
+    if not await g.taken.is_ouder(connection.user.id):
+        raise FamilyFout("Alleen een ouder kan dit aanpassen.")
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/taken"})
+@websocket_api.async_response
+@_antwoord
+async def ws_taken(hass, connection, msg):
+    g = _gezin(hass)
+    t = g.taken
+    ik = g.lid_van_user(connection.user.id)
+    return {"taken": g.data["taken"], "boodschappen": t.boodschappen(), "afdelingen": AFDELINGEN, "klusjes": g.data["klusjes"],
+            **t.overzicht(), "ik": ik["id"] if ik else None, "ouder": await t.is_ouder(connection.user.id),
+            "voorbeelden": [{"emoji": e, "titel": n, "punten": p} for e, n, p in VOORBEELDEN],
+            "instellingen": g.data["klusjes_instellingen"]}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/taak", vol.Optional("taak"): cv.string, vol.Required("titel"): cv.string,
+                                  vol.Optional("wie", default=[]): [cv.string], vol.Optional("deadline"): vol.Any(None, cv.string),
+                                  vol.Optional("notitie", default=""): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_taak(hass, connection, msg):
+    g = _gezin(hass)
+    door = _magschrijven(g, connection)
+    return g.taken.taak({"id": msg.get("taak"), "titel": msg["titel"], "wie": msg["wie"], "deadline": msg.get("deadline"), "notitie": msg["notitie"]}, door)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/taak/klaar", vol.Required("taak"): cv.string, vol.Required("klaar"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_taak_klaar(hass, connection, msg):
+    g = _gezin(hass)
+    return g.taken.taak_klaar(msg["taak"], msg["klaar"], _magschrijven(g, connection))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/taak/weg", vol.Required("taak"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_taak_weg(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    g.taken.taak_weg(msg["taak"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/taken/opruimen"})
+@websocket_api.async_response
+@_antwoord
+async def ws_taken_opruimen(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    return {"weg": g.taken.taken_opruimen()}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/boodschap", vol.Required("tekst"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_boodschap(hass, connection, msg):
+    g = _gezin(hass)
+    return {"nieuw": g.taken.boodschap(msg["tekst"], _magschrijven(g, connection))}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/boodschap/bij", vol.Required("boodschap"): cv.string, vol.Optional("klaar"): bool,
+                                  vol.Optional("afdeling"): cv.string, vol.Optional("titel"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_boodschap_bij(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    return g.taken.boodschap_bij(msg["boodschap"], msg.get("klaar"), msg.get("afdeling"), msg.get("titel"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/boodschap/weg", vol.Optional("boodschap"): cv.string,
+                                  vol.Optional("alles_gekocht", default=False): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_boodschap_weg(hass, connection, msg):
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    g.taken.boodschap_weg(msg.get("boodschap"), msg["alles_gekocht"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusjes", vol.Optional("datum"): cv.date})
+@websocket_api.async_response
+@_antwoord
+async def ws_klusjes(hass, connection, msg):
+    g = _gezin(hass)
+    ik = g.lid_van_user(connection.user.id)
+    return {**g.taken.overzicht(msg.get("datum")), "ik": ik["id"] if ik else None, "ouder": await g.taken.is_ouder(connection.user.id)}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusje", vol.Optional("klusje"): cv.string, vol.Required("titel"): cv.string,
+                                  vol.Optional("emoji", default="⭐"): cv.string, vol.Optional("punten", default=0): vol.Coerce(int),
+                                  vol.Required("wie"): [cv.string], vol.Optional("dagen", default=[]): [vol.Coerce(int)],
+                                  vol.Optional("datum"): vol.Any(None, cv.string), vol.Optional("goedkeuren", default=False): bool,
+                                  vol.Optional("actief", default=True): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_klusje(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    data = {k: v for k, v in msg.items() if k not in ("type", "id", "klusje")}
+    data["id"] = msg.get("klusje")
+    return g.taken.klusje(data)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusje/weg", vol.Required("klusje"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_klusje_weg(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    g.taken.klusje_weg(msg["klusje"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusje/gedaan", vol.Required("klusje"): cv.string, vol.Required("lid"): cv.string,
+                                  vol.Required("datum"): cv.string, vol.Optional("gedaan", default=True): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_klusje_gedaan(hass, connection, msg):
+    return await _gezin(hass).taken.klusje_gedaan(msg["klusje"], msg["lid"], msg["datum"], connection.user.id, msg["gedaan"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusje/goedkeuren", vol.Required("klusje"): cv.string, vol.Required("lid"): cv.string,
+                                  vol.Required("datum"): cv.string, vol.Required("ok"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_goedkeuren(hass, connection, msg):
+    await _gezin(hass).taken.goedkeuren(msg["klusje"], msg["lid"], msg["datum"], msg["ok"], connection.user.id)
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/punten", vol.Required("lid"): cv.string, vol.Required("punten"): vol.Coerce(int),
+                                  vol.Optional("reden", default=""): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_punten_geven(hass, connection, msg):
+    return await _gezin(hass).taken.punten_geven(msg["lid"], msg["punten"], msg["reden"], connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/beloning", vol.Optional("beloning"): cv.string, vol.Required("titel"): cv.string,
+                                  vol.Optional("emoji", default="🎁"): cv.string, vol.Required("punten"): vol.Coerce(int)})
+@websocket_api.async_response
+@_antwoord
+async def ws_beloning(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    return g.taken.beloning({"id": msg.get("beloning"), "titel": msg["titel"], "emoji": msg["emoji"], "punten": msg["punten"]})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/beloning/weg", vol.Required("beloning"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_beloning_weg(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    g.taken.beloning_weg(msg["beloning"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/beloning/inwisselen", vol.Required("beloning"): cv.string, vol.Required("lid"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_inwisselen(hass, connection, msg):
+    return await _gezin(hass).taken.inwisselen(msg["beloning"], msg["lid"], connection.user.id)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/beloning/goedkeuren", vol.Required("punten_id"): cv.string, vol.Required("ok"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_beloning_goedkeuren(hass, connection, msg):
+    await _gezin(hass).taken.beloning_goedkeuren(msg["punten_id"], msg["ok"], connection.user.id)
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusjes/instellingen", vol.Required("aan"): bool, vol.Required("tijd"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_klusjes_instellingen(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    g.data["klusjes_instellingen"] = {"herinnering": {"aan": msg["aan"], "tijd": msg["tijd"]}}
+    g.opslaan()
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/lid/account", vol.Required("lid"): cv.string, vol.Optional("gebruikersnaam"): cv.string,
+                                  vol.Required("wachtwoord"): cv.string, vol.Optional("beheerder", default=False): bool})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_account(hass, connection, msg):
+    g = _gezin(hass)
+    lid = await g.account_aanmaken(msg["lid"], msg.get("gebruikersnaam"), msg["wachtwoord"], msg["beheerder"])
+    await g.weergave_zetten(lid)
+    return lid

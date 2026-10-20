@@ -4,8 +4,9 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.2.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.2.0';
+import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.3.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.3.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.3.0';
 
 class FamilyGezinCard extends HTMLElement {
   setConfig(config) { this._config = { ...config }; }
@@ -73,16 +74,20 @@ class FamilyStrategie extends HTMLElement {
       views: [
         { title: nl ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
           sections: [
-            { type: 'grid', cards: [{ type: 'custom:family-gezin-card' }] },
+            { type: 'grid', cards: [{ type: 'custom:family-gezin-card' }, { type: 'custom:family-klusjes-card' }] },
             { type: 'grid', cards: [{ type: 'custom:family-vandaag-card' }, ...(afval && afval.state !== 'unknown' ? [{ type: 'tile', entity: afval.entity_id, name: nl ? 'Volgende afval' : 'Next waste collection' }] : [])] },
           ] },
         { title: nl ? '📅 Agenda' : '📅 Calendar', path: 'agenda', type: 'panel', cards: [{ type: 'custom:family-agenda-card' }] },
+        { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,
+          sections: [{ type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-taken-card' }] }] },
+        { title: nl ? '🛒 Boodschappen' : '🛒 Groceries', path: 'boodschappen', type: 'sections', max_columns: 1,
+          sections: [{ type: 'grid', cards: [{ type: 'custom:family-boodschappen-card' }] }] },
       ],
     };
   }
 }
 
-const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN];
+const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN];
 registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ...KAARTEN.map(([n, c]) => [n, c])]);
 window.customCards = window.customCards || [];
 KAARTEN.forEach(([type, , name, description]) => { if (!window.customCards.some((c) => c.type === type)) window.customCards.push({ type, name, description }); });

@@ -11,6 +11,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
 from .agenda import Agenda
+from .taken import herinnering as taken_herinnering
 from .gezin import FamilyFout
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +69,11 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["afval"] = vandaag
             agenda.gezin.opslaan()
             await afval_herinnering(agenda, nu)
+        k = agenda.gezin.data.get("klusjes_instellingen", {}).get("herinnering", {})
+        if k.get("aan") and klok == k.get("tijd") and verstuurd.get("klusjes") != vandaag:
+            verstuurd["klusjes"] = vandaag
+            agenda.gezin.opslaan()
+            await taken_herinnering(agenda.gezin.taken, nu)
         v = agenda.gezin.data["verjaardag_melding"]
         if v.get("aan") and klok == v.get("tijd") and verstuurd.get("verjaardag") != vandaag:
             verstuurd["verjaardag"] = vandaag

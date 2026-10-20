@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 — klusjes, taken en boodschappen
+
+- **Klusjes met punten**: elke dag, werkdagen, weekend, eigen dagen of één keer; voor wie; voorbeelden met één klik.
+  Kinderen vinken af op grote tegels (met feestje); de ouder krijgt bij *goedkeuren* een melding met de knoppen
+  **Goedkeuren** / **Nog niet**.
+- **Beloningen**: punten inwisselen (met goedkeuring), voortgang per beloning; extra punten geven of afhalen.
+- **Avondherinnering** voor wie nog klusjes open heeft.
+- **Taken**: gezinstaken met *voor wie* en deadline (ook als to-do-lijst *Taken* in HA).
+- **Boodschappen** op looproute, met komma's meer tegelijk, afdeling aanpassen (ook als to-do-lijst *Boodschappen*).
+- Nieuwe kaarten: *klusjes*, *taken*, *boodschappen*; tabbladen *Taken* en *Boodschappen* in het gezinsdashboard; de klusjes
+  van een kind staan op zijn startscherm.
+- Sensor *Punten* per gezinslid (ook voor nieuwe gezinsleden).
+- **Gezin beheren**: tabblad *Klusjes* (klusjes, beloningen, punten, herinnering) en *Geef … een eigen account* voor wie
+  eerst zonder account is toegevoegd.
+- Opgelost: na *Erop* of *+* verscheen een nieuw item pas als je ergens anders klikte.
+
 ## 0.2.0 — de gezinsagenda
 
 - **Agendakaart** met twee weergaven, per persoon te kiezen: **maand** (blokken met een gekleurd puntje per gezinslid) en

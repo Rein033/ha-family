@@ -229,3 +229,97 @@ async def test_websocket_bewerken_en_agenda(hass: HomeAssistant, gezin, hass_ws_
     await stuur(type="ha_family/agenda/verjaardag_weg", verjaardag=v["id"])
     await stuur(type="ha_family/lid/verwijderen", lid=lid["id"])
     assert (await stuur(type="ha_family/gezin"))["leden"] == []
+
+
+async def _kind(hass: HomeAssistant, g, naam="Emma"):
+    """Gezinslid 'kind' met een eigen (gewone) gebruiker en een websocket-token."""
+    lid = await g.lid_toevoegen(naam, "kind", inloggen=True, gebruikersnaam=naam.lower(), wachtwoord="maan-tulp-vos-42")
+    user = await hass.auth.async_get_user(g.user_id(lid))
+    refresh = await hass.auth.async_create_refresh_token(user, "https://example.com/")
+    return lid, user, hass.auth.async_create_access_token(refresh)
+
+
+async def test_klusjes_goedkeuren_en_punten(hass: HomeAssistant, gezin, hass_admin_user) -> None:
+    from homeassistant.core import Context
+    from homeassistant.util import dt as dt_util
+
+    g = gezin.runtime_data
+    emma, emma_user, _ = await _kind(hass, g)
+    vandaag = dt_util.now().date()
+    k = g.taken.klusje({"titel": "Tafel dekken", "emoji": "🍽️", "punten": 3, "wie": [emma["id"]], "dagen": list(range(7)), "goedkeuren": True})
+    lijst = g.taken.klusjes_vandaag()
+    assert [(x["titel"], x["status"]) for x in lijst] == [("Tafel dekken", "open")]
+    # Emma vinkt af: wacht op goedkeuring, nog geen punten
+    s = await g.taken.klusje_gedaan(k["id"], emma["id"], vandaag.isoformat(), emma_user.id)
+    assert s["status"] == "wacht" and g.taken.saldo(emma["id"]) == 0
+    assert g.taken.wacht_op_ouder()[0]["titel"] == "Tafel dekken"
+    # ouder keurt goed via de knop in de melding (event van de app, met de gebruiker van de ouder)
+    hass.bus.async_fire("mobile_app_notification_action", {"action": f"HA_FAMILY|klusje|{vandaag.isoformat()}|{k['id']}|{emma['id']}|ok"},
+                        context=Context(user_id=hass_admin_user.id))
+    await hass.async_block_till_done()
+    assert g.taken.saldo(emma["id"]) == 3 and g.taken.wacht_op_ouder() == []
+    # nog een keer afvinken telt niet dubbel
+    await g.taken.klusje_gedaan(k["id"], emma["id"], vandaag.isoformat(), emma_user.id)
+    assert g.taken.saldo(emma["id"]) == 3
+    # beloning: te weinig, dan genoeg
+    b = g.taken.beloning({"titel": "Film kiezen", "emoji": "🎬", "punten": 5})
+    with pytest.raises(FamilyFout):
+        await g.taken.inwisselen(b["id"], emma["id"], emma_user.id)
+    await g.taken.punten_geven(emma["id"], 4, "Goed geholpen", hass_admin_user.id)
+    p = await g.taken.inwisselen(b["id"], emma["id"], emma_user.id)
+    assert p["status"] == "wacht" and g.taken.saldo(emma["id"]) == 7 and g.taken.beschikbaar(emma["id"]) == 2
+    await g.taken.beloning_goedkeuren(p["id"], True, hass_admin_user.id)
+    assert g.taken.saldo(emma["id"]) == 2
+    # een kind kan geen punten geven of goedkeuren
+    with pytest.raises(FamilyFout):
+        await g.taken.punten_geven(emma["id"], 100, "", emma_user.id)
+
+
+async def test_kind_mag_geen_klusjes_maken(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    g = gezin.runtime_data
+    emma, _, token = await _kind(hass, g)
+    ws = await hass_ws_client(hass, token)
+    await ws.send_json({"id": 1, "type": "ha_family/klusje", "titel": "Snoep halen", "punten": 100, "wie": [emma["id"]], "dagen": [0]})
+    r = await ws.receive_json()
+    assert not r["success"] and "ouder" in r["error"]["message"]
+    await ws.send_json({"id": 2, "type": "ha_family/klusjes"})
+    r = await ws.receive_json()
+    assert r["success"] and r["result"]["ik"] == emma["id"] and r["result"]["ouder"] is False
+
+
+async def test_boodschappen_en_taken_als_todo(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    noor = await g.lid_toevoegen("Noor", "ouder")
+    await hass.async_block_till_done()
+    await hass.services.async_call("todo", "add_item", {"item": "wc-papier, tomaten, melk"}, target={"entity_id": "todo.familie_jansen_boodschappen"}, blocking=True)
+    await hass.services.async_call("todo", "add_item", {"item": "melk"}, target={"entity_id": "todo.familie_jansen_boodschappen"}, blocking=True)
+    r = await hass.services.async_call("todo", "get_items", {}, target={"entity_id": "todo.familie_jansen_boodschappen"}, blocking=True, return_response=True)
+    assert [i["summary"] for i in r["todo.familie_jansen_boodschappen"]["items"]] == ["tomaten", "melk", "wc-papier"]
+    g.taken.taak({"titel": "Paspoort verlengen", "wie": [noor["id"]], "deadline": "2030-02-01"}, None)
+    await hass.async_block_till_done()
+    r = await hass.services.async_call("todo", "get_items", {}, target={"entity_id": "todo.familie_jansen_taken"}, blocking=True, return_response=True)
+    item = r["todo.familie_jansen_taken"]["items"][0]
+    assert item["summary"] == "Paspoort verlengen" and item["description"] == "Voor: Noor" and item["due"] == "2030-02-01"
+    await hass.services.async_call("todo", "update_item", {"item": "Paspoort verlengen", "status": "completed"}, target={"entity_id": "todo.familie_jansen_taken"}, blocking=True)
+    t = g.data["taken"][0]
+    assert t["klaar"] and t["wie"] == [noor["id"]]          # 'voor wie' blijft bewaard
+
+
+async def test_puntensensor_ook_voor_nieuw_lid(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    await g.lid_toevoegen("Daan", "kind")
+    await hass.async_block_till_done()
+    s = hass.states.get("sensor.familie_jansen_punten_daan")
+    assert s is not None and s.state == "0"
+
+
+async def test_account_later_aanmaken(hass: HomeAssistant, gezin) -> None:
+    g = gezin.runtime_data
+    emma = await g.lid_toevoegen("Emma", "kind")
+    assert g.user_id(emma) is None
+    await g.account_aanmaken(emma["id"], "emma", "maan-tulp-vos-42")
+    uid = g.user_id(emma)
+    assert uid and (await hass.auth.async_get_user(uid)).name == "Emma"
+    assert await g.gebruikersnaam(emma) == "emma"
+    with pytest.raises(FamilyFout):
+        await g.account_aanmaken(emma["id"], "emma2", "maan-tulp-vos-42")

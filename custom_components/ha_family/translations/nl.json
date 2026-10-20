@@ -44,6 +44,17 @@
       },
       "volgende_afval": {
         "name": "Volgende afval"
+      },
+      "punten": {
+        "name": "Punten {naam}"
+      }
+    },
+    "todo": {
+      "taken": {
+        "name": "Taken"
+      },
+      "boodschappen": {
+        "name": "Boodschappen"
       }
     },
     "calendar": {

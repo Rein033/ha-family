@@ -44,6 +44,17 @@
       },
       "volgende_afval": {
         "name": "Next waste collection"
+      },
+      "punten": {
+        "name": "Points {naam}"
+      }
+    },
+    "todo": {
+      "taken": {
+        "name": "Tasks"
+      },
+      "boodschappen": {
+        "name": "Groceries"
       }
     },
     "calendar": {

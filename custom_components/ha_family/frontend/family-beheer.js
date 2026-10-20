@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.2.0';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.3.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -42,7 +42,17 @@ const T = {
     account: 'Account', geenLogin: 'Geen eigen account', telefoon: 'Telefoon', geenTelefoon: 'Nog geen telefoon', lampKort: 'Lamp', geenLamp: 'Geen lamp',
     allesGoed: 'Alles werkt', kanInloggen: 'Inloggen als {x}', jij: 'jij', adresOnbekend: 'Stel eerst het adres van je Home Assistant in (Instellingen → Systeem → Netwerk).',
     huishoudenNaam: 'Naam van jullie huishouden',
-    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda',
+    accountMaken: 'Geef {x} een eigen account', accountKnop: 'Account maken en telefoon koppelen',
+    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes',
+    klKlusjes: 'Klusjes', klUitleg: 'Klusjes staan elke dag (of op de gekozen dagen) klaar. Afvinken geeft punten.', klNieuw: 'Klusje',
+    klVoorbeelden: 'Voorbeelden: tik om toe te voegen', klGeen: 'Nog geen klusjes. Begin met een voorbeeld hieronder.', klMaak: 'Klusje maken', klBewerk: 'Klusje bewerken',
+    klWat: 'Wat moet er gebeuren?', klPunten: 'Punten', klWie: 'Voor wie?', klWanneer: 'Wanneer?', klElkeDag: 'Elke dag', klWerkdagen: 'Werkdagen',
+    klWeekend: 'Weekend', klEenKeer: 'Eén keer', klDatum: 'Datum', klGoedkeuren: 'Een ouder moet het goedkeuren', klGoedkeurenUitleg: 'Je krijgt een melding met "Goedkeuren" erin.',
+    klZeker: 'Klusje "{x}" verwijderen?', dagenKort: ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'], klUit: 'staat uit',
+    blBeloningen: 'Beloningen', blUitleg: 'Waar kunnen punten voor worden ingewisseld? Bij inwisselen krijg je een melding om goed te keuren.',
+    blTitel: 'Beloning', blTitelVb: 'bijv. Film kiezen', blPunten: 'punten', blVb: [['🎬', 'Film kiezen', 20], ['🍦', 'IJsje', 15], ['📱', '30 min extra schermtijd', 25], ['🍕', 'Pizza kiezen', 40], ['🎢', 'Uitje', 100]],
+    ptPunten: 'Punten', ptUitleg: 'Extra punten geven (of afhalen), bijvoorbeeld voor goed helpen.', ptAnders: 'Anders…', ptHoeveel: 'Hoeveel punten? (min = afhalen)', ptReden: 'Waarvoor?',
+    ptRecent: 'Laatst', hrHerinnering: 'Herinnering', hrUitleg: "'s Avonds een seintje aan wie nog klusjes open heeft.", hrAan: 'Herinnering om',
     agendasLeden: "Agenda's per gezinslid", agendasUitleg: 'Afspraken uit deze agenda\'s komen in de gezinsagenda, in de kleur van die persoon.',
     gezamenlijk: "Gezamenlijke agenda's", gezamenlijkUitleg: 'Bijvoorbeeld school, sport of vakanties: in de kleur van het gezin.',
     agendaKoppelen: 'Agenda koppelen', geenAgendas: 'Nog geen agenda gekoppeld', agendaVan: 'Agenda koppelen voor {x}', hetGezin: 'het hele gezin',
@@ -92,7 +102,17 @@ const T = {
     account: 'Account', geenLogin: 'No own account', telefoon: 'Phone', geenTelefoon: 'No phone yet', lampKort: 'Lamp', geenLamp: 'No lamp',
     allesGoed: 'Everything works', kanInloggen: 'Logs in as {x}', jij: 'you', adresOnbekend: 'Set the address of your Home Assistant first (Settings → System → Network).',
     huishoudenNaam: 'Name of your household',
-    tabLeden: 'Family members', tabAgenda: 'Calendar',
+    accountMaken: 'Give {x} their own account', accountKnop: 'Create account and connect phone',
+    tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores',
+    klKlusjes: 'Chores', klUitleg: 'Chores are ready every day (or on the chosen days). Ticking them off earns points.', klNieuw: 'Chore',
+    klVoorbeelden: 'Examples: tap to add', klGeen: 'No chores yet. Start with an example below.', klMaak: 'New chore', klBewerk: 'Edit chore',
+    klWat: 'What needs doing?', klPunten: 'Points', klWie: 'For whom?', klWanneer: 'When?', klElkeDag: 'Every day', klWerkdagen: 'Weekdays',
+    klWeekend: 'Weekend', klEenKeer: 'Once', klDatum: 'Date', klGoedkeuren: 'A parent has to approve', klGoedkeurenUitleg: 'You get a notification with "Approve" in it.',
+    klZeker: 'Delete chore "{x}"?', dagenKort: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'], klUit: 'is off',
+    blBeloningen: 'Rewards', blUitleg: 'What can points be exchanged for? You get a notification to approve.',
+    blTitel: 'Reward', blTitelVb: 'e.g. Pick the movie', blPunten: 'points', blVb: [['🎬', 'Pick the movie', 20], ['🍦', 'Ice cream', 15], ['📱', '30 min extra screen time', 25], ['🍕', 'Choose the pizza', 40], ['🎢', 'Day out', 100]],
+    ptPunten: 'Points', ptUitleg: 'Give (or take away) extra points, for example for helping out.', ptAnders: 'Other…', ptHoeveel: 'How many points? (minus = take away)', ptReden: 'What for?',
+    ptRecent: 'Recent', hrHerinnering: 'Reminder', hrUitleg: 'In the evening a note to whoever still has chores open.', hrAan: 'Reminder at',
     agendasLeden: 'Calendars per family member', agendasUitleg: "Events from these calendars appear in the family calendar, in that person's colour.",
     gezamenlijk: 'Shared calendars', gezamenlijkUitleg: 'For example school, sports or holidays: in the family colour.',
     agendaKoppelen: 'Connect calendar', geenAgendas: 'No calendar connected yet', agendaVan: 'Connect a calendar for {x}', hetGezin: 'the whole family',
@@ -134,7 +154,7 @@ class HaFamilyBeheer extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style>
       <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div>
-        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button></div></div>
+        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button><button data-a="tab" data-tab="klusjes">⭐ ${esc(this.t('tabKlusjes'))}</button></div></div>
       <div class="inhoud"><div class="laden">…</div></div><div class="dlg-plek"></div>`;
     this._menu = document.createElement('ha-menu-button');
     this._menu.hass = this._hass;
@@ -151,8 +171,9 @@ class HaFamilyBeheer extends HTMLElement {
     try {
       this._s = await this._ws('ha_family/status'); this._fout = null;
       if (this._tab === 'agenda' && !this._typt()) this._ag = await this._ws('ha_family/agenda/instellingen');
+      if (this._tab === 'klusjes' && !this._typt()) this._kl = await this._ws('ha_family/taken');
     } catch (e) { this._fout = e.message; }
-    if (this._tab === 'agenda' && this._typt()) return;            // niet hertekenen terwijl iemand in de agenda-instellingen typt
+    if ((this._tab === 'agenda' || this._tab === 'klusjes') && this._typt()) return;            // niet hertekenen terwijl iemand in de agenda-instellingen typt
     this._teken();
     if (this._dlg) this._tekenDlg();
   }
@@ -168,6 +189,7 @@ class HaFamilyBeheer extends HTMLElement {
     if (!s) { el.innerHTML = `<div class="kaart fout">${esc(this._fout || '…')}</div>`; return; }
     this.shadowRoot.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('aan', b.dataset.tab === (this._tab || 'leden')));
     if (this._tab === 'agenda') { el.innerHTML = this._agendaTab(); return; }
+    if (this._tab === 'klusjes') { el.innerHTML = this._klusjesTab(); return; }
     const soort = s.type === 'huishouden' ? this.t('huishouden') : this.t('gezin');
     const losse = s.losse_personen.length ? `<div class="kaart zacht"><b>${esc(this.t('alInHa'))}</b><p class="fam-sub">${esc(this.t('alInHaTekst'))}</p>
       <div class="losse">${s.losse_personen.map((p) => `<div class="los"><span class="los-naam">${esc(p.naam)}</span>
@@ -291,7 +313,7 @@ class HaFamilyBeheer extends HTMLElement {
 
   async _agendaKlik(a, b) {
     const v = this._afv;
-    if (a === 'tab') { this._tab = b.dataset.tab; this._ag = null; this._afv = null; this._teken(); return this._laad(); }
+    if (a === 'tab') { this._tab = b.dataset.tab; this._ag = null; this._afv = null; this._kl = null; this._teken(); return this._laad(); }
     if (a === 'agenda-koppel') return this._open({ soort: 'agenda', voor: b.dataset.voor });
     if (a === 'agenda-los') return this._agendaZet(b.dataset.voor, this._huidigeAgendas(b.dataset.voor).filter((x) => x !== b.dataset.entity));
     if (a === 'agenda-kies') {
@@ -336,6 +358,11 @@ class HaFamilyBeheer extends HTMLElement {
   async _agendaWijzig(e) {
     const a = e.target.dataset.a, v = this._afv;
     if (!a) return;
+    if (a === 'kl-herinnering' || a === 'kl-tijd') {
+      const r = this.shadowRoot;
+      return this._doe('ha_family/klusjes/instellingen', { aan: r.querySelector('[data-a=kl-herinnering]').checked, tijd: r.querySelector('[data-a=kl-tijd]').value || '18:00' }, this.t('bewaard'));
+    }
+    if (a === 'kl-dlg-datum' && this._dlg) { this._dlg.datum = e.target.value; return; }
     if (a === 'geboorte') return this._doe('ha_family/lid/bijwerken', { lid: e.target.dataset.id, geboortedatum: e.target.value || null }, this.t('bewaard'));
     if (a === 'jarig-melding' || a === 'jarig-tijd') {
       const r = this.shadowRoot;
@@ -348,6 +375,130 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'afval-weken') v.schema[k].weken = Number(e.target.value);
     if (a === 'afval-herinnering') v.herinnering.aan = e.target.checked;
     if (a === 'afval-tijd') v.herinnering.tijd = e.target.value;
+  }
+
+
+  /* ── Klusjes-tab ── */
+  _wanneerTekst(k) {
+    const d = this.t('dagenKort');
+    if (!k.dagen.length) return k.datum ? new Date(k.datum + 'T00:00:00').toLocaleDateString(this._hass.locale?.language, { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    if (k.dagen.length === 7) return this.t('klElkeDag');
+    if (k.dagen.join() === '0,1,2,3,4') return this.t('klWerkdagen');
+    if (k.dagen.join() === '5,6') return this.t('klWeekend');
+    return k.dagen.map((i) => d[i]).join(', ');
+  }
+  _klusjesTab() {
+    const k = this._kl, s = this._s, h = this._hass;
+    if (!k) return '<div class="kaart">…</div>';
+    const lmap = Object.fromEntries(s.leden.map((l) => [l.id, l]));
+    const avs = (ids) => ids.filter((i) => lmap[i]).map((i) => avatar(lmap[i], { grootte: 26 })).join('');
+    const bestaand = new Set(k.klusjes.map((x) => x.titel.toLowerCase()));
+    const geschiedenis = (k.geschiedenis || []).filter((p) => lmap[p.lid]).slice(0, 8);
+    return `
+      <div class="kaart"><div class="kop2"><h2>⭐ ${esc(this.t('klKlusjes'))}</h2><button class="fam-knop" data-a="kl-nieuw"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('klNieuw'))}</button></div>
+        <p class="fam-sub">${esc(this.t('klUitleg'))}</p>
+        ${k.klusjes.length ? k.klusjes.map((x) => `<div class="arij"><span class="kl-em">${esc(x.emoji)}</span><span class="anaam groei"><b>${esc(x.titel)}</b><br/>
+            <span class="fam-sub">${x.punten ? `+${x.punten} ⭐ · ` : ''}${esc(this._wanneerTekst(x))}${x.goedkeuren ? ' · ✋' : ''}${x.actief === false ? ` · ${esc(this.t('klUit'))}` : ''}</span></span>
+            <span class="avs">${avs(x.wie)}</span>
+            <button class="fam-knop rand klein" data-a="kl-bewerk" data-k="${x.id}"><ha-icon icon="mdi:pencil"></ha-icon></button>
+            <button class="fam-knop gevaar klein" data-a="kl-weg" data-k="${x.id}" data-t="${esc(x.titel)}">✕</button></div>`).join('')
+          : `<p>${esc(this.t('klGeen'))}</p>`}
+        <h3>${esc(this.t('klVoorbeelden'))}</h3>
+        <div class="vb">${k.voorbeelden.filter((v) => !bestaand.has(v.titel.toLowerCase())).map((v) => `<button class="fam-chip vbk" data-a="kl-voorbeeld" data-e="${esc(v.emoji)}" data-t="${esc(v.titel)}" data-p="${v.punten}">${esc(v.emoji)} ${esc(v.titel)} · ${v.punten} ⭐</button>`).join('')}</div></div>
+
+      <div class="kaart"><h2>🎁 ${esc(this.t('blBeloningen'))}</h2><p class="fam-sub">${esc(this.t('blUitleg'))}</p>
+        ${k.beloningen.map((b) => `<div class="arij"><span class="kl-em">${esc(b.emoji)}</span><b class="anaam groei">${esc(b.titel)}</b><span class="fam-chip">${b.punten} ⭐</span>
+          <button class="fam-knop gevaar klein" data-a="kl-bl-weg" data-b="${b.id}">✕</button></div>`).join('')}
+        <div class="rij"><input class="veld smal" id="bl-emoji" value="🎁" maxlength="4" style="width:64px;text-align:center"/><input class="veld groei" id="bl-titel" placeholder="${esc(this.t('blTitelVb'))}" maxlength="80"/>
+          <input class="veld smal" id="bl-punten" type="number" min="1" max="10000" value="20" style="width:90px"/><span class="fam-sub">${esc(this.t('blPunten'))}</span>
+          <button class="fam-knop" data-a="kl-bl-toevoegen"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('toevoegenKort'))}</button></div>
+        ${`<div class="vb" style="margin-top:10px">${this.t('blVb').filter(([, t]) => !k.beloningen.some((x) => x.titel.toLowerCase() === t.toLowerCase())).map(([e, t, p]) => `<button class="fam-chip vbk" data-a="kl-bl-vb" data-e="${e}" data-t="${esc(t)}" data-p="${p}">${e} ${esc(t)} · ${p} ⭐</button>`).join('')}</div>`}</div>
+
+      <div class="kaart"><h2>💯 ${esc(this.t('ptPunten'))}</h2><p class="fam-sub">${esc(this.t('ptUitleg'))}</p>
+        ${s.leden.map((l) => `<div class="arij">${avatar(l, { grootte: 40 })}<b class="anaam groei">${esc(l.naam)}</b><span class="fam-chip">⭐ ${(k.leden[l.id] || {}).saldo || 0}</span>
+          ${[1, 5, -1].map((n) => `<button class="fam-knop ${n > 0 ? 'zacht' : 'rand'} klein" data-a="kl-pt" data-l="${l.id}" data-n="${n}">${n > 0 ? '+' : '−'}${Math.abs(n)}</button>`).join('')}
+          <button class="fam-knop rand klein" data-a="kl-pt-anders" data-l="${l.id}">${esc(this.t('ptAnders'))}</button></div>`).join('')}
+        ${geschiedenis.length ? `<h3>${esc(this.t('ptRecent'))}</h3>${geschiedenis.map((p) => `<div class="arij">${avatar(lmap[p.lid], { grootte: 26 })}<span class="groei">${esc(p.reden)}</span>
+          <span class="fam-sub">${new Date(p.tijd * 1000).toLocaleString(h.locale?.language, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          <b style="color:${p.punten > 0 ? 'var(--success-color,#2e7d32)' : 'var(--error-color)'}">${p.punten > 0 ? '+' : ''}${p.punten}${p.status === 'wacht' ? ' ⏳' : ''}</b></div>`).join('')}` : ''}</div>
+
+      <div class="kaart"><h2>⏰ ${esc(this.t('hrHerinnering'))}</h2><p class="fam-sub">${esc(this.t('hrUitleg'))}</p>
+        <div class="rij"><label class="vink kort"><input type="checkbox" data-a="kl-herinnering" ${k.instellingen.herinnering.aan ? 'checked' : ''}/> ${esc(this.t('hrAan'))}</label>
+          <input class="veld smal" type="time" data-a="kl-tijd" value="${esc(k.instellingen.herinnering.tijd)}"/></div></div>`;
+  }
+
+  _dlgKlusje(d) {
+    const s = this._s, dagen = this.t('dagenKort');
+    const EM = ['⭐', '🍽️', '🧽', '🍴', '🧸', '🛏️', '🦷', '📚', '🐕', '🐈', '🌱', '🗑️', '👕', '🧹', '🚿', '🛒', '🎒', '🚲', '🎹', '🏃'];
+    const preset = (n, lijst) => `<button class="keuze klein-k ${!d.eenmalig && d.dagen.join() === lijst.join() ? 'aan' : ''}" data-a="kl-dlg-dagen" data-v="${lijst.join()}">${esc(n)}</button>`;
+    return `<h2>${esc(d.klusje ? this.t('klBewerk') : this.t('klMaak'))}</h2>
+      <div class="voorbeeld"><span class="kl-groot">${esc(d.emoji)}</span></div>
+      <div class="emoji">${EM.map((e) => `<button class="${d.emoji === e ? 'aan' : ''}" data-a="kl-dlg-emoji" data-v="${e}">${e}</button>`).join('')}</div>
+      <label class="lbl">${esc(this.t('klWat'))}</label><input class="veld" id="kl-titel" value="${esc(d.titel)}" maxlength="80"/>
+      <label class="lbl">${esc(this.t('klPunten'))}</label>
+      <div class="rij"><button class="fam-knop rand klein" data-a="kl-dlg-pt" data-n="-1">−</button><b class="ptn">${d.punten} ⭐</b><button class="fam-knop rand klein" data-a="kl-dlg-pt" data-n="1">+</button></div>
+      <label class="lbl">${esc(this.t('klWie'))}</label>
+      <div class="wie">${s.leden.map((l) => `<button class="${d.wie.includes(l.id) ? 'aan' : ''}" style="--k:${esc(l.kleur)}" data-a="kl-dlg-wie" data-l="${l.id}">${avatar(l, { grootte: 40 })}<small>${esc(l.naam)}</small></button>`).join('')}</div>
+      <label class="lbl">${esc(this.t('klWanneer'))}</label>
+      <div class="keuzes vier">${preset(this.t('klElkeDag'), [0, 1, 2, 3, 4, 5, 6])}${preset(this.t('klWerkdagen'), [0, 1, 2, 3, 4])}${preset(this.t('klWeekend'), [5, 6])}
+        <button class="keuze klein-k ${d.eenmalig ? 'aan' : ''}" data-a="kl-dlg-eenmalig">${esc(this.t('klEenKeer'))}</button></div>
+      ${d.eenmalig ? `<input class="veld" type="date" data-a="kl-dlg-datum" value="${esc(d.datum || '')}" style="margin-top:8px"/>`
+        : `<div class="dagen">${dagen.map((n, i) => `<button class="${d.dagen.includes(i) ? 'aan' : ''}" data-a="kl-dlg-dag" data-v="${i}">${esc(n)}</button>`).join('')}</div>`}
+      <label class="vink"><input type="checkbox" id="kl-goedkeuren" ${d.goedkeuren ? 'checked' : ''}/> <span><b>${esc(this.t('klGoedkeuren'))}</b><br/><small class="fam-sub">${esc(this.t('klGoedkeurenUitleg'))}</small></span></label>
+      ${d.fout ? `<div class="fam-chip fout">${esc(d.fout)}</div>` : ''}
+      <div class="rij eind"><button class="fam-knop rand" data-a="sluit">${esc(this.t('annuleren'))}</button><button class="fam-knop" data-a="kl-dlg-opslaan">${esc(this.t('opslaan'))}</button></div>`;
+  }
+
+  _klDlgLees() {
+    const d = this._dlg, r = this.shadowRoot;
+    if (!d || d.soort !== 'klusje') return;
+    if (r.getElementById('kl-titel')) d.titel = r.getElementById('kl-titel').value;
+    if (r.getElementById('kl-goedkeuren')) d.goedkeuren = r.getElementById('kl-goedkeuren').checked;
+  }
+
+  async _klusjesKlik(a, b) {
+    const k = this._kl, d = this._dlg;
+    const kinderen = this._s.leden.filter((l) => l.rol === 'kind').map((l) => l.id);
+    const nieuw = (extra = {}) => this._open({ soort: 'klusje', emoji: '⭐', titel: '', punten: 2, wie: kinderen.length ? kinderen : this._s.leden.map((l) => l.id),
+      dagen: [0, 1, 2, 3, 4, 5, 6], eenmalig: false, datum: '', goedkeuren: false, ...extra });
+    if (a === 'kl-nieuw') return nieuw();
+    if (a === 'kl-voorbeeld') return nieuw({ emoji: b.dataset.e, titel: b.dataset.t, punten: Number(b.dataset.p) });
+    if (a === 'kl-bewerk') {
+      const x = k.klusjes.find((y) => y.id === b.dataset.k);
+      return this._open({ soort: 'klusje', klusje: x.id, emoji: x.emoji, titel: x.titel, punten: x.punten, wie: [...x.wie], dagen: [...x.dagen],
+        eenmalig: !x.dagen.length, datum: x.datum || '', goedkeuren: x.goedkeuren });
+    }
+    if (a === 'kl-weg') { if (confirm(this.t('klZeker', b.dataset.t))) await this._doe('ha_family/klusje/weg', { klusje: b.dataset.k }); return; }
+    if (a.startsWith('kl-dlg-') && d) {
+      this._klDlgLees();
+      if (a === 'kl-dlg-emoji') d.emoji = b.dataset.v;
+      if (a === 'kl-dlg-pt') d.punten = Math.max(0, Math.min(1000, d.punten + Number(b.dataset.n)));
+      if (a === 'kl-dlg-wie') { const id = b.dataset.l; d.wie = d.wie.includes(id) ? d.wie.filter((x) => x !== id) : [...d.wie, id]; }
+      if (a === 'kl-dlg-dagen') { d.eenmalig = false; d.dagen = b.dataset.v.split(',').map(Number); }
+      if (a === 'kl-dlg-dag') { const i = Number(b.dataset.v); d.dagen = d.dagen.includes(i) ? d.dagen.filter((x) => x !== i) : [...d.dagen, i].sort(); }
+      if (a === 'kl-dlg-eenmalig') d.eenmalig = true;
+      if (a === 'kl-dlg-opslaan') {
+        try {
+          await this._ws('ha_family/klusje', { ...(d.klusje ? { klusje: d.klusje } : {}), titel: d.titel, emoji: d.emoji, punten: d.punten, wie: d.wie,
+            dagen: d.eenmalig ? [] : d.dagen, datum: d.eenmalig ? d.datum : null, goedkeuren: d.goedkeuren });
+          this._sluit(); await this._laad(); return;
+        } catch (er) { d.fout = er.message; }
+      }
+      return this._herteken();
+    }
+    if (a === 'kl-bl-toevoegen' || a === 'kl-bl-vb') {
+      const r = this.shadowRoot;
+      const data = a === 'kl-bl-vb' ? { emoji: b.dataset.e, titel: b.dataset.t, punten: Number(b.dataset.p) }
+        : { emoji: r.getElementById('bl-emoji').value || '🎁', titel: r.getElementById('bl-titel').value, punten: Number(r.getElementById('bl-punten').value) };
+      return this._doe('ha_family/beloning', data);
+    }
+    if (a === 'kl-bl-weg') return this._doe('ha_family/beloning/weg', { beloning: b.dataset.b });
+    if (a === 'kl-pt') return this._doe('ha_family/punten', { lid: b.dataset.l, punten: Number(b.dataset.n), reden: '' }, '⭐');
+    if (a === 'kl-pt-anders') {
+      const n = Number(prompt(this.t('ptHoeveel'), '10')); if (!n) return;
+      const reden = prompt(this.t('ptReden'), '') || '';
+      return this._doe('ha_family/punten', { lid: b.dataset.l, punten: n, reden }, '⭐');
+    }
   }
 
   /* ── Dialogen ── */
@@ -363,7 +514,8 @@ class HaFamilyBeheer extends HTMLElement {
     // velden waarin iemand typt niet weggooien: alleen de koppel-dialoog ververst vanzelf
     if (d.soort !== 'koppel' && plek.innerHTML && !d.opnieuw) return;
     d.opnieuw = false;
-    const inhoud = d.soort === 'nieuw' ? this._dlgNieuw(d) : d.soort === 'koppel' ? this._dlgKoppel(d) : d.soort === 'agenda' ? this._dlgAgenda(d) : this._dlgBewerk(d);
+    const inhoud = d.soort === 'nieuw' ? this._dlgNieuw(d) : d.soort === 'koppel' ? this._dlgKoppel(d) : d.soort === 'agenda' ? this._dlgAgenda(d)
+      : d.soort === 'klusje' ? this._dlgKlusje(d) : this._dlgBewerk(d);
     plek.innerHTML = `<div class="achter" data-a="sluit-achter"><div class="dlg" role="dialog">${inhoud}</div></div>`;
     if (d.soort === 'bewerk') this._lampForm(d);
   }
@@ -439,6 +591,11 @@ class HaFamilyBeheer extends HTMLElement {
       <label class="lbl">${esc(this.t('welkeRol'))}</label>${this._rollen(d)}${this._kiezers(d)}
       ${l.kan_inloggen ? `<label class="lbl">${esc(this.t('weergave', l.naam))}</label>
         <div class="keuzes vier">${Object.entries(wg).map(([k, [n, u]]) => `<button class="keuze ${d.weergave === k ? 'aan' : ''}" data-a="weergave" data-v="${k}"><b>${esc(n)}</b><small>${esc(u)}</small></button>`).join('')}</div>` : ''}
+      ${l.kan_inloggen ? '' : d.account ? `<div class="kaart zacht" style="margin-top:16px"><b>📱 ${esc(this.t('accountMaken', l.naam))}</b>
+          <label class="lbl">${esc(this.t('gebruikersnaam'))}</label><input class="veld" id="acc-gebruikersnaam" value="${esc(d.account.gebruikersnaam)}" autocapitalize="off" maxlength="30"/>
+          <label class="lbl">${esc(this.t('wachtwoord'))}</label><input class="veld mono" id="acc-wachtwoord" value="${esc(d.account.wachtwoord)}" maxlength="64"/>
+          <div class="rij eind"><button class="fam-knop" data-a="account-maak">${esc(this.t('accountKnop'))}</button></div></div>`
+        : `<div class="rij" style="margin-top:16px"><button class="fam-knop zacht" data-a="account-start"><ha-icon icon="mdi:cellphone-plus"></ha-icon>${esc(this.t('accountMaken', l.naam))}</button></div>`}
       <label class="lbl">${esc(this.t('lamp', l.naam))}</label><small class="fam-sub">${esc(this.t('lampUitleg'))}</small><div class="lampform"></div>
       ${l.telefoons.length ? `<label class="lbl">${esc(this.t('meldingen'))}</label><select class="veld" id="notify"><option value="">${esc(this.t('automatisch'))}</option>
         ${l.telefoons.map((t) => `<option value="${esc(t.notify)}" ${l.notify === t.notify ? 'selected' : ''}>${esc(t.naam)}</option>`).join('')}</select>` : ''}
@@ -484,6 +641,10 @@ class HaFamilyBeheer extends HTMLElement {
     const b = e.target.closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a, d = this._dlg, s = this._s;
+    if (a.startsWith('kl-')) {
+      if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
+      return this._klusjesKlik(a, b);
+    }
     if (a === 'tab' || a.startsWith('agenda-') || a.startsWith('jarig-') || a.startsWith('afval-')) {
       if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;              // die gaan via 'change'
       return this._agendaKlik(a, b);
@@ -541,6 +702,15 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'bewerk') {
       const l = s.leden.find((x) => x.id === b.dataset.id);
       return this._open({ soort: 'bewerk', id: l.id, naam: l.naam, rol: l.rol, emoji: l.emoji, kleur: l.kleur, weergave: l.weergave, lamp: l.lamp, notify: l.notify || '' });
+    }
+    if (a === 'account-start') { d.account = { gebruikersnaam: slug(d.naam), wachtwoord: (await this._ws('ha_family/voorstel')).wachtwoord }; return this._herteken(); }
+    if (a === 'account-maak') {
+      const gb = this.shadowRoot.getElementById('acc-gebruikersnaam').value, ww = this.shadowRoot.getElementById('acc-wachtwoord').value;
+      try {
+        await this._ws('ha_family/lid/account', { lid: d.id, gebruikersnaam: gb, wachtwoord: ww });
+        await this._laad();
+        return this._open({ soort: 'koppel', id: d.id, wachtwoord: ww });           // meteen door naar telefoon koppelen
+      } catch (er) { d.fout = er.message; return this._herteken(); }
     }
     if (a === 'bewerk-opslaan') {
       const l = s.leden.find((x) => x.id === d.id);
@@ -656,6 +826,17 @@ const STIJL = `
   .wie button { border: 0; background: none; cursor: pointer; font: inherit; color: inherit; display: grid; justify-items: center; gap: 4px; padding: 6px; border-radius: 14px; opacity: .45; }
   .wie button.aan { opacity: 1; background: color-mix(in srgb, var(--k) 14%, transparent); }
   .wie small { font-size: .8rem; }
+  .kl-em { font-size: 1.8rem; width: 40px; text-align: center; }
+  .kl-groot { font-size: 3.5rem; }
+  .groei { flex: 1; min-width: 0; }
+  .vb { display: flex; flex-wrap: wrap; gap: 6px; }
+  .vbk { border: 0; cursor: pointer; font: inherit; }
+  .vbk:hover { background: color-mix(in srgb, var(--primary-color) 14%, transparent); }
+  .ptn { font-size: 1.3rem; min-width: 70px; text-align: center; }
+  .keuze.klein-k { padding: 10px 12px; text-align: center; }
+  .dagen { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .dagen button { border: 0; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font: inherit; font-weight: 600; background: var(--secondary-background-color); color: var(--primary-text-color); }
+  .dagen button.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); }
   @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } .tabs button { padding: 0 10px; } }
 `;
 
