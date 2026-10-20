@@ -4,7 +4,7 @@
  *
  * Bovenaan kies je wie: jezelf (je eigen lijstje maken en naar anderen sturen) of iemand anders (zijn lijstje bekijken,
  * afvinken wat jij koopt, en ideeën laten bedenken — met de AI van Home Assistant als die er is). */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.6.0';
+import { CSS, avatar, esc, leden } from './family-ui.js?v=0.6.1';
 
 const TEKST = {
   nl: {

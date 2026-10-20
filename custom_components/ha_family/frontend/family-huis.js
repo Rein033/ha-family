@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc } from './family-ui.js?v=0.6.0';
+import { CSS, esc } from './family-ui.js?v=0.6.1';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',

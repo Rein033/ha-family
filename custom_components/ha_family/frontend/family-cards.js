@@ -4,12 +4,13 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.6.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.6.0';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.6.0';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.6.0';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.6.0';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.6.0';
+import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.6.1';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.6.1';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.6.1';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.6.1';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.6.1';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.6.1';
+import { FamilyKaartEditor, metEditor } from './family-editor.js?v=0.6.1';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -109,7 +110,8 @@ class FamilyStrategie extends HTMLElement {
 }
 
 const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN, ...CADEAU_KAARTEN];
-registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ...KAARTEN.map(([n, c]) => [n, c])]);
+metEditor(KAARTEN);
+registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ['family-kaart-editor', FamilyKaartEditor], ...KAARTEN.map(([n, c]) => [n, c])]);
 window.customCards = window.customCards || [];
-KAARTEN.forEach(([type, , name, description]) => { if (!window.customCards.some((c) => c.type === type)) window.customCards.push({ type, name, description }); });
+KAARTEN.forEach(([type, , name, description]) => { if (!window.customCards.some((c) => c.type === type)) window.customCards.push({ type, name, description, preview: false, documentationURL: 'https://github.com/Rein033/ha-family#kaarten' }); });
 console.info(`%c HA FAMILY %c ${VERSIE} `, 'background:#7c4dff;color:#fff;font-weight:700', 'background:#333;color:#fff');

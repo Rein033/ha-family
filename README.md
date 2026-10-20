@@ -258,6 +258,9 @@ weergave: maand                    # standaard voor wie nog niets koos: maand of
 weken: 6                           # aantal weken in de weekplanner
 ```
 
+Alle kaarten zijn ook via **Kaart toevoegen** te vinden en hebben een visuele editor. Die instellingen zijn alleen voor
+wie in HA Family op de weergave *Expert* staat (of een beheerder die geen gezinslid is); de rest krijgt uitleg.
+
 Het hele dashboard: `strategy: { type: custom:ha-family }`. Het muurscherm staat op `/gezin-muur`. Wil je het zelf aanpassen: open het dashboard → ✏️ → **Overnemen**.
 
 ## Wat komt er

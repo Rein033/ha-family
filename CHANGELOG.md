@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — visuele editor (voor experts)
+
+- Alle kaarten hebben een **visuele editor** in de dashboard-editor (weerbericht, agenda-weergave en aantal weken, klusjes
+  van wie, compact, kamer en titel). Alleen voor wie op de weergave *Expert* staat; anderen krijgen uitleg.
+- Kaarten staan met een beschrijving in *Kaart toevoegen*.
+
 ## 0.6.0 — cadeaus en verlanglijstjes
 
 - **Over een gezinslid** (Gezin beheren → Bewerken): geboortedatum, geslacht en interesses.
