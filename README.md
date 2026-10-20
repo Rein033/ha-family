@@ -218,6 +218,29 @@ automatiseringen, en kamers die je al had staan er meteen.
 |---|---|
 | ![Huis](docs/images/73-huis-bediend.png) | ![Instellen](docs/images/71-huis-toegewezen.png) |
 
+## Cadeaus en verlanglijstjes
+
+**Over iedereen.** In **Gezin beheren → Bewerken** staan per gezinslid de geboortedatum, het geslacht en de interesses
+(voetbal, paarden, gamen, … of zelf iets typen). Iedereen kan zijn eigen interesses ook aanpassen op het tabblad Cadeaus.
+
+**Verlanglijstje.** Op het tabblad **🎁 Cadeaus** zet iedereen zijn wensen op een lijstje, met prijs, link en een notitie
+(*maat 38, zwart*). Ouders helpen de kinderen met hun lijstje. Met **📤 Sturen naar…** krijgt wie je kiest een melding met
+het lijstje op de telefoon.
+
+**Stiekem afvinken.** Bij het lijstje van een ander tik je op *Ik koop dit*. De anderen zien dat het al gekocht wordt,
+zodat niemand hetzelfde koopt, maar de eigenaar ziet nooit wát er gekocht is of door wie.
+
+**Cadeau-ideeën.** Kies iemand, een budget en waarvoor (verjaardag, Sinterklaas, kerst, zomaar), en HA Family bedenkt
+ideeën die passen bij leeftijd, geslacht en interesses, en die nog niet op het lijstje staan. Is er in Home Assistant
+een AI gekoppeld (*AI Task*, bijvoorbeeld Ollama, OpenAI of Google), dan bedenkt die ze; anders komen ze uit een eigen
+ideeënlijst. Bewaar wat je leuk vindt met ⭐: die lijst is alleen voor jou.
+
+**Herinnering.** Twee weken voor iemands verjaardag krijgen de anderen een seintje, met wat er nog op het lijstje staat.
+
+| Lijstje van een ander, met ideeën | Mijn lijstje | Over een gezinslid |
+|---|---|---|
+| ![Cadeaus](docs/images/80-cadeaus-ander.png) | ![Mijn lijstje](docs/images/81-cadeaus-mijn-lijst.png) | ![Over](docs/images/82-over-gezinslid.png) |
+
 ## Kaarten
 
 ```yaml
@@ -230,6 +253,7 @@ type: custom:family-boodschappen-card   # (compact: true = tikbare lijstjes met 
 type: custom:family-eten-card      # het weekmenu (compact: true = 'Vanavond eten we')
 type: custom:family-recepten-card  # recepten: zoeken, inplannen, op de lijst, importeren van een website
 type: custom:family-kamers-card    # lampen, airco en meer per kamer (compact: true = één rij per kamer; kamer: <ruimte-id>)
+type: custom:family-cadeaus-card   # verlanglijstjes, stiekem afvinken en cadeau-ideeën
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```
@@ -247,6 +271,7 @@ wizard in Gezin beheren.
 - [x] **Maaltijdplanner:** weekmenu, recepten, ingrediënten naar de boodschappen
 - [x] **Kamers:** lampen, airco en meer per kamer, kamers en apparaten instellen zonder HA-instellingen
 - [ ] **Waar is iedereen:** "ik kom eraan", melding bij thuiskomst
+- [x] **Cadeaus:** verlanglijstjes, stiekem afvinken, cadeau-ideeën (met AI als die er is)
 - [ ] **Kinderen:** ochtend- en avondroutines, beloningen, zakgeld
 - [ ] **Samen:** voor stellen (stemming, knuffels, date-pot; uit [Ons hokje](https://github.com/Rein033/ha-ons-hokje))
 - [ ] **Systeem:** back-ups en updates in gewone taal, gezinsthema

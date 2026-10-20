@@ -162,6 +162,13 @@ class Gezin:
             if g and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", g):
                 raise FamilyFout("Kies een geboortedatum.")
             lid["geboortedatum"] = g
+        if "geslacht" in velden:
+            v = velden.pop("geslacht") or None
+            if v and v not in ("man", "vrouw", "anders"):
+                raise FamilyFout("Onbekend geslacht.")
+            lid["geslacht"] = v
+        if "interesses" in velden:
+            lid["interesses"] = list(dict.fromkeys(str(i).strip()[:30] for i in (velden.pop("interesses") or []) if str(i).strip()))[:15]
         for k in ("naam", "rol", "kleur", "emoji", "lamp", "notify", "weergave"):
             if k in velden:
                 v = velden[k]

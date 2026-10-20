@@ -2,7 +2,7 @@
  *
  *   type: custom:family-eten-card        het weekmenu: per dag een gerecht en wie er kookt (compact: true = 'Vanavond eten we')
  *   type: custom:family-recepten-card    recepten: zoeken, bekijken, inplannen, op de boodschappenlijst, importeren van een website */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.5.1';
+import { CSS, avatar, esc, leden } from './family-ui.js?v=0.6.0';
 
 const TEKST = {
   nl: {

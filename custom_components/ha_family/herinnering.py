@@ -108,5 +108,7 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["verjaardag"] = vandaag
             agenda.gezin.opslaan()
             await verjaardag_herinnering(agenda, nu)
+            from .cadeaus import verlanglijst_herinnering
+            await verlanglijst_herinnering(agenda.gezin, nu)
 
     return async_track_time_change(hass, _elke_minuut, second=0)

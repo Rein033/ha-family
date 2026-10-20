@@ -45,6 +45,7 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
                 ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen, ws_apparaat_tonen, ws_kamer_samenvoegen,
+                ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -140,6 +141,8 @@ async def ws_persoon_toevoegen(hass, connection, msg):
     vol.Optional("notify"): vol.Any(None, cv.string),
     vol.Optional("weergave"): vol.In(WEERGAVEN),
     vol.Optional("geboortedatum"): vol.Any(None, cv.string),
+    vol.Optional("geslacht"): vol.Any(None, cv.string),
+    vol.Optional("interesses"): [cv.string],
 })
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -750,3 +753,115 @@ async def ws_apparaat_tonen(hass, connection, msg):
 @_antwoord
 async def ws_kamer_samenvoegen(hass, connection, msg):
     return {"verplaatst": _gezin(hass).huis.samenvoegen(msg["van"], msg["naar"])}
+
+
+# ── 🎁 Cadeaus en verlanglijstjes ──
+
+def _ik(g: Gezin, connection) -> dict[str, Any]:
+    ik = g.lid_van_user(connection.user.id)
+    if not ik:
+        raise FamilyFout("Alleen gezinsleden hebben een verlanglijstje.")
+    return ik
+
+
+async def _mag_lijst(g: Gezin, connection, eigenaar: str) -> dict[str, Any] | None:
+    ik = g.lid_van_user(connection.user.id)
+    g.lid(eigenaar)                                          # bestaat het?
+    if not await g.cadeaus.mag_lijst_bewerken(ik, eigenaar, connection.user.is_admin):
+        raise FamilyFout("Dit lijstje mag je niet aanpassen.")
+    return ik
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/cadeaus"})
+@websocket_api.async_response
+@_antwoord
+async def ws_cadeaus(hass, connection, msg):
+    g = _gezin(hass)
+    return g.cadeaus.overzicht(g.lid_van_user(connection.user.id))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/lid/profiel", vol.Optional("lid"): cv.string,
+                                  vol.Optional("geboortedatum"): vol.Any(None, cv.string), vol.Optional("geslacht"): vol.Any(None, cv.string),
+                                  vol.Optional("interesses"): [cv.string]})
+@websocket_api.async_response
+@_antwoord
+async def ws_profiel(hass, connection, msg):
+    """Je eigen verjaardag, geslacht en interesses (ouders ook die van een kind)."""
+    g = _gezin(hass)
+    lid = msg.get("lid") or _ik(g, connection)["id"]
+    await _mag_lijst(g, connection, lid)
+    velden = {k: msg[k] for k in ("geboortedatum", "geslacht", "interesses") if k in msg}
+    return g.lid_bijwerken(lid, **velden)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/wens", vol.Optional("wens"): cv.string, vol.Optional("lid"): cv.string,
+                                  vol.Required("titel"): cv.string, vol.Optional("link"): vol.Any(None, cv.string),
+                                  vol.Optional("prijs"): vol.Any(None, cv.string, vol.Coerce(float)), vol.Optional("notitie"): vol.Any(None, cv.string),
+                                  vol.Optional("emoji"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_wens(hass, connection, msg):
+    g = _gezin(hass)
+    eigenaar = msg.get("lid") or _ik(g, connection)["id"]
+    await _mag_lijst(g, connection, eigenaar)
+    return g.cadeaus.wens(eigenaar, msg, msg.get("wens"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/wens/weg", vol.Required("wens"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_wens_weg(hass, connection, msg):
+    g = _gezin(hass)
+    w = g.cadeaus._wens(msg["wens"])
+    await _mag_lijst(g, connection, w["lid"])
+    g.cadeaus.wens_weg(msg["wens"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/wens/kopen", vol.Required("wens"): cv.string, vol.Required("gekocht"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_wens_kopen(hass, connection, msg):
+    g = _gezin(hass)
+    g.cadeaus.kopen(msg["wens"], _ik(g, connection)["id"], msg["gekocht"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/wensen/sturen", vol.Optional("lid"): cv.string, vol.Required("naar"): [cv.string]})
+@websocket_api.async_response
+@_antwoord
+async def ws_wensen_sturen(hass, connection, msg):
+    g = _gezin(hass)
+    eigenaar = msg.get("lid") or _ik(g, connection)["id"]
+    ik = await _mag_lijst(g, connection, eigenaar)
+    return {"verstuurd": await g.cadeaus.sturen(eigenaar, msg["naar"], ik)}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/cadeau/ideeen", vol.Required("lid"): cv.string,
+                                  vol.Optional("budget"): vol.Any(None, vol.Coerce(float)), vol.Optional("gelegenheid"): vol.Any(None, cv.string),
+                                  vol.Optional("extra"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_cadeau_ideeen(hass, connection, msg):
+    g = _gezin(hass)
+    _ik(g, connection)
+    return await g.cadeaus.ideeen(msg["lid"], msg.get("budget"), msg.get("gelegenheid"), msg.get("extra"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/cadeau/idee", vol.Required("lid"): cv.string, vol.Required("titel"): cv.string,
+                                  vol.Optional("emoji"): cv.string, vol.Optional("prijs"): vol.Any(None, cv.string, vol.Coerce(float))})
+@websocket_api.async_response
+@_antwoord
+async def ws_idee_bewaren(hass, connection, msg):
+    g = _gezin(hass)
+    g.lid(msg["lid"])
+    return g.cadeaus.idee_bewaren(_ik(g, connection)["id"], msg["lid"], msg)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/cadeau/idee/weg", vol.Required("idee"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_idee_weg(hass, connection, msg):
+    g = _gezin(hass)
+    g.cadeaus.idee_weg(_ik(g, connection)["id"], msg["idee"])
+    return {}

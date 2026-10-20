@@ -531,3 +531,81 @@ async def test_lampgroepen_en_samenvoegen(hass: HomeAssistant, gezin, hass_ws_cl
     await client.send_json_auto_id({"type": "ha_family/kamer", "kamer": keuken.id, "naam": "Keuken"})
     assert (await client.receive_json())["success"]
     assert areas.async_get_area(keuken.id).icon == "mdi:stove"   # hernoemen laat het icoon staan
+
+
+async def test_verlanglijstjes_en_stiekem_kopen(hass: HomeAssistant, gezin, hass_ws_client, hass_admin_user, hass_owner_user) -> None:
+    from homeassistant.components import person
+
+    g = gezin.runtime_data
+    await person.async_create_person(hass, "Ouder", user_id=hass_owner_user.id)
+    await person.async_create_person(hass, "Romy", user_id=hass_admin_user.id)
+    await hass.async_block_till_done()
+    ouder = g.persoon_toevoegen("person.ouder", "ouder")
+    romy = g.persoon_toevoegen("person.romy", "kind")
+    g.lid_bijwerken(romy["id"], geboortedatum="2012-06-01", geslacht="vrouw", interesses=["paarden", "tekenen", "paarden"])
+    assert g.lid(romy["id"])["interesses"] == ["paarden", "tekenen"]
+
+    romy_ws = await hass_ws_client(hass)                 # hass_admin_user = Romy
+    await romy_ws.send_json_auto_id({"type": "ha_family/wens", "titel": "Rijlaarzen", "prijs": "49,95", "link": "https://example.com/laarzen"})
+    w = (await romy_ws.receive_json())["result"]
+    assert w["lid"] == romy["id"] and w["prijs"] == 49.95
+    await romy_ws.send_json_auto_id({"type": "ha_family/wens", "titel": "x", "link": "javascript:alert(1)"})
+    assert (await romy_ws.receive_json())["error"]["code"] == "ha_family_fout"
+    await romy_ws.send_json_auto_id({"type": "ha_family/wens/kopen", "wens": w["id"], "gekocht": True})
+    assert (await romy_ws.receive_json())["error"]["code"] == "ha_family_fout"      # eigen wens niet afvinken
+
+    # de ouder koopt het stiekem; Romy ziet daar niets van
+    g.cadeaus.kopen(w["id"], ouder["id"], True)
+    await romy_ws.send_json_auto_id({"type": "ha_family/cadeaus"})
+    o = (await romy_ws.receive_json())["result"]
+    assert "gekocht" not in o["lijsten"][romy["id"]][0] and "gekocht_door" not in o["lijsten"][romy["id"]][0]
+    ouder_zicht = g.cadeaus.overzicht(ouder)["lijsten"][romy["id"]][0]
+    assert ouder_zicht["gekocht"] and ouder_zicht["door_mij"]
+
+    # ideeën zonder AI: uit de eigen lijst, passend bij interesse en budget
+    r = await g.cadeaus.ideeen(romy["id"], 40, "verjaardag", None)
+    assert r["bron"] == "lijst" and r["ideeen"] and all((i["prijs"] or 0) <= 40 for i in r["ideeen"])
+    assert any("paarden" in i["waarom"] or "tekenen" in i["waarom"] for i in r["ideeen"])
+
+
+async def test_cadeau_ideeen_via_ai_task(hass: HomeAssistant, gezin) -> None:
+    from homeassistant.core import SupportsResponse
+
+    g = gezin.runtime_data
+    hass.states.async_set("ai_task.ollama", "unknown")
+    gevraagd = {}
+
+    async def generate(call):
+        gevraagd.update(call.data)
+        return {"conversation_id": "x", "data": 'Hier: [{"emoji": "🐴", "titel": "Dagje manege", "waarom": "Ze houdt van paarden", "prijs": "45"}]'}
+
+    hass.services.async_register("ai_task", "generate_data", generate, supports_response=SupportsResponse.ONLY)
+    hass.states.async_set("person.romy", "home", {"friendly_name": "Romy"})
+    romy = g.persoon_toevoegen("person.romy", "kind")
+    g.lid_bijwerken(romy["id"], geboortedatum="2014-03-03", interesses=["paarden"])
+    r = await g.cadeaus.ideeen(romy["id"], 50, "verjaardag", None)
+    assert r["bron"] == "ai" and r["ideeen"][0]["titel"] == "Dagje manege" and r["ideeen"][0]["prijs"] == 45
+    assert gevraagd["entity_id"] == "ai_task.ollama" and "paarden" in gevraagd["instructions"]
+
+
+async def test_verlanglijst_herinnering_twee_weken_vooraf(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    from custom_components.ha_family.cadeaus import verlanglijst_herinnering
+
+    g = gezin.runtime_data
+    hass.states.async_set("person.romy", "home", {"friendly_name": "Romy"})
+    hass.states.async_set("person.rein", "home", {"friendly_name": "Rein"})
+    romy = g.persoon_toevoegen("person.romy", "kind")
+    rein = g.persoon_toevoegen("person.rein", "ouder")
+    nu = dt.datetime(2026, 10, 20, 9, 0)
+    g.lid_bijwerken(romy["id"], geboortedatum="2013-11-03")
+    g.cadeaus.wens(romy["id"], {"titel": "Tekenset"})
+    verstuurd = []
+
+    async def nep(lid, titel, tekst, **extra):
+        verstuurd.append((lid["naam"], tekst))
+        return True
+    g.melding = nep
+    assert await verlanglijst_herinnering(g, nu) == 1
+    assert verstuurd[0][0] == "Rein" and "Tekenset" in verstuurd[0][1]
+    assert await verlanglijst_herinnering(g, nu + dt.timedelta(days=1)) == 0      # alleen precies twee weken vooraf

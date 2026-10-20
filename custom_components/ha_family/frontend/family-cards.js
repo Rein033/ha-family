@@ -4,11 +4,12 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.5.1';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.5.1';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.5.1';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.5.1';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.5.1';
+import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.6.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.6.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.6.0';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.6.0';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.6.0';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.6.0';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -99,6 +100,7 @@ class FamilyStrategie extends HTMLElement {
         { title: nl ? '🍝 Eten' : '🍝 Meals', path: 'eten', type: 'sections', max_columns: 2,
           sections: [{ type: 'grid', cards: [{ type: 'custom:family-eten-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-recepten-card' }] }] },
         { title: nl ? '🏠 Huis' : '🏠 Home', path: 'huis', type: 'panel', cards: [{ type: 'custom:family-kamers-card' }] },
+        { title: nl ? '🎁 Cadeaus' : '🎁 Gifts', path: 'cadeaus', type: 'panel', cards: [{ type: 'custom:family-cadeaus-card' }] },
         { title: nl ? '🛒 Boodschappen' : '🛒 Groceries', path: 'boodschappen', type: 'sections', max_columns: 1,
           sections: [{ type: 'grid', cards: [{ type: 'custom:family-boodschappen-card' }] }] },
       ],
@@ -106,7 +108,7 @@ class FamilyStrategie extends HTMLElement {
   }
 }
 
-const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN];
+const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN, ...CADEAU_KAARTEN];
 registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ...KAARTEN.map(([n, c]) => [n, c])]);
 window.customCards = window.customCards || [];
 KAARTEN.forEach(([type, , name, description]) => { if (!window.customCards.some((c) => c.type === type)) window.customCards.push({ type, name, description }); });

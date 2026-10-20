@@ -3,8 +3,8 @@
  * Volledig scherm zonder balken: links klok, datum, weer en afval; midden de agenda van vandaag en morgen voor het hele
  * gezin; rechts de klusjes per kind, de kamers en wie er thuis is; onderaan de boodschappen. 's Nachts alleen een gedimde klok.
  * Op de tablet zelf (het account 'muur') verdwijnt de zijbalk en blijft het scherm aan waar de browser dat toestaat. */
-import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.5.1';
-import { FamilyKamersCard } from './family-huis.js?v=0.5.1';
+import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.6.0';
+import { FamilyKamersCard } from './family-huis.js?v=0.6.0';
 
 if (!customElements.get('family-kamers-card')) customElements.define('family-kamers-card', FamilyKamersCard);
 

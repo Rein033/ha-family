@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 — cadeaus en verlanglijstjes
+
+- **Over een gezinslid** (Gezin beheren → Bewerken): geboortedatum, geslacht en interesses.
+- **Verlanglijstjes** (tabblad *🎁 Cadeaus*): wensen met prijs, link en notitie; ouders helpen kinderen; *Sturen naar…*
+  stuurt het lijstje als melding naar gekozen gezinsleden.
+- **Stiekem afvinken**: *Ik koop dit*; anderen zien dat het gekocht wordt, de eigenaar niet.
+- **Cadeau-ideeën** op leeftijd, geslacht, interesses, budget en gelegenheid, via de AI van Home Assistant (*AI Task*) als
+  die gekoppeld is, anders uit een eigen ideeënlijst; ideeën bewaren (alleen voor jezelf).
+- **Herinnering** twee weken voor een verjaardag, met wat er nog op het verlanglijstje staat.
+
 ## 0.5.1 — kamers in een bestaand huis
 
 - Lampgroepen (zoals Hue-ruimtes): de groep staat in de kamer, de losse lampen erin niet; twee groepen met dezelfde lampen
