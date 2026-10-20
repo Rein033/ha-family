@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.12.1';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.12.2';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
@@ -122,6 +122,22 @@ const STIJL = `
   :host([muur]) .pil.aan small.st { color: inherit; opacity: .8; }
   :host([muur]) .pil:active { transform: scale(.97); }
   .pil small.st { display: none; }
+  @media (max-width: 700px) {
+    /* telefoon: ook grote knoppen, twee naast elkaar */
+    .rij { padding: 8px 0; gap: 8px; }
+    .rij .nm { font-size: 1.05rem; }
+    .rij .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .pil { min-height: 58px; border-radius: 16px; padding: 8px 12px; font-size: .95rem; display: grid;
+      grid-template-columns: 30px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; }
+    .pil ha-icon { --mdc-icon-size: 28px; grid-row: 1 / span 2; }
+    .pil span { max-width: none; white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pil small, .pil b { grid-column: 2; font-size: .8rem; }
+    .pil small.st { display: block; color: var(--secondary-text-color); }
+    .pil.aan small.st { color: inherit; opacity: .8; }
+    .pil:active { transform: scale(.97); }
+    .rij .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
 `;
 
 export class FamilyKamersCard extends HTMLElement {
@@ -172,16 +188,21 @@ export class FamilyKamersCard extends HTMLElement {
     if (entity in u) return u[entity];
     return (mag.kamers || {})[kamer] || '';
   }
+  _sorteer(apps) {
+    // vaste volgorde per kamer: lampen, klimaat, stekkers, ventilatoren, rolluiken, speakers; daarbinnen op naam
+    const volg = ['light', 'climate', 'switch', 'fan', 'cover', 'media_player'];
+    return [...apps].sort((a, b) => (volg.indexOf(a.domein) - volg.indexOf(b.domein)) || a.naam.localeCompare(b.naam, 'nl', { numeric: true }));
+  }
   _kamers() {
     const d = this._d, h = this._hass;
     const mijn = this._config.mijn ? this._mijnKamers() : null;
     const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer) && (!mijn || mijn.includes(k.kamer)))
-      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && this._stand(a.entity, a.kamer) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
+      .map((k) => ({ ...k, apps: this._sorteer(d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && this._stand(a.entity, a.kamer) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state))) }))
       .filter((k) => k.apps.length);
     // apparaten zonder kamer (bijv. een stekker die nog nergens hoort): in 'Overig', zodat niets verdwijnt
     if (!this._config.kamer && !mijn) {
       const los = d.apparaten.filter((a) => !a.kamer && a.kan && a.tonen && this._stand(a.entity, '') && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state));
-      if (los.length) per.push({ kamer: '', naam: this.t('overig'), icoon: 'mdi:dots-grid', apps: los });
+      if (los.length) per.push({ kamer: '', naam: this.t('overig'), icoon: 'mdi:dots-grid', apps: this._sorteer(los) });
     }
     return per;
   }

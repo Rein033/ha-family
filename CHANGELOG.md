@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.2 — grote knoppen op de telefoon
+
+- Op de telefoon zijn de knoppen per kamer op de startpagina nu groot (twee naast elkaar, met aan/uit), net als op het muurscherm.
+- Apparaten staan per kamer gesorteerd: lampen, klimaat, stekkers, ventilatoren, rolluiken, speakers; daarbinnen op naam.
+
 ## 0.12.1
 
 - Opgelost: afvalkalender bewaren met *Mijn afvalbedrijf* gaf "Cannot read properties of null (reading 'value')".
