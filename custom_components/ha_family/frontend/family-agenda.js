@@ -5,7 +5,7 @@
  *
  * Alle afspraken komen samengevoegd uit HA Family (ha_family/agenda): eigen afspraken, agenda's per gezinslid,
  * gezamenlijke agenda's, verjaardagen en afval. De kleur is die van wie het betreft. */
-import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.8.0';
+import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.9.0';
 
 const TEKST = {
   nl: {

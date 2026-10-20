@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 — bediening per soort apparaat, rechten per kamer
+
+- **Bedieningspaneel per soort**: airco/thermostaat (temperatuur, stand, ventilator, zwenken, voorkeur), rolluik (op/stop/
+  neer, positie), speaker (afspelen, volgende, volume), ventilator (snelheid), lamp (lang drukken: helderheid, warm/koel,
+  kleur). Op het startscherm, het muurscherm en via ⋯ op het tabblad Huis.
+- **Rechten per kamer** (Verborgen/Zien/Bedienen) met uitzonderingen per apparaat, en *Zelfde als* een ander gezinslid.
+  Instellingen uit 0.8.0 worden vanzelf omgezet.
+
 ## 0.8.0 — meer AI, bekijk als, apparaten per kind
 
 - **AI** (met AI Task, anders zonder): dagoverzicht in *Vandaag*, weekmenu bedenken, recept bedenken, klusjes-ideeën per kind.

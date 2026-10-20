@@ -5,18 +5,28 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.8.0';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.9.0';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
     instellen: 'Kamers instellen', nuBinnen: 'nu', modus: { off: 'Uit', heat: 'Verwarmen', cool: 'Koelen', heat_cool: 'Automatisch', auto: 'Automatisch', dry: 'Drogen', fan_only: 'Ventileren' },
-    lampenAan: '{x} aan', zonder: 'Zonder kamer', slot: 'Dit mag je bekijken, maar niet bedienen.' },
+    lampenAan: '{x} aan', zonder: 'Zonder kamer', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
+    helderheid: 'Helderheid', licht: 'Licht', kleur: 'Kleur', volume: 'Volume', snelheidLbl: 'Snelheid', klaar: 'Klaar',
+    snelheid: { auto: 'Auto', low: 'Laag', medium: 'Middel', mid: 'Middel', middle: 'Middel', high: 'Hoog', silent: 'Stil', quiet: 'Stil', turbo: 'Turbo', strong: 'Sterk', mute: 'Stil' },
+    presets: { none: 'Geen', eco: 'Eco', comfort: 'Comfort', away: 'Weg', home: 'Thuis', sleep: 'Slapen', boost: 'Boost', activity: 'Actief', on: 'Aan', off: 'Uit', vertical: 'Verticaal', horizontal: 'Horizontaal', both: 'Beide' },
+    kleurtemp: { 2700: '🕯️ Warm', 4000: '☀️ Neutraal', 6000: '❄️ Koel' }, slot: 'Dit mag je bekijken, maar niet bedienen.' },
   en: { kamers: 'Home', aan: 'On', uit: 'Off', open: 'Open', dicht: 'Closed', speelt: 'Playing', alleUit: 'All off', geen: 'No rooms with devices yet.',
     instellen: 'Set up rooms', nuBinnen: 'now', modus: { off: 'Off', heat: 'Heating', cool: 'Cooling', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' },
-    lampenAan: '{x} on', zonder: 'No room', slot: 'You can see this, but not control it.' },
+    lampenAan: '{x} on', zonder: 'No room', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
+    helderheid: 'Brightness', licht: 'Light', kleur: 'Colour', volume: 'Volume', snelheidLbl: 'Speed', klaar: 'Done',
+    snelheid: { auto: 'Auto', low: 'Low', medium: 'Medium', mid: 'Medium', middle: 'Medium', high: 'High', silent: 'Silent', quiet: 'Quiet', turbo: 'Turbo', strong: 'Strong', mute: 'Silent' },
+    presets: { none: 'None', eco: 'Eco', comfort: 'Comfort', away: 'Away', home: 'Home', sleep: 'Sleep', boost: 'Boost', activity: 'Activity', on: 'On', off: 'Off', vertical: 'Vertical', horizontal: 'Horizontal', both: 'Both' },
+    kleurtemp: { 2700: '🕯️ Warm', 4000: '☀️ Neutral', 6000: '❄️ Cool' }, slot: 'You can see this, but not control it.' },
 };
 const ICOON = { light: ['mdi:lightbulb-outline', 'mdi:lightbulb'], climate: ['mdi:air-conditioner', 'mdi:air-conditioner'], fan: ['mdi:fan-off', 'mdi:fan'],
   cover: ['mdi:window-shutter', 'mdi:window-shutter-open'], switch: ['mdi:power-socket-eu', 'mdi:power-socket-eu'], media_player: ['mdi:speaker-off', 'mdi:speaker'] };
+const MODUS_ICOON = { off: '⏻', heat: '🔥', cool: '❄️', heat_cool: '🔄', auto: '🔄', dry: '💧', fan_only: '🌀' };
+const KLEUREN = ['255,180,107', '255,0,0', '255,120,0', '255,214,0', '0,200,83', '0,176,255', '41,98,255', '170,0,255', '255,64,129'];
 const isAan = (s) => !!s && ['on', 'open', 'opening', 'playing', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'].includes(s.state);
 const taalVan = (h) => (((h && h.locale && h.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
 
@@ -64,6 +74,26 @@ const STIJL = `
   .pil.aan ha-icon { color: var(--k); }
   .rij .rond { width: 42px; height: 42px; }
   .rij .rond.lbl { width: auto; padding: 0 12px; border-radius: 21px; font-size: .9rem; font-weight: 600; gap: 4px; display: inline-flex; }
+  .tegel .meer { position: absolute; top: 4px; right: 4px; border: 0; background: none; color: var(--secondary-text-color); font-size: 1.1rem; line-height: 1;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+  .tegel .meer:hover { background: var(--secondary-background-color); }
+  .achter { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .45); display: grid; place-items: center; padding: 16px; }
+  .paneel { background: var(--card-background-color); color: var(--primary-text-color); border-radius: 26px; padding: 20px; width: min(420px, 100%);
+    max-height: calc(100vh - 32px); overflow: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+  .pkop { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pkop b { flex: 1; font-size: 1.15rem; }
+  .pkop ha-icon { color: var(--primary-color); }
+  .pgroot { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 6px; }
+  .rond.groot { width: 52px; height: 52px; font-size: 1.6rem; }
+  .ptemp { font-size: 2.6rem; font-weight: 600; display: grid; justify-items: center; min-width: 3.4em; }
+  .ptemp small { font-size: .85rem; font-weight: 400; color: var(--secondary-text-color); }
+  .plbl { color: var(--secondary-text-color); font-size: .85rem; margin: 14px 0 6px; }
+  .pchips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pchips .chip { border: 0; font: inherit; font-size: .88rem; padding: 7px 13px; border-radius: 999px; background: var(--secondary-background-color); color: var(--primary-text-color); cursor: pointer; }
+  .pchips .chip.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); font-weight: 600; }
+  .kleurbol { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--card-background-color); box-shadow: 0 0 0 1px var(--divider-color); cursor: pointer; }
+  .paneel input[type=range] { width: 100%; accent-color: var(--primary-color); }
+  .pvoet { display: flex; justify-content: flex-end; margin-top: 18px; }
   .slot { opacity: .5; cursor: not-allowed !important; }
   .slot input[type=range] { pointer-events: none; }
   .leeg { color: var(--secondary-text-color); text-align: center; padding: 8px 0; display: grid; gap: 8px; justify-items: center; }
@@ -88,6 +118,12 @@ export class FamilyKamersCard extends HTMLElement {
       this.attachShadow({ mode: 'open' });
       this.shadowRoot.addEventListener('click', (e) => this._klik(e));
       this.shadowRoot.addEventListener('change', (e) => this._wijzig(e));
+      // lang drukken (of rechtermuisknop) op een lamp: het paneel met helderheid en kleur
+      const start = (e) => { const b = e.target.closest && e.target.closest('[data-a=schakel]'); if (!b) return;
+        clearTimeout(this._lang); this._lang = setTimeout(() => { this._langGedaan = true; this._paneel = b.dataset.e; this._teken(); }, 550); };
+      const stop = () => clearTimeout(this._lang);
+      this.shadowRoot.addEventListener('pointerdown', start); this.shadowRoot.addEventListener('pointerup', stop); this.shadowRoot.addEventListener('pointerleave', stop, true);
+      this.shadowRoot.addEventListener('contextmenu', (e) => { const b = e.target.closest && e.target.closest('[data-a=schakel]'); if (b) { e.preventDefault(); this._paneel = b.dataset.e; this._teken(); } });
     }
     // kamers of apparaten veranderd in HA (ruimtes, entiteitenregister) → opnieuw ophalen
     if (!oud || hass.areas !== oud.areas || hass.entities !== oud.entities || hass.devices !== oud.devices) { this._laad(); return; }
@@ -109,10 +145,18 @@ export class FamilyKamersCard extends HTMLElement {
     const ik = ikLid(this._hass);
     return ik && ik.apparaten && ik.apparaten.beperkt ? ik.apparaten : null;
   }
+  _stand(entity, kamer) {
+    // per kamer ingesteld, met uitzonderingen per apparaat: '' verborgen, 'z' zien, 'b' bedienen (null = alles mag)
+    const mag = this._mag();
+    if (!mag) return 'b';
+    const u = mag.uitzonderingen || {};
+    if (entity in u) return u[entity];
+    return (mag.kamers || {})[kamer] || '';
+  }
   _kamers() {
-    const d = this._d, h = this._hass, mag = this._mag();
+    const d = this._d, h = this._hass;
     const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer))
-      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && (!mag || mag.zien.includes(a.entity)) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
+      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && this._stand(a.entity, a.kamer) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
       .filter((k) => k.apps.length);
     return per;
   }
@@ -145,9 +189,11 @@ export class FamilyKamersCard extends HTMLElement {
     const titel = c.titel === false ? '' : `<div class="kop"><div class="titel">🏠 ${esc(c.titel || this.t('kamers'))}</div></div>`;
     // focus van een schuifje bewaren: anders springt hij weg terwijl je sleept
     if (this.shadowRoot.activeElement && this.shadowRoot.activeElement.type === 'range') return;
-    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><ha-card>${titel}${binnen}</ha-card>`;
-    const mag = this._mag();
-    if (mag) this.shadowRoot.querySelectorAll('[data-e]').forEach((el) => { if (!mag.bedienen.includes(el.dataset.e)) { el.classList.add('slot'); el.title = this.t('slot'); } });
+    this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><ha-card>${titel}${binnen}</ha-card>${this._paneel && this._hass.states[this._paneel] ? this._paneelHtml(this._paneel) : ''}`;
+    if (this._mag()) {
+      const kamerVan = Object.fromEntries((this._d ? this._d.apparaten : []).map((a) => [a.entity, a.kamer]));
+      this.shadowRoot.querySelectorAll('[data-e]').forEach((el) => { if (this._stand(el.dataset.e, kamerVan[el.dataset.e]) !== 'b') { el.classList.add('slot'); el.title = this.t('slot'); } });
+    }
   }
 
   _kamer(k) {
@@ -158,7 +204,7 @@ export class FamilyKamersCard extends HTMLElement {
   }
   _tegel(a, k) {
     const s = this._hass.states[a.entity], aan = isAan(s), naam = esc(this._kort(a.naam, k.naam)), ic = ICOON[a.domein][aan ? 1 : 0], at = s.attributes;
-    const icoon = `<ha-icon icon="${esc(at.icon || ic)}"></ha-icon>`;
+    const icoon = `<ha-icon icon="${esc(at.icon || ic)}"></ha-icon><button class="meer" data-a="open" data-e="${a.entity}" title="${esc(this.t('meer'))}">⋯</button>`;
     if (a.domein === 'climate') {
       const doel = at.temperature ?? at.target_temp_high ?? null, k2 = s.state === 'cool' ? '#039be5' : s.state === 'heat' ? '#f4511e' : 'var(--primary-color)';
       return `<div class="tegel breed ${aan ? 'aan' : ''}" style="--k:${k2};cursor:default">${icoon}<b>${naam}</b>
@@ -181,6 +227,44 @@ export class FamilyKamersCard extends HTMLElement {
     return `<div class="tegel ${aan ? 'aan' : ''}" role="button" tabindex="0" style="--k:${kleur}" data-a="schakel" data-e="${a.entity}">${icoon}<b>${naam}</b><small>${esc(status)}</small>
       ${dimbaar && aan ? `<input type="range" min="1" max="100" value="${pct || 100}" data-a="dim" data-e="${a.entity}"/>` : ''}</div>`;
   }
+  /* ── bedieningspaneel per categorie (tik op airco/rolluik/speaker/ventilator, of ⋯, of lang drukken op een lamp) ── */
+  _paneelHtml(id) {
+    const h = this._hass, s = h.states[id], at = s.attributes, dom = id.split('.')[0], aan = isAan(s), T = this.t.bind(this);
+    const kop = `<div class="pkop"><ha-icon icon="${esc(at.icon || ICOON[dom][aan ? 1 : 0])}"></ha-icon><b>${esc(at.friendly_name || id)}</b>
+      <button class="rond ${aan ? 'aan' : ''}" style="--k:var(--primary-color)" data-a="${dom === 'climate' ? 'klimaat-aan' : dom === 'cover' ? 'cover-wissel' : 'schakel'}" data-e="${id}" title="${esc(T('aanUit'))}"><ha-icon icon="mdi:power"></ha-icon></button></div>`;
+    const chips = (lijst, act, huidig, label = (x) => x) => `<div class="pchips">${lijst.map((x) => `<button class="chip ${x === huidig ? 'aan' : ''}" data-a="${act}" data-e="${id}" data-v="${esc(x)}">${esc(label(x))}</button>`).join('')}</div>`;
+    let b = '';
+    if (dom === 'climate') {
+      const doel = at.temperature ?? at.target_temp_high;
+      b = `<div class="pgroot">${doel != null ? `<button class="rond groot" data-a="temp" data-e="${id}" data-n="-1">−</button><span class="ptemp">${doel}°<small>${at.current_temperature != null ? `${esc(T('nuBinnen'))} ${at.current_temperature}°` : ''}</small></span><button class="rond groot" data-a="temp" data-e="${id}" data-n="1">+</button>`
+          : `<span class="ptemp">${at.current_temperature != null ? at.current_temperature + '°' : ''}</span>`}</div>
+        <div class="plbl">${esc(T('stand'))}</div>${chips(at.hvac_modes || [], 'hvac', s.state, (m) => `${MODUS_ICOON[m] || ''} ${T('modus')[m] || m}`)}
+        ${(at.fan_modes || []).length ? `<div class="plbl">${esc(T('ventilator'))}</div>${chips(at.fan_modes, 'fanmode', at.fan_mode, (m) => T('snelheid')[m] || m)}` : ''}
+        ${(at.preset_modes || []).length ? `<div class="plbl">${esc(T('voorkeur'))}</div>${chips(at.preset_modes, 'preset', at.preset_mode, (m) => T('presets')[m] || m)}` : ''}
+        ${(at.swing_modes || []).length ? `<div class="plbl">${esc(T('zwenken'))}</div>${chips(at.swing_modes, 'swing', at.swing_mode, (m) => T('presets')[m] || m)}` : ''}`;
+    } else if (dom === 'light') {
+      const modi = at.supported_color_modes || [], pct = at.brightness != null ? Math.round(at.brightness / 2.55) : 0;
+      b = `${modi.some((m) => m !== 'onoff') ? `<div class="plbl">${esc(T('helderheid'))} ${aan ? pct + '%' : ''}</div><input type="range" min="1" max="100" value="${pct || 100}" data-a="dim" data-e="${id}"/>` : ''}
+        ${modi.includes('color_temp') ? `<div class="plbl">${esc(T('licht'))}</div>${chips(['2700', '4000', '6000'], 'ct', String(at.color_temp_kelvin && (at.color_temp_kelvin < 3300 ? 2700 : at.color_temp_kelvin < 5000 ? 4000 : 6000)), (k) => T('kleurtemp')[k])}` : ''}
+        ${modi.some((m) => ['hs', 'rgb', 'rgbw', 'rgbww', 'xy'].includes(m)) ? `<div class="plbl">${esc(T('kleur'))}</div><div class="pchips">${KLEUREN.map((c) => `<button class="kleurbol" style="background:rgb(${c})" data-a="rgb" data-e="${id}" data-v="${c}"></button>`).join('')}</div>` : ''}`;
+    } else if (dom === 'cover') {
+      b = `<div class="pgroot"><button class="rond groot" data-a="cover" data-s="open_cover" data-e="${id}"><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+          <button class="rond groot" data-a="cover" data-s="stop_cover" data-e="${id}"><ha-icon icon="mdi:stop"></ha-icon></button>
+          <button class="rond groot" data-a="cover" data-s="close_cover" data-e="${id}"><ha-icon icon="mdi:arrow-down"></ha-icon></button></div>
+        ${at.current_position != null ? `<div class="plbl">${esc(T('stand'))} ${at.current_position}%</div><input type="range" min="0" max="100" value="${at.current_position}" data-a="pos" data-e="${id}"/>` : ''}`;
+    } else if (dom === 'media_player') {
+      b = `${at.media_title ? `<div class="sub" style="margin:4px 0 10px">${esc(at.media_title)}${at.media_artist ? ` · ${esc(at.media_artist)}` : ''}</div>` : ''}
+        <div class="pgroot"><button class="rond groot" data-a="mp" data-s="media_previous_track" data-e="${id}"><ha-icon icon="mdi:skip-previous"></ha-icon></button>
+          <button class="rond groot aan" style="--k:var(--primary-color)" data-a="mp" data-s="media_play_pause" data-e="${id}"><ha-icon icon="${s.state === 'playing' ? 'mdi:pause' : 'mdi:play'}"></ha-icon></button>
+          <button class="rond groot" data-a="mp" data-s="media_next_track" data-e="${id}"><ha-icon icon="mdi:skip-next"></ha-icon></button></div>
+        ${at.volume_level != null ? `<div class="plbl">${esc(T('volume'))} ${Math.round(at.volume_level * 100)}%</div><input type="range" min="0" max="100" value="${Math.round(at.volume_level * 100)}" data-a="vol" data-e="${id}"/>` : ''}`;
+    } else if (dom === 'fan') {
+      b = `${at.percentage != null ? `<div class="plbl">${esc(T('snelheidLbl'))} ${at.percentage}%</div><input type="range" min="0" max="100" step="${at.percentage_step || 1}" value="${at.percentage}" data-a="pct" data-e="${id}"/>` : ''}
+        ${(at.preset_modes || []).length ? `<div class="plbl">${esc(T('voorkeur'))}</div>${chips(at.preset_modes, 'fanpreset', at.preset_mode, (m) => T('presets')[m] || m)}` : ''}`;
+    }
+    return `<div class="achter" data-a="sluit"><div class="paneel">${kop}${b}<div class="pvoet"><button class="fam-knop rand" data-a="sluit">${esc(T('klaar'))}</button></div></div></div>`;
+  }
+
   _rij(k) {
     // compact: kamernaam met temperatuur, daaronder knoppen mét naam (wat is wat), aan = gekleurd
     const h = this._hass;
@@ -189,11 +273,12 @@ export class FamilyKamersCard extends HTMLElement {
         const s = h.states[a.entity], aan = isAan(s), naam = this._kort(a.naam, k.naam), at = s.attributes;
         if (a.domein === 'climate') {
           const doel = at.temperature ?? at.target_temp_high;
-          return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${s.state === 'heat' ? '#f4511e' : '#039be5'}" data-a="klimaat-aan" data-e="${a.entity}" title="${esc(a.naam)}">
+          return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${s.state === 'heat' ? '#f4511e' : '#039be5'}" data-a="open" data-e="${a.entity}" title="${esc(a.naam)}">
             <ha-icon icon="mdi:air-conditioner"></ha-icon><span>${esc(naam)}</span>${aan && doel != null ? `<b>${doel}°</b>` : `<small>${esc(this.t('uit'))}</small>`}</button>`;
         }
         const kleur = a.domein === 'light' ? (at.rgb_color ? `rgb(${at.rgb_color.join(',')})` : '#ffb300') : a.domein === 'cover' ? '#7e57c2' : a.domein === 'fan' ? '#26a69a' : a.domein === 'media_player' ? '#5c6bc0' : '#43a047';
-        return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${kleur}" data-a="${a.domein === 'cover' ? 'cover-wissel' : 'schakel'}" data-e="${a.entity}" title="${esc(a.naam)}">
+        const actie = ['cover', 'media_player', 'fan'].includes(a.domein) ? 'open' : 'schakel';
+        return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${kleur}" data-a="${actie}" data-e="${a.entity}" title="${esc(a.naam)}">
           <ha-icon icon="${esc(at.icon || ICOON[a.domein][aan ? 1 : 0])}"></ha-icon><span>${esc(naam)}</span></button>`;
       }).join('')}</div></div>`;
   }
@@ -206,8 +291,19 @@ export class FamilyKamersCard extends HTMLElement {
     if (e.target.type === 'range') return;            // het schuifje zelf, niet de tegel eronder
     const b = e.target.closest && e.target.closest('[data-a]');
     if (!b) return;
+    if (this._langGedaan) { this._langGedaan = false; return; }   // was lang drukken: niet ook nog schakelen
     if (b.classList.contains('slot')) return this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message: `🔒 ${this.t('slot')}` }, bubbles: true, composed: true }));
     const a = b.dataset.a, id = b.dataset.e, h = this._hass, s = id && h.states[id];
+    if (a === 'sluit') { if (e.target === b || b.tagName === 'BUTTON') { this._paneel = null; this._teken(); } return; }
+    if (a === 'open') { this._paneel = id; return this._teken(); }
+    if (a === 'hvac') return this._dienst('climate', 'set_hvac_mode', { entity_id: id, hvac_mode: b.dataset.v });
+    if (a === 'fanmode') return this._dienst('climate', 'set_fan_mode', { entity_id: id, fan_mode: b.dataset.v });
+    if (a === 'preset') return this._dienst('climate', 'set_preset_mode', { entity_id: id, preset_mode: b.dataset.v });
+    if (a === 'swing') return this._dienst('climate', 'set_swing_mode', { entity_id: id, swing_mode: b.dataset.v });
+    if (a === 'ct') return this._dienst('light', 'turn_on', { entity_id: id, color_temp_kelvin: Number(b.dataset.v) });
+    if (a === 'rgb') return this._dienst('light', 'turn_on', { entity_id: id, rgb_color: b.dataset.v.split(',').map(Number) });
+    if (a === 'mp') return this._dienst('media_player', b.dataset.s, { entity_id: id });
+    if (a === 'fanpreset') return this._dienst('fan', 'set_preset_mode', { entity_id: id, preset_mode: b.dataset.v });
     if (a === 'instellen') { history.pushState(null, '', '/gezin-beheer'); window.dispatchEvent(new CustomEvent('location-changed')); return; }
     if (a === 'schakel') {
       const dom = id.split('.')[0];
@@ -236,6 +332,10 @@ export class FamilyKamersCard extends HTMLElement {
   }
   _wijzig(e) {
     if (e.target.classList.contains('slot')) return;
+    const id = e.target.dataset.e, v = Number(e.target.value);
+    if (e.target.dataset.a === 'pos') { e.target.blur(); return this._dienst('cover', 'set_cover_position', { entity_id: id, position: v }).then(() => this._teken()); }
+    if (e.target.dataset.a === 'vol') { e.target.blur(); return this._dienst('media_player', 'volume_set', { entity_id: id, volume_level: v / 100 }).then(() => this._teken()); }
+    if (e.target.dataset.a === 'pct') { e.target.blur(); return this._dienst('fan', 'set_percentage', { entity_id: id, percentage: v }).then(() => this._teken()); }
     if (e.target.dataset.a === 'dim') e.target.blur(), this._dienst('light', 'turn_on', { entity_id: e.target.dataset.e, brightness_pct: Number(e.target.value) }).then(() => this._teken());
   }
 }

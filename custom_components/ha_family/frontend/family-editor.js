@@ -3,7 +3,7 @@
  * Eén editor voor alle kaarten: per kaart een lijstje instellingen, getekend met Home Assistants eigen formulier
  * (ha-form). Alleen wie in HA Family op 'Expert' staat (of een beheerder die geen gezinslid is) ziet de instellingen;
  * de rest krijgt uitleg. Gewone gezinsleden hoeven de kaarten niet aan te passen: het gezinsdashboard bouwt zichzelf. */
-import { esc, leden } from './family-ui.js?v=0.8.0';
+import { esc, leden } from './family-ui.js?v=0.9.0';
 
 const nl = (h) => ((h && h.locale && h.locale.language) || 'en').startsWith('nl');
 const L = {

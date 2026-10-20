@@ -664,12 +664,16 @@ async def test_apparaten_per_kind(hass: HomeAssistant, gezin, hass_ws_client) ->
     hass.states.async_set("person.romy", "home", {"friendly_name": "Romy"})
     romy = g.persoon_toevoegen("person.romy", "kind")
     client = await hass_ws_client(hass)
+    # per kamer, met een uitzondering per apparaat
     await client.send_json_auto_id({"type": "ha_family/lid/bijwerken", "lid": romy["id"], "apparaten": {
-        "beperkt": True, "zien": ["light.romy", "light.gang", "light.romy"], "bedienen": ["light.romy", "light.woonkamer"]}})
+        "beperkt": True, "kamers": {"slaapkamer_romy": "b", "woonkamer": "z"}, "uitzonderingen": {"light.tv": "", "x": "b"}}})
     assert (await client.receive_json())["success"]
     a = g.lid(romy["id"])["apparaten"]
-    assert a == {"beperkt": True, "zien": ["light.romy", "light.gang"], "bedienen": ["light.romy"]}   # bedienen alleen wat ze ziet
-    assert next(l for l in g.openbaar()["leden"] if l["id"] == romy["id"])["apparaten"]["bedienen"] == ["light.romy"]
+    assert a == {"beperkt": True, "kamers": {"slaapkamer_romy": "b", "woonkamer": "z"}, "uitzonderingen": {"light.tv": ""}}
+    assert next(l for l in g.openbaar()["leden"] if l["id"] == romy["id"])["apparaten"]["kamers"]["slaapkamer_romy"] == "b"
+    # oude vorm (lijsten) wordt omgezet
+    g.lid_bijwerken(romy["id"], apparaten={"beperkt": True, "zien": ["light.a", "light.b"], "bedienen": ["light.a", "light.c"]})
+    assert g.lid(romy["id"])["apparaten"]["uitzonderingen"] == {"light.a": "b", "light.b": "z"}
     g.lid_bijwerken(romy["id"], apparaten={"beperkt": False})
     assert next(l for l in g.openbaar()["leden"] if l["id"] == romy["id"])["apparaten"] is None
 
@@ -713,3 +717,15 @@ async def test_ai_functies_met_en_zonder_ai(hass: HomeAssistant, gezin) -> None:
     d = await ai.dagoverzicht(g, opnieuw=True)
     assert d["bron"] == "ai" and "rustige dag" in d["tekst"]
     assert (await ai.klusjes(g, romy["id"]))["ideeen"][0]["titel"] == "Sokken sorteren"
+
+
+async def test_oude_apparaten_worden_omgezet(hass: HomeAssistant, local_auth, hass_owner_user, hass_storage) -> None:
+    from custom_components.ha_family.gezin import Gezin
+
+    entry = MockConfigEntry(domain=DOMAIN, title="Familie", data={"naam": "Familie", "type": "gezin"})
+    entry.add_to_hass(hass)
+    hass_storage[f"ha_family.{entry.entry_id}"] = {"version": 1, "minor_version": 1, "key": f"ha_family.{entry.entry_id}", "data": {"leden": [
+        {"id": "r1", "naam": "Rafi", "rol": "kind", "person": "person.rafi", "apparaten": {"beperkt": True, "zien": ["light.a", "light.b"], "bedienen": ["light.a"]}}]}}
+    g = Gezin(hass, entry)
+    await g.async_load()
+    assert g.lid("r1")["apparaten"] == {"beperkt": True, "kamers": {}, "uitzonderingen": {"light.a": "b", "light.b": "z"}}

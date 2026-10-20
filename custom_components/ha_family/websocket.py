@@ -143,7 +143,9 @@ async def ws_persoon_toevoegen(hass, connection, msg):
     vol.Optional("geboortedatum"): vol.Any(None, cv.string),
     vol.Optional("geslacht"): vol.Any(None, cv.string),
     vol.Optional("interesses"): [cv.string],
-    vol.Optional("apparaten"): {vol.Required("beperkt"): bool, vol.Optional("zien", default=[]): [cv.string], vol.Optional("bedienen", default=[]): [cv.string]},
+    vol.Optional("apparaten"): {vol.Required("beperkt"): bool, vol.Optional("kamers"): {cv.string: vol.In(["", "z", "b"])},
+                                 vol.Optional("uitzonderingen"): {cv.string: vol.In(["", "z", "b"])},
+                                 vol.Optional("zien"): [cv.string], vol.Optional("bedienen"): [cv.string]},
 })
 @websocket_api.require_admin
 @websocket_api.async_response

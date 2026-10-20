@@ -51,6 +51,13 @@ class Gezin:
     # ── opslag ──
     async def async_load(self) -> None:
         self.data = {"leden": [], **(await self.store.async_load() or {})}
+        for lid in self.data["leden"]:                  # 0.8.0 bewaarde apparaten als lijsten (zien/bedienen): omzetten
+            a = lid.get("apparaten")
+            if a and "uitzonderingen" not in a:
+                zien = list(a.get("zien") or [])
+                uitz = {e: "z" for e in zien}
+                uitz.update({e: "b" for e in a.get("bedienen") or [] if e in zien})
+                lid["apparaten"] = {"beperkt": bool(a.get("beperkt")), "kamers": {}, "uitzonderingen": uitz}
 
     @callback
     def opslaan(self) -> None:
@@ -168,11 +175,17 @@ class Gezin:
                 raise FamilyFout("Onbekend geslacht.")
             lid["geslacht"] = v
         if "apparaten" in velden:
-            # welke apparaten iemand ziet en mag bedienen (kamers-kaart); beperkt=False is alles
+            # welke apparaten iemand ziet en mag bedienen (kamers-kaart): per kamer, met uitzonderingen per apparaat.
+            # stand: "" = verborgen, "z" = zien, "b" = bedienen. beperkt=False is alles.
             a = velden.pop("apparaten") or {}
-            zien = [e for e in dict.fromkeys(a.get("zien") or []) if isinstance(e, str) and "." in e][:500]
-            bedienen = [e for e in dict.fromkeys(a.get("bedienen") or []) if e in zien]
-            lid["apparaten"] = {"beperkt": bool(a.get("beperkt")), "zien": zien, "bedienen": bedienen}
+            kamers = {str(k): v for k, v in (a.get("kamers") or {}).items() if v in ("", "z", "b")}
+            uitz = {str(e): v for e, v in (a.get("uitzonderingen") or {}).items() if "." in str(e) and v in ("", "z", "b")}
+            for e in a.get("zien") or []:                    # oude vorm: lijsten met entiteiten
+                uitz.setdefault(e, "z")
+            for e in a.get("bedienen") or []:
+                if e in (a.get("zien") or []):
+                    uitz[e] = "b"
+            lid["apparaten"] = {"beperkt": bool(a.get("beperkt")), "kamers": kamers, "uitzonderingen": dict(list(uitz.items())[:1000])}
         if "interesses" in velden:
             lid["interesses"] = list(dict.fromkeys(str(i).strip()[:30] for i in (velden.pop("interesses") or []) if str(i).strip()))[:15]
         for k in ("naam", "rol", "kleur", "emoji", "lamp", "notify", "weergave"):

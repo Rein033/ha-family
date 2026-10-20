@@ -102,8 +102,9 @@ had toen HA Family erbij kwam, staat eerst op *Zoals het was*.
 **Bekijk als.** In Gezin beheren staat bij ieder gezinslid *Bekijk als*: je ziet HA Family zoals die persoon het ziet
 (groet, klusjes, apparaten, cadeaus zonder de stiekeme aankopen). Alleen kijken: wat je doet, doe je als jezelf.
 
-**Lampen en apparaten per persoon.** Bij *Bewerken* kies je *Alles* of *Zelf kiezen*: per apparaat *Verborgen*, *Zien*
-(met slotje) of *Bedienen*. Handig voor kinderen. Let op: dit regelt wat HA Family laat zien en bedienen; Home Assistant
+**Lampen en apparaten per persoon.** Bij *Bewerken* kies je *Alles* of *Zelf kiezen*: **per kamer** *Verborgen*, *Zien*
+(met slotje) of *Bedienen*, voor alles in die kamer (ook wat er later bijkomt). Alleen als één apparaat anders moet, zet
+je dat per apparaat. Met *Zelfde als* neem je de keuze van een ander gezinslid over. Handig voor kinderen. Let op: dit regelt wat HA Family laat zien en bedienen; Home Assistant
 zelf kent geen rechten per apparaat.
 
 **Persoonlijk dashboard.** In Bewerken maak je voor iemand een eigen dashboard (gewoon te bewerken) of koppel je een
@@ -244,7 +245,9 @@ dan krijgen de ouders een idee. Aan of uit onder het weekmenu. Ook als sensor *E
 
 ## Kamers
 
-Lampen, airco en de rest, **per kamer**: op het tabblad **🏠 Huis**, rechts op het muurscherm en op het startscherm. Tik op
+Lampen, airco en de rest, **per kamer**. Tik op de airco, een rolluik, speaker of ventilator voor het bedieningspaneel:
+temperatuur, stand (koelen, verwarmen, drogen …), ventilatorsnelheid, zwenken, positie of volume. Lang drukken op een lamp
+geeft helderheid en lichtkleur. op het tabblad **🏠 Huis**, rechts op het muurscherm en op het startscherm. Tik op
 een lamp om hem aan of uit te zetten, schuif voor de helderheid; bij de airco of thermostaat zet je hem aan/uit en de
 temperatuur met − en +; rolluiken gaan op ▲ ■ ▼. *Alles uit* zet alle lampen in een kamer uit.
 

@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.8.0';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.9.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -81,6 +81,8 @@ const T = {
     verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
     geboortedatum: 'Geboortedatum', klAi: 'Ideeën voor…', klAiMet: 'Bedacht door de AI, passend bij leeftijd en interesses. Tik om toe te voegen.', klAiZonder: 'Uit de voorbeelden (koppel een AI voor ideeën op maat). Tik om toe te voegen.', apTitel: 'Lampen en apparaten van {x}', apAlles: 'Alles', apAllesUitleg: '{x} ziet en bedient alle lampen en apparaten in het gezinsdashboard.',
     apKiezen: 'Zelf kiezen', apKiezenUitleg: 'Jij kiest per apparaat wat {x} ziet en wat {x} mag aan- en uitzetten.', apLegenda: 'Verborgen: staat er niet. Zien: alleen kijken (met slotje). Bedienen: aan/uit en instellen.',
+    apLegendaKamer: 'Kies per kamer: Verborgen, Zien (met slotje) of Bedienen. Dat geldt voor alles in de kamer, ook wat er later bijkomt. Alleen als één apparaat anders moet, zet je dat bij "Per apparaat".',
+    apUitz: 'Per apparaat ({x})', apAnders: 'anders', apZoalsKamer: 'Zoals kamer', apZelfdeAls: 'Zelfde als:', apGekopieerd: 'Overgenomen van {x}, vergeet niet op te slaan',
     apVerborgen: 'Verborgen', apZien: 'Zien', apBedienen: 'Bedienen', apAllesBedienen: 'Alles bedienen', apNiets: 'Niets', bekijkAls: 'Bekijk als', bekijkAlsUitleg: 'Zie HA Family zoals dit gezinslid het ziet (alleen kijken).', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
     meldingOm: 'Melding om', aan: 'Aan',
     afvalTitel: 'Afvalkalender', afvalUitleg: 'De avond voor het ophalen krijgt het gezin een seintje.',
@@ -162,6 +164,8 @@ const T = {
     verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
     geboortedatum: 'Date of birth', klAi: 'Ideas for…', klAiMet: 'Made up by the AI, fitting age and interests. Tap to add.', klAiZonder: 'From the examples (connect an AI for tailored ideas). Tap to add.', apTitel: "{x}'s lights and devices", apAlles: 'Everything', apAllesUitleg: '{x} sees and controls all lights and devices on the family dashboard.',
     apKiezen: 'Choose', apKiezenUitleg: 'You choose per device what {x} sees and may switch.', apLegenda: 'Hidden: not shown. See: view only (with a lock). Control: on/off and settings.',
+    apLegendaKamer: 'Choose per room: Hidden, See (with a lock) or Control. It applies to everything in the room, also devices added later. Only if one device should differ, set it under "Per device".',
+    apUitz: 'Per device ({x})', apAnders: 'different', apZoalsKamer: 'Like room', apZelfdeAls: 'Same as:', apGekopieerd: 'Copied from {x}, remember to save',
     apVerborgen: 'Hidden', apZien: 'See', apBedienen: 'Control', apAllesBedienen: 'Control all', apNiets: 'None', bekijkAls: 'View as', bekijkAlsUitleg: 'See HA Family the way this family member sees it (view only).', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
     meldingOm: 'Notification at', aan: 'On',
     afvalTitel: 'Waste collection', afvalUitleg: 'The evening before collection the family gets a note.',
@@ -814,24 +818,28 @@ class HaFamilyBeheer extends HTMLElement {
   }
 
   _apparatenKeuze(d, l) {
+    // per kamer Verborgen/Zien/Bedienen; per apparaat alleen als het anders moet; of alles overnemen van iemand anders
     const ap = d.apparaten, naam = l.naam.split(' ')[0], h = this._huisApp;
+    ap.kamers = ap.kamers || {}; ap.uitzonderingen = ap.uitzonderingen || {};
     const kop = `<div class="kaart zacht" style="margin-top:16px"><b>💡 ${esc(this.t('apTitel', naam))}</b>
       <div class="keuzes twee" style="margin-top:8px">${[[false, 'apAlles'], [true, 'apKiezen']].map(([v, k]) => `<button class="keuze ${!!ap.beperkt === v ? 'aan' : ''}" data-a="ap-beperkt" data-v="${v ? 1 : ''}"><b>${esc(this.t(k))}</b><small>${esc(this.t(k + 'Uitleg', naam))}</small></button>`).join('')}</div>`;
     if (!ap.beperkt) return kop + '</div>';
     if (!h) return kop + '<p class="fam-sub">…</p></div>';
-    const stand = (e) => (ap.bedienen.includes(e) ? 'b' : ap.zien.includes(e) ? 'z' : '');
+    const anderen = this._s.leden.filter((x) => x.id !== l.id && x.apparaten && x.apparaten.beperkt);
+    const seg = (act, data, huidig, opties) => `<span class="ap-seg">${opties.map(([v, t]) => `<button class="${huidig === v ? 'aan' : ''}" data-a="${act}" ${data} data-v="${v}">${esc(this.t(t))}</button>`).join('')}</span>`;
     const kamers = h.kamers.filter((k) => !k.verborgen).map((k) => ({ ...k, apps: h.apparaten.filter((a) => a.kamer === k.kamer && a.tonen) })).filter((k) => k.apps.length);
-    return kop + `<p class="fam-sub" style="margin:8px 0 0">${esc(this.t('apLegenda'))}</p>${kamers.map((k) => `<details class="ap-kamer" ${k.apps.some((a) => stand(a.entity)) ? 'open' : ''}>
-        <summary><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><b>${esc(k.naam)}</b><span class="fam-sub">${k.apps.filter((a) => stand(a.entity)).length}/${k.apps.length}</span>
-          <span class="groei"></span><button class="fam-chip vbk" data-a="ap-kamer" data-k="${k.kamer}" data-v="b">${esc(this.t('apAllesBedienen'))}</button><button class="fam-chip vbk" data-a="ap-kamer" data-k="${k.kamer}" data-v="">${esc(this.t('apNiets'))}</button></summary>
-        ${k.apps.map((a) => `<div class="ap-rij"><span class="groei">${esc(a.naam)}</span><span class="ap-seg">${[['', 'apVerborgen'], ['z', 'apZien'], ['b', 'apBedienen']].map(([v, t]) =>
-          `<button class="${stand(a.entity) === v ? 'aan' : ''}" data-a="ap-zet" data-e="${esc(a.entity)}" data-v="${v}">${esc(this.t(t))}</button>`).join('')}</span></div>`).join('')}</details>`).join('')}</div>`;
+    return kop + `<p class="fam-sub" style="margin:8px 0 0">${esc(this.t('apLegendaKamer'))}</p>
+      ${anderen.length ? `<div class="rij" style="margin-top:6px"><span class="fam-sub">${esc(this.t('apZelfdeAls'))}</span>${anderen.map((x) => `<button class="fam-chip vbk" data-a="ap-kopie" data-id="${x.id}">${esc(x.emoji)} ${esc(x.naam.split(' ')[0])}</button>`).join('')}</div>` : ''}
+      ${kamers.map((k) => { const ks = ap.kamers[k.kamer] || '', uitz = k.apps.filter((a) => a.entity in ap.uitzonderingen).length;
+        return `<div class="ap-kamer"><div class="ap-krij"><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><b class="groei">${esc(k.naam)}</b>
+          ${seg('ap-kamerstand', `data-k="${k.kamer}"`, ks, [['', 'apVerborgen'], ['z', 'apZien'], ['b', 'apBedienen']])}</div>
+          <details ${uitz ? 'open' : ''}><summary class="fam-sub">${esc(this.t('apUitz', k.apps.length))}${uitz ? ` · ${uitz} ${esc(this.t('apAnders'))}` : ''}</summary>
+          ${k.apps.map((a) => `<div class="ap-rij"><span class="groei">${esc(a.naam)}</span>${seg('ap-zet', `data-e="${esc(a.entity)}"`, a.entity in ap.uitzonderingen ? ap.uitzonderingen[a.entity] : 'kamer',
+            [['kamer', 'apZoalsKamer'], ['', 'apVerborgen'], ['z', 'apZien'], ['b', 'apBedienen']])}</div>`).join('')}</details></div>`; }).join('')}</div>`;
   }
   _apZet(d, e, v) {
-    const ap = d.apparaten;
-    ap.zien = ap.zien.filter((x) => x !== e); ap.bedienen = ap.bedienen.filter((x) => x !== e);
-    if (v) ap.zien.push(e);
-    if (v === 'b') ap.bedienen.push(e);
+    const u = d.apparaten.uitzonderingen = d.apparaten.uitzonderingen || {};
+    if (v === 'kamer') delete u[e]; else u[e] = v;
   }
   _leesOver(d) { const g = this.shadowRoot.getElementById('geboorte'); if (g) d.geboortedatum = g.value; }
   _dlgBewerk(d) {
@@ -941,10 +949,11 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'weergave' && d) { d.weergave = b.dataset.v; return this._herteken(); }
     if (a === 'ap-beperkt' && d) { this._leesOver(d); d.apparaten.beperkt = !!b.dataset.v; return this._herteken(); }
     if (a === 'ap-zet' && d) { this._leesOver(d); this._apZet(d, b.dataset.e, b.dataset.v); return this._herteken(); }
-    if (a === 'ap-kamer' && d) {
-      e.preventDefault && e.preventDefault(); this._leesOver(d);
-      this._huisApp.apparaten.filter((x) => x.kamer === b.dataset.k && x.tonen).forEach((x) => this._apZet(d, x.entity, b.dataset.v));
-      return this._herteken();
+    if (a === 'ap-kamerstand' && d) { this._leesOver(d); d.apparaten.kamers = { ...(d.apparaten.kamers || {}), [b.dataset.k]: b.dataset.v }; return this._herteken(); }
+    if (a === 'ap-kopie' && d) {
+      this._leesOver(d); const x = this._s.leden.find((y) => y.id === b.dataset.id).apparaten;
+      d.apparaten = { beperkt: true, kamers: { ...(x.kamers || {}) }, uitzonderingen: { ...(x.uitzonderingen || {}) } };
+      this._melding(this.t('apGekopieerd', this._s.leden.find((y) => y.id === b.dataset.id).naam.split(' ')[0])); return this._herteken();
     }
     if (a === 'geslacht' && d) { this._leesOver(d); d.geslacht = d.geslacht === b.dataset.v ? null : b.dataset.v; return this._herteken(); }
     if (a === 'interesse' && d) { this._leesOver(d); const v = b.dataset.v; d.interesses = d.interesses.includes(v) ? d.interesses.filter((x) => x !== v) : [...d.interesses, v]; return this._herteken(); }
@@ -1159,6 +1168,9 @@ const STIJL = `
   .ap-kamer { margin-top: 8px; border-top: 1px solid var(--divider-color); padding-top: 6px; }
   .ap-kamer summary { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; }
   .ap-kamer summary ha-icon { color: var(--primary-color); --mdc-icon-size: 20px; }
+  .ap-krij { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .ap-krij ha-icon { color: var(--primary-color); --mdc-icon-size: 20px; }
+  .ap-kamer details summary { cursor: pointer; padding: 0 0 4px 28px; font-size: .85rem; }
   .ap-rij { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 28px; font-size: .92rem; }
   .ap-seg { display: inline-flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--divider-color); flex: none; }
   .ap-seg button { border: 0; background: none; font: inherit; font-size: .8rem; padding: 5px 10px; cursor: pointer; color: var(--primary-text-color); }

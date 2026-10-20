@@ -6,7 +6,7 @@
  *   type: custom:family-boodschappen-card  boodschappen op volgorde van de looproute
  *
  * Alles komt uit ha_family/taken; de kaarten verversen zodra een van de lijsten of puntensensoren verandert. */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.8.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.9.0';
 
 const TEKST = {
   nl: {
