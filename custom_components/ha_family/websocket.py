@@ -16,6 +16,7 @@ from .const import ALLE_ROLLEN, DOMAIN
 from .afdelingen import AFDELINGEN
 from .agenda import AFVAL
 from .taken import VOORBEELDEN
+from . import muur
 from .gezin import FamilyFout, Gezin, wachtwoord_voorstel
 from .weergave import WEERGAVEN
 
@@ -40,6 +41,7 @@ def _antwoord(fn):
 def async_registreer(hass: HomeAssistant) -> None:
     for cmd in (ws_gezin, ws_status, ws_lid_toevoegen, ws_persoon_toevoegen, ws_lid_bijwerken, ws_lid_verwijderen,
                 ws_wachtwoord, ws_test_melding, ws_voorstel, ws_huishouden, ws_account,
+                ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -205,7 +207,7 @@ async def ws_huishouden(hass, connection, msg):
 def _magschrijven(g: Gezin, connection) -> str | None:
     """Afspraken maken mag ieder gezinslid en elke beheerder; geeft het lid-id van wie het doet."""
     lid = g.lid_van_user(connection.user.id)
-    if not lid and not connection.user.is_admin:
+    if not lid and not connection.user.is_admin and not muur.is_muur(g, connection.user.id):
         raise FamilyFout("Alleen gezinsleden kunnen de agenda aanpassen.")
     return lid["id"] if lid else None
 
@@ -537,3 +539,52 @@ async def ws_account(hass, connection, msg):
     lid = await g.account_aanmaken(msg["lid"], msg.get("gebruikersnaam"), msg["wachtwoord"], msg["beheerder"])
     await g.weergave_zetten(lid)
     return lid
+
+
+# ── Muurscherm ──
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/muur"})
+@websocket_api.async_response
+@_antwoord
+async def ws_muur(hass, connection, msg):
+    g = _gezin(hass)
+    return {**muur.openbaar(g), "ben_muur": muur.is_muur(g, connection.user.id),
+            "weerberichten": [{"entity": s.entity_id, "naam": s.name} for s in hass.states.async_all("weather")]}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/muur/aanmaken", vol.Required("gebruikersnaam"): cv.string, vol.Required("wachtwoord"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_muur_aanmaken(hass, connection, msg):
+    g = _gezin(hass)
+    await muur.aanmaken(g, msg["gebruikersnaam"], msg["wachtwoord"])
+    return muur.openbaar(g)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/muur/bijwerken", vol.Optional("nacht"): dict, vol.Optional("weer"): vol.Any(None, cv.string),
+                                  vol.Optional("blokken"): dict, vol.Optional("zijbalk_weg"): bool})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_muur_bijwerken(hass, connection, msg):
+    g = _gezin(hass)
+    muur.bijwerken(g, {k: v for k, v in msg.items() if k not in ("type", "id")})
+    return muur.openbaar(g)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/muur/verwijderen"})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_muur_verwijderen(hass, connection, msg):
+    await muur.verwijderen(_gezin(hass))
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/muur/wachtwoord", vol.Required("wachtwoord"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_muur_wachtwoord(hass, connection, msg):
+    await muur.wachtwoord(_gezin(hass), msg["wachtwoord"])
+    return {}

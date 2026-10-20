@@ -26,6 +26,8 @@ EMOJI = ["🦊", "🐻", "🐼", "🦁", "🐯", "🐨", "🐸", "🦉", "🐙",
 
 DASHBOARD_URL = "gezin"
 BEHEER_URL = "gezin-beheer"
+MUUR_URL = "gezin-muur"
+MUUR_COMPONENT = "ha-family-muur"
 FRONTEND_URL = "/ha_family"
 CARDS_JS = "family-cards.js"
 BEHEER_COMPONENT = "ha-family-beheer"

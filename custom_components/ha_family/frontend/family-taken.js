@@ -6,7 +6,7 @@
  *   type: custom:family-boodschappen-card  boodschappen op volgorde van de looproute
  *
  * Alles komt uit ha_family/taken; de kaarten verversen zodra een van de lijsten of puntensensoren verandert. */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.3.0';
+import { CSS, avatar, esc, leden } from './family-ui.js?v=0.4.0';
 
 const TEKST = {
   nl: {
@@ -18,6 +18,7 @@ const TEKST = {
     teLaat: 'te laat', vandaagKort: 'vandaag', morgen: 'morgen', zeker: '"{x}" verwijderen?',
     boodschappen: 'Boodschappen', watNodig: 'Wat moet er gehaald worden? (komma = meer)', erop: 'Erop', gekochtWeg: 'Gekochte dingen weghalen',
     leeg: 'Het lijstje is leeg. 🛒', stondErAl: 'Stond er al op', erbij: '{x} erop gezet', afdeling: 'Afdeling',
+    mijnTaken: 'Mijn taken', alle: 'Alles bekijken', tikGekocht: 'Tik op wat je gekocht hebt',
   },
   en: {
     klusjes: 'Chores', jouwKlusjes: "{x}'s chores", vandaag: 'today', punten: 'points', alles: 'All done! 🎉', nog: '{x} to go',
@@ -28,6 +29,7 @@ const TEKST = {
     teLaat: 'overdue', vandaagKort: 'today', morgen: 'tomorrow', zeker: 'Delete "{x}"?',
     boodschappen: 'Groceries', watNodig: 'What do we need? (comma = more)', erop: 'Add', gekochtWeg: 'Remove bought items',
     leeg: 'The list is empty. 🛒', stondErAl: 'Already on the list', erbij: '{x} added', afdeling: 'Aisle',
+    mijnTaken: 'My tasks', alle: 'See all', tikGekocht: 'Tap what you bought',
   },
 };
 const taalVan = (hass) => (((hass && hass.locale && hass.locale.language) || 'en').startsWith('nl') ? 'nl' : 'en');
@@ -89,6 +91,10 @@ const STIJL = `
   .afd { margin: 16px 0 2px; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--secondary-text-color); }
   details summary { cursor: pointer; color: var(--secondary-text-color); margin-top: 14px; }
   .leeg { color: var(--secondary-text-color); padding: 12px 0; text-align: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { border: 0; font: inherit; padding: 6px 12px; border-radius: 999px; background: var(--secondary-background-color); color: var(--primary-text-color); cursor: pointer; }
+  .chip:hover { background: color-mix(in srgb, var(--primary-color) 14%, transparent); }
+  .naar { border: 0; background: none; color: var(--primary-color); font: inherit; cursor: pointer; padding: 4px 0; margin-top: 8px; }
   .afdkeus { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); }
 `;
 
@@ -126,6 +132,7 @@ class TakenBasis extends HTMLElement {
   }
   _melding(message) { if (message) this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message }, bubbles: true, composed: true })); }
   _lmap() { return Object.fromEntries(leden(this._hass).map((l) => [l.id, l])); }
+  _naar(pad) { history.pushState(null, '', pad); window.dispatchEvent(new CustomEvent('location-changed')); }
   _schil(binnen) { this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><ha-card>${this._fout ? `<div class="leeg">${esc(this._fout)}</div>` : binnen}</ha-card>`; }
 }
 
@@ -198,6 +205,7 @@ class FamilyTakenCard extends TakenBasis {
   _teken() {
     const d = this._d;
     if (!d) return this._schil('<div class="leeg">…</div>');
+    if (this._config.compact) return this._compact();
     const lmap = this._lmap(), l = leden(this._hass);
     if (!this._wie) this._wie = d.ik ? [d.ik] : [];
     const vandaag = new Date(); vandaag.setHours(0, 0, 0, 0);
@@ -223,14 +231,26 @@ class FamilyTakenCard extends TakenBasis {
     const det = this.shadowRoot.querySelector('details');
     if (det) det.addEventListener('toggle', () => { this._open = det.open; });
   }
+  _compact() {
+    const d = this._d, lmap = this._lmap(), ik = d.ik;
+    const mijn = d.taken.filter((t) => !t.klaar && (!ik || !(t.wie || []).length || t.wie.includes(ik)))
+      .sort((a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999')).slice(0, 6);
+    if (!this._wie) this._wie = ik ? [ik] : [];
+    this._schil(`<div class="kop"><div class="titel">📝 ${esc(ik ? this.t('mijnTaken') : this.t('taken'))}</div><span class="sub">${mijn.length || ''}</span></div>
+      <div class="invoer"><input class="veld" id="nieuw" placeholder="${esc(this.t('nieuweTaak'))}" maxlength="200" data-enter="toevoegen"/><button class="fam-knop" data-a="toevoegen">+</button></div>
+      <div style="margin-top:6px">${mijn.map((t) => `<div class="rij"><button class="ck" data-a="klaar" data-t="${t.id}" data-k="0"></button><span class="wat tt">${esc(t.titel)}</span>
+        <span class="avs">${(t.wie || []).filter((w) => lmap[w] && w !== ik).map((w) => avatar(lmap[w], { grootte: 24 })).join('')}</span></div>`).join('') || `<div class="leeg">${esc(this.t('geenTaken'))}</div>`}</div>
+      <button class="naar" data-a="naar">${esc(this.t('alle'))} →</button>`);
+  }
   async _klik(e) {
     const b = e.target && e.target.closest && e.target.closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a, r = this.shadowRoot;
+    if (a === 'naar') return this._naar('/gezin/taken');
     if (a === 'wie') { const id = b.dataset.l; this._wie = this._wie.includes(id) ? this._wie.filter((x) => x !== id) : [...this._wie, id]; b.classList.toggle('aan'); return; }
     if (a === 'toevoegen') {
       const titel = r.getElementById('nieuw').value.trim(); if (!titel) return;
-      const deadline = r.getElementById('deadline').value || null;
+      const deadline = r.getElementById('deadline') ? r.getElementById('deadline').value || null : null;
       r.getElementById('nieuw').value = '';
       await this._ws('ha_family/taak', { titel, wie: this._wie, deadline });
       const i = this.shadowRoot.getElementById('nieuw'); if (i) i.focus();
@@ -247,6 +267,14 @@ class FamilyBoodschappenCard extends TakenBasis {
   _teken() {
     const d = this._d;
     if (!d) return this._schil('<div class="leeg">…</div>');
+    if (this._config.compact) {
+      const open = d.boodschappen.filter((b) => !b.klaar);
+      return this._schil(`<div class="kop"><div class="titel">🛒 ${esc(this.t('boodschappen'))}</div><span class="sub">${open.length || ''}</span></div>
+        <div class="invoer"><input class="veld" id="nieuw" placeholder="${esc(this.t('watNodig'))}" maxlength="400" data-enter="toevoegen"/><button class="fam-knop" data-a="toevoegen">${esc(this.t('erop'))}</button></div>
+        ${open.length ? `<div class="chips">${open.slice(0, 16).map((b) => `<button class="chip" data-a="koop" data-b="${b.id}" data-k="0">${esc(b.titel)}</button>`).join('')}${open.length > 16 ? `<span class="chip">+${open.length - 16}</span>` : ''}</div>
+          <div class="sub" style="margin-top:6px">${esc(this.t('tikGekocht'))}</div>` : `<div class="leeg">${esc(this.t('leeg'))}</div>`}
+        <button class="naar" data-a="naar">${esc(this.t('alle'))} →</button>`);
+    }
     const lijst = d.boodschappen, open = lijst.filter((b) => !b.klaar);
     const groepen = Object.entries(d.afdelingen).map(([k, naam]) => [k, naam, lijst.filter((b) => b.afdeling === k)]).filter((g) => g[2].length);
     this._schil(`<div class="kop"><div class="titel">🛒 ${esc(this.t('boodschappen'))}</div><span class="sub">${open.length || ''}</span></div>
@@ -275,6 +303,7 @@ class FamilyBoodschappenCard extends TakenBasis {
     if (a === 'weg') return this._ws('ha_family/boodschap/weg', { boodschap: b.dataset.b });
     if (a === 'gekocht') return this._ws('ha_family/boodschap/weg', { alles_gekocht: true });
     if (a === 'afd') { this._afdeling = b.dataset.b; return this._teken(); }
+    if (a === 'naar') return this._naar('/gezin/boodschappen');
   }
   _wijzig(e) {
     if (e.target.classList.contains('afdkeus')) { this._afdeling = null; this._ws('ha_family/boodschap/bij', { boodschap: e.target.dataset.b, afdeling: e.target.value }); }

@@ -17,7 +17,7 @@ from typing import Any
 
 from homeassistant.core import Event, HomeAssistant, callback
 
-from .const import BEHEER_URL, DASHBOARD_URL
+from .const import BEHEER_URL, DASHBOARD_URL, MUUR_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +79,26 @@ async def toepassen(gezin, lid: dict[str, Any]) -> None:
         await store.async_set_item("sidebar", sidebar)
 
 
+async def muur_toepassen(gezin) -> None:
+    """Het muurscherm-account: het muurscherm als startscherm, verder niets in de zijbalk."""
+    uid = (gezin.data.get("muur") or {}).get("user_id")
+    if not uid:
+        return
+    store = await _user_store(gezin.hass, uid)
+    data = store.data or {}
+    core = {**(data.get("core") or {}), "default_panel": MUUR_URL}
+    sidebar = {**(data.get("sidebar") or {}), "panelOrder": [MUUR_URL], "hiddenPanels": [p for p in _panelen(gezin.hass) if p != MUUR_URL]}
+    if data.get("core") != core:
+        await store.async_set_item("core", core)
+    if data.get("sidebar") != sidebar:
+        await store.async_set_item("sidebar", sidebar)
+
+
 async def alles_toepassen(gezin) -> None:
+    try:
+        await muur_toepassen(gezin)
+    except Exception:  # noqa: BLE001
+        _LOGGER.exception("Weergave voor het muurscherm zetten mislukt")
     for lid in gezin.leden:
         try:
             await toepassen(gezin, lid)

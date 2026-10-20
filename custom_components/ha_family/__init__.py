@@ -22,7 +22,8 @@ from homeassistant.loader import async_get_integration
 from . import herinnering, weergave, websocket
 from .agenda import Agenda
 from .taken import Taken, volg_meldingknoppen
-from .const import BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, PLATFORMS
+from .const import (BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, MUUR_COMPONENT,
+                    MUUR_URL, PLATFORMS)
 from .gezin import Gezin
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ async def _beheer(hass: HomeAssistant, versie: str | None, aan: bool) -> None:
     """Paneel 'Gezin beheren' in de zijbalk, alleen voor beheerders."""
     if not aan:
         frontend.async_remove_panel(hass, BEHEER_URL, warn_if_unknown=False)
+        frontend.async_remove_panel(hass, MUUR_URL, warn_if_unknown=False)
         return
     if versie is None or BEHEER_URL in hass.data.get(frontend.DATA_PANELS, {}):
         return
@@ -61,6 +63,9 @@ async def _beheer(hass: HomeAssistant, versie: str | None, aan: bool) -> None:
                                             sidebar_title="Gezin beheren", sidebar_icon="mdi:account-cog",
                                             module_url=f"{FRONTEND_URL}/family-beheer.js?v={versie}", require_admin=True,
                                             config_panel_domain=DOMAIN)
+    # muurscherm: volledig scherm, niet in de zijbalk (de tablet opent het als startscherm)
+    await panel_custom.async_register_panel(hass, frontend_url_path=MUUR_URL, webcomponent_name=MUUR_COMPONENT,
+                                            module_url=f"{FRONTEND_URL}/family-muur.js?v={versie}", require_admin=False)
 
 
 async def _dashboard(hass: HomeAssistant, titel: str, aan: bool) -> None:
@@ -150,4 +155,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: FamilyEntry) -> None:
     await gezin.async_load()
     await weergave.terugzetten(gezin)
     await weergave.systeem_startscherm(gezin, False)
+    from . import muur
+
+    await muur.verwijderen(gezin)                      # het muuraccount heeft zonder HA Family geen nut
     await Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}").async_remove()

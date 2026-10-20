@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.3.0';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.4.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -43,7 +43,15 @@ const T = {
     allesGoed: 'Alles werkt', kanInloggen: 'Inloggen als {x}', jij: 'jij', adresOnbekend: 'Stel eerst het adres van je Home Assistant in (Instellingen → Systeem → Netwerk).',
     huishoudenNaam: 'Naam van jullie huishouden',
     accountMaken: 'Geef {x} een eigen account', accountKnop: 'Account maken en telefoon koppelen',
-    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes',
+    tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes', tabMuur: 'Muurscherm',
+    muTitel: 'Een tablet aan de muur', muUitleg: 'Een groot scherm voor iedereen: klok, weer, de agenda van vandaag en morgen, de klusjes van de kinderen en de boodschappen. \'s Nachts alleen een gedimde klok.',
+    muInstellen: 'Muurscherm instellen', muAccountUitleg: 'De tablet krijgt een eigen account dat alleen thuis kan inloggen. Kinderen kunnen er hun klusjes afvinken; beheren kan er niet.',
+    muStap1: 'Open dit adres op de tablet', muStap1t: 'In de browser, de Home Assistant-app of een kiosk-app (zoals Fully Kiosk Browser):',
+    muStap2: 'Log in met het muuraccount', muStap2t: 'Vink "Ingelogd blijven" aan.', muStap3: 'Zet de tablet vast aan de lader',
+    muStap3t: 'Zet in de instellingen van de tablet "scherm uit" op nooit (of gebruik een kiosk-app). Het muurscherm houdt het scherm zelf ook wakker waar dat kan.',
+    muBekijk: 'Bekijk het muurscherm', muInst: 'Instellingen', muNacht: 'Nachtstand: alleen een gedimde klok', muVan: 'van', muTot: 'tot', muWeer: 'Weerbericht',
+    muWeerAuto: 'Automatisch (eerste)', muBlokken: 'Wat staat erop?', muBlok: { agenda: '📅 Agenda', klusjes: '⭐ Klusjes', boodschappen: '🛒 Boodschappen', thuis: '🏠 Wie is er thuis' },
+    muZijbalk: 'Zijbalk verbergen op de tablet', muAccount: 'Account', muVerwijder: 'Muuraccount verwijderen', muZeker: 'Het muuraccount verwijderen? De tablet wordt uitgelogd.',
     klKlusjes: 'Klusjes', klUitleg: 'Klusjes staan elke dag (of op de gekozen dagen) klaar. Afvinken geeft punten.', klNieuw: 'Klusje',
     klVoorbeelden: 'Voorbeelden: tik om toe te voegen', klGeen: 'Nog geen klusjes. Begin met een voorbeeld hieronder.', klMaak: 'Klusje maken', klBewerk: 'Klusje bewerken',
     klWat: 'Wat moet er gebeuren?', klPunten: 'Punten', klWie: 'Voor wie?', klWanneer: 'Wanneer?', klElkeDag: 'Elke dag', klWerkdagen: 'Werkdagen',
@@ -103,7 +111,15 @@ const T = {
     allesGoed: 'Everything works', kanInloggen: 'Logs in as {x}', jij: 'you', adresOnbekend: 'Set the address of your Home Assistant first (Settings → System → Network).',
     huishoudenNaam: 'Name of your household',
     accountMaken: 'Give {x} their own account', accountKnop: 'Create account and connect phone',
-    tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores',
+    tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores', tabMuur: 'Wall screen',
+    muTitel: 'A tablet on the wall', muUitleg: "A big screen for everyone: clock, weather, today's and tomorrow's calendar, the children's chores and the groceries. At night only a dimmed clock.",
+    muInstellen: 'Set up the wall screen', muAccountUitleg: 'The tablet gets its own account that can only log in at home. Children can tick off their chores there; it cannot manage anything.',
+    muStap1: 'Open this address on the tablet', muStap1t: 'In the browser, the Home Assistant app or a kiosk app (such as Fully Kiosk Browser):',
+    muStap2: 'Log in with the wall account', muStap2t: 'Tick "Keep me logged in".', muStap3: 'Keep the tablet on its charger',
+    muStap3t: 'Set "screen timeout" to never in the tablet settings (or use a kiosk app). The wall screen also keeps the screen awake where possible.',
+    muBekijk: 'View the wall screen', muInst: 'Settings', muNacht: 'Night mode: only a dimmed clock', muVan: 'from', muTot: 'to', muWeer: 'Weather',
+    muWeerAuto: 'Automatic (first)', muBlokken: 'What is on it?', muBlok: { agenda: '📅 Calendar', klusjes: '⭐ Chores', boodschappen: '🛒 Groceries', thuis: "🏠 Who's home" },
+    muZijbalk: 'Hide the sidebar on the tablet', muAccount: 'Account', muVerwijder: 'Delete wall account', muZeker: 'Delete the wall account? The tablet will be logged out.',
     klKlusjes: 'Chores', klUitleg: 'Chores are ready every day (or on the chosen days). Ticking them off earns points.', klNieuw: 'Chore',
     klVoorbeelden: 'Examples: tap to add', klGeen: 'No chores yet. Start with an example below.', klMaak: 'New chore', klBewerk: 'Edit chore',
     klWat: 'What needs doing?', klPunten: 'Points', klWie: 'For whom?', klWanneer: 'When?', klElkeDag: 'Every day', klWerkdagen: 'Weekdays',
@@ -154,7 +170,7 @@ class HaFamilyBeheer extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style>
       <div class="balk"><span class="menu"></span><div class="titel">${esc(this.t('titel'))}</div>
-        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button><button data-a="tab" data-tab="klusjes">⭐ ${esc(this.t('tabKlusjes'))}</button></div></div>
+        <div class="tabs"><button data-a="tab" data-tab="leden" class="aan">👨‍👩‍👧 ${esc(this.t('tabLeden'))}</button><button data-a="tab" data-tab="agenda">📅 ${esc(this.t('tabAgenda'))}</button><button data-a="tab" data-tab="klusjes">⭐ ${esc(this.t('tabKlusjes'))}</button><button data-a="tab" data-tab="muur">📺 ${esc(this.t('tabMuur'))}</button></div></div>
       <div class="inhoud"><div class="laden">…</div></div><div class="dlg-plek"></div>`;
     this._menu = document.createElement('ha-menu-button');
     this._menu.hass = this._hass;
@@ -172,8 +188,12 @@ class HaFamilyBeheer extends HTMLElement {
       this._s = await this._ws('ha_family/status'); this._fout = null;
       if (this._tab === 'agenda' && !this._typt()) this._ag = await this._ws('ha_family/agenda/instellingen');
       if (this._tab === 'klusjes' && !this._typt()) this._kl = await this._ws('ha_family/taken');
+      if (this._tab === 'muur' && !this._typt()) {
+        this._mu = await this._ws('ha_family/muur');
+        if (!this._mu.heeft_account && !this._muWw) this._muWw = (await this._ws('ha_family/voorstel')).wachtwoord;
+      }
     } catch (e) { this._fout = e.message; }
-    if ((this._tab === 'agenda' || this._tab === 'klusjes') && this._typt()) return;            // niet hertekenen terwijl iemand in de agenda-instellingen typt
+    if (this._tab !== 'leden' && this._tab && this._typt()) return;            // niet hertekenen terwijl iemand in de agenda-instellingen typt
     this._teken();
     if (this._dlg) this._tekenDlg();
   }
@@ -190,6 +210,7 @@ class HaFamilyBeheer extends HTMLElement {
     this.shadowRoot.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('aan', b.dataset.tab === (this._tab || 'leden')));
     if (this._tab === 'agenda') { el.innerHTML = this._agendaTab(); return; }
     if (this._tab === 'klusjes') { el.innerHTML = this._klusjesTab(); return; }
+    if (this._tab === 'muur') { el.innerHTML = this._muurTab(); return; }
     const soort = s.type === 'huishouden' ? this.t('huishouden') : this.t('gezin');
     const losse = s.losse_personen.length ? `<div class="kaart zacht"><b>${esc(this.t('alInHa'))}</b><p class="fam-sub">${esc(this.t('alInHaTekst'))}</p>
       <div class="losse">${s.losse_personen.map((p) => `<div class="los"><span class="los-naam">${esc(p.naam)}</span>
@@ -313,7 +334,7 @@ class HaFamilyBeheer extends HTMLElement {
 
   async _agendaKlik(a, b) {
     const v = this._afv;
-    if (a === 'tab') { this._tab = b.dataset.tab; this._ag = null; this._afv = null; this._kl = null; this._teken(); return this._laad(); }
+    if (a === 'tab') { this._tab = b.dataset.tab; this._ag = null; this._afv = null; this._kl = null; this._mu = null; this._teken(); return this._laad(); }
     if (a === 'agenda-koppel') return this._open({ soort: 'agenda', voor: b.dataset.voor });
     if (a === 'agenda-los') return this._agendaZet(b.dataset.voor, this._huidigeAgendas(b.dataset.voor).filter((x) => x !== b.dataset.entity));
     if (a === 'agenda-kies') {
@@ -358,6 +379,7 @@ class HaFamilyBeheer extends HTMLElement {
   async _agendaWijzig(e) {
     const a = e.target.dataset.a, v = this._afv;
     if (!a) return;
+    if (a.startsWith('mu-inst')) return this._muurOpslaan();
     if (a === 'kl-herinnering' || a === 'kl-tijd') {
       const r = this.shadowRoot;
       return this._doe('ha_family/klusjes/instellingen', { aan: r.querySelector('[data-a=kl-herinnering]').checked, tijd: r.querySelector('[data-a=kl-tijd]').value || '18:00' }, this.t('bewaard'));
@@ -377,6 +399,66 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'afval-tijd') v.herinnering.tijd = e.target.value;
   }
 
+
+
+  /* ── Muurscherm-tab ── */
+  _muurTab() {
+    const m = this._mu, h = this._hass;
+    if (!m) return '<div class="kaart">…</div>';
+    const adres = (this._s.adres.intern || this._s.adres.extern || location.origin) + '/gezin-muur';
+    const stap = (n, titel, tekst, extra = '') => `<div class="stap"><span class="nr">${n}</span><div><b>${esc(titel)}</b><p class="fam-sub">${esc(tekst)}</p>${extra}</div></div>`;
+    const kop = `<div class="kaart welkom" style="text-align:left;justify-items:start"><div class="groot">📺</div><h2>${esc(this.t('muTitel'))}</h2><p class="fam-sub">${esc(this.t('muUitleg'))}</p>
+      <button class="fam-knop rand" data-a="mu-bekijk"><ha-icon icon="mdi:monitor-dashboard"></ha-icon>${esc(this.t('muBekijk'))}</button></div>`;
+    if (!m.heeft_account) {
+      return `${kop}<div class="kaart"><h2>${esc(this.t('muInstellen'))}</h2><p class="fam-sub">${esc(this.t('muAccountUitleg'))}</p>
+        <div class="gegevens"><div><small>${esc(this.t('gebruikersnaam'))}</small><input class="veld" id="mu-gb" value="muur" autocapitalize="off"/></div>
+          <div><small>${esc(this.t('wachtwoord'))}</small><input class="veld mono" id="mu-ww" value="${esc(this._muWw || '')}"/></div></div>
+        <div class="rij eind"><button class="fam-knop" data-a="mu-maak"><ha-icon icon="mdi:tablet"></ha-icon>${esc(this.t('muInstellen'))}</button></div></div>`;
+    }
+    const b = m.blokken;
+    return `${kop}
+      <div class="kaart"><h2>📲 ${esc(this.t('muInstellen'))}</h2>
+        ${stap(1, this.t('muStap1'), this.t('muStap1t'), `<div class="qrs"><span class="qr">${qrSvg(adres)}</span><b class="mono adres">${esc(adres)}</b></div>`)}
+        ${stap(2, this.t('muStap2'), this.t('muStap2t'), `<div class="gegevens"><div><small>${esc(this.t('gebruikersnaam'))}</small><b class="mono">${esc(m.gebruikersnaam || '')}</b></div>
+          <div><small>${esc(this.t('wachtwoord'))}</small>${this._muWwNieuw ? `<b class="mono">${esc(this._muWwNieuw)}</b>` : `<button class="fam-knop rand klein" data-a="mu-ww">${esc(this.t('nieuwWachtwoord'))}</button>`}</div></div>`)}
+        ${stap(3, this.t('muStap3'), this.t('muStap3t'))}</div>
+      <div class="kaart"><h2>⚙️ ${esc(this.t('muInst'))}</h2>
+        <div class="rij"><label class="vink kort"><input type="checkbox" data-a="mu-inst-nacht" ${m.nacht.aan ? 'checked' : ''}/> ${esc(this.t('muNacht'))}</label></div>
+        <div class="rij"><span class="fam-sub">${esc(this.t('muVan'))}</span><input class="veld smal" type="time" data-a="mu-inst-van" value="${esc(m.nacht.van)}"/>
+          <span class="fam-sub">${esc(this.t('muTot'))}</span><input class="veld smal" type="time" data-a="mu-inst-tot" value="${esc(m.nacht.tot)}"/></div>
+        <label class="lbl">${esc(this.t('muWeer'))}</label>
+        <select class="veld" data-a="mu-inst-weer"><option value="">${esc(this.t('muWeerAuto'))}</option>${m.weerberichten.map((w) => `<option value="${esc(w.entity)}" ${m.weer === w.entity ? 'selected' : ''}>${esc(w.naam)}</option>`).join('')}</select>
+        <label class="lbl">${esc(this.t('muBlokken'))}</label>
+        <div class="rij">${Object.entries(this.t('muBlok')).map(([k, n]) => `<label class="vink kort"><input type="checkbox" data-a="mu-inst-blok" data-k="${k}" ${b[k] ? 'checked' : ''}/> ${esc(n)}</label>`).join('')}</div>
+        <div class="rij"><label class="vink kort"><input type="checkbox" data-a="mu-inst-zijbalk" ${m.zijbalk_weg ? 'checked' : ''}/> ${esc(this.t('muZijbalk'))}</label></div>
+        <hr/><div class="rij"><button class="fam-knop gevaar klein" data-a="mu-weg">${esc(this.t('muVerwijder'))}</button></div></div>`;
+  }
+  async _muurOpslaan() {
+    const r = this.shadowRoot, q = (s) => r.querySelector(s);
+    const blokken = {};
+    r.querySelectorAll('[data-a=mu-inst-blok]').forEach((x) => { blokken[x.dataset.k] = x.checked; });
+    try {
+      this._mu = { ...this._mu, ...(await this._ws('ha_family/muur/bijwerken', { nacht: { aan: q('[data-a=mu-inst-nacht]').checked, van: q('[data-a=mu-inst-van]').value || '22:30', tot: q('[data-a=mu-inst-tot]').value || '06:30' },
+        weer: q('[data-a=mu-inst-weer]').value || null, blokken, zijbalk_weg: q('[data-a=mu-inst-zijbalk]').checked })) };
+      this._melding(this.t('bewaard'));
+    } catch (e) { this._melding(e.message); }
+  }
+  async _muurKlik(a, b) {
+    if (a === 'mu-bekijk') { history.pushState(null, '', '/gezin-muur'); window.dispatchEvent(new CustomEvent('location-changed')); return; }
+    if (a === 'mu-maak') {
+      const gb = this.shadowRoot.getElementById('mu-gb').value, ww = this.shadowRoot.getElementById('mu-ww').value;
+      try { await this._ws('ha_family/muur/aanmaken', { gebruikersnaam: gb, wachtwoord: ww }); this._muWwNieuw = ww; await this._laad(); }
+      catch (e) { this._melding(e.message); }
+      return;
+    }
+    if (a === 'mu-ww') {
+      const ww = (await this._ws('ha_family/voorstel')).wachtwoord;
+      const nieuw = prompt(this.t('nieuwWachtwoord'), ww); if (!nieuw) return;
+      if (await this._doe('ha_family/muur/wachtwoord', { wachtwoord: nieuw }, this.t('wwGewijzigd'))) { this._muWwNieuw = nieuw; this._teken(); }
+      return;
+    }
+    if (a === 'mu-weg') { if (confirm(this.t('muZeker'))) { this._muWwNieuw = null; await this._doe('ha_family/muur/verwijderen', {}); } }
+  }
 
   /* ── Klusjes-tab ── */
   _wanneerTekst(k) {
@@ -641,6 +723,10 @@ class HaFamilyBeheer extends HTMLElement {
     const b = e.target.closest('[data-a]');
     if (!b) return;
     const a = b.dataset.a, d = this._dlg, s = this._s;
+    if (a.startsWith('mu-')) {
+      if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
+      return this._muurKlik(a, b);
+    }
     if (a.startsWith('kl-')) {
       if (b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
       return this._klusjesKlik(a, b);

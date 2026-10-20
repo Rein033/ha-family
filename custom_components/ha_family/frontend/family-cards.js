@@ -4,9 +4,12 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.3.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.3.0';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.3.0';
+import { CSS, VERSIE, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.4.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.4.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.4.0';
+
+const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
+  rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
 
 class FamilyGezinCard extends HTMLElement {
   setConfig(config) { this._config = { ...config }; }
@@ -15,7 +18,8 @@ class FamilyGezinCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     const l = leden(hass);
-    const sleutel = taal(hass) + new Date().getHours() + JSON.stringify(l) + l.map((x) => (hass.states[x.person] || {}).state).join();
+    const w = Object.values(hass.states).find((s) => s.entity_id.startsWith('weather.'));
+    const sleutel = taal(hass) + new Date().getHours() + JSON.stringify(l) + l.map((x) => (hass.states[x.person] || {}).state).join() + (w ? w.last_updated : '');
     if (sleutel === this._sleutel) return;
     this._sleutel = sleutel;
     if (!this.shadowRoot) {
@@ -31,6 +35,8 @@ class FamilyGezinCard extends HTMLElement {
   }
   _teken() {
     const h = this._hass, l = leden(h), ik = ikLid(h), g = gezinState(h);
+    const weerId = this._config.weer || Object.keys(h.states).find((e) => e.startsWith('weather.'));
+    const weer = weerId && h.states[weerId] && !['unknown', 'unavailable'].includes(h.states[weerId].state) ? h.states[weerId] : null;
     const nu = new Date();
     const datum = nu.toLocaleDateString(h.locale?.language || undefined, { weekday: 'long', day: 'numeric', month: 'long' });
     // alleen tellen wie we kunnen volgen (met een telefoon); weten we van niemand iets, dan zeggen we niets
@@ -39,6 +45,11 @@ class FamilyGezinCard extends HTMLElement {
     this.shadowRoot.innerHTML = `<style>${CSS}
       ha-card { padding: 20px; border-radius: var(--ha-card-border-radius, var(--fam-radius)); }
       .kop { display: flex; align-items: center; gap: 16px; }
+      .groei { flex: 1; min-width: 0; }
+      .weer { border: 0; background: none; padding: 0; margin-top: 6px; display: flex; align-items: center; gap: 6px; cursor: pointer; font: inherit;
+        color: var(--secondary-text-color); text-align: left; }
+      .weer .wi { font-size: 1.3rem; line-height: 1; }
+      .weer b { color: var(--primary-text-color); font-size: 1.05rem; }
       .groet { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
       .datum { color: var(--secondary-text-color); margin-top: 2px; }
       .datum::first-letter { text-transform: uppercase; }
@@ -52,7 +63,8 @@ class FamilyGezinCard extends HTMLElement {
       .waar.thuis { color: var(--success-color, #2e7d32); }
       .leeg { text-align: center; padding: 12px 0; display: grid; gap: 12px; justify-items: center; }
     </style><ha-card>
-      <div class="kop">${ik ? avatar(ik, { grootte: 64 }) : ''}<div><div class="groet">${esc(groet(h))}${ik ? `, ${esc(ik.naam)}` : ''} 👋</div><div class="datum">${esc(datum)}</div></div></div>
+      <div class="kop">${ik ? avatar(ik, { grootte: 64 }) : ''}<div class="groei"><div class="groet">${esc(groet(h))}${ik ? `, ${esc(ik.naam)}` : ''} 👋</div><div class="datum">${esc(datum)}</div>
+        ${weer ? `<button class="weer" data-person="${esc(weer.entity_id)}"><span class="wi">${WEER[weer.state] || '🌡️'}</span><b>${Math.round(weer.attributes.temperature)}°</b><span>${esc(h.formatEntityState ? h.formatEntityState(weer) : weer.state)}</span></button>` : ''}</div></div>
       ${!g ? `<div class="leeg fam-sub">${esc(t(h, 'nietIngesteld'))}</div>`
         : !l.length ? `<div class="leeg"><span class="fam-sub">${esc(t(h, 'geenLeden'))}</span>${h.user && h.user.is_admin ? `<button class="fam-knop" data-naar="/gezin-beheer"><ha-icon icon="mdi:account-plus"></ha-icon>${esc(t(h, 'naarBeheer'))}</button>` : ''}</div>`
         : `<div class="wie"><b>${esc(t(h, 'wieThuis'))}</b><span class="fam-sub">${esc(samen)}</span></div>
@@ -75,7 +87,9 @@ class FamilyStrategie extends HTMLElement {
         { title: nl ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
           sections: [
             { type: 'grid', cards: [{ type: 'custom:family-gezin-card' }, { type: 'custom:family-klusjes-card' }] },
-            { type: 'grid', cards: [{ type: 'custom:family-vandaag-card' }, ...(afval && afval.state !== 'unknown' ? [{ type: 'tile', entity: afval.entity_id, name: nl ? 'Volgende afval' : 'Next waste collection' }] : [])] },
+            { type: 'grid', cards: [{ type: 'custom:family-vandaag-card' }, { type: 'custom:family-boodschappen-card', compact: true }] },
+            { type: 'grid', cards: [{ type: 'custom:family-taken-card', compact: true },
+              ...(afval && afval.state !== 'unknown' ? [{ type: 'tile', entity: afval.entity_id, name: nl ? 'Volgende afval' : 'Next waste collection' }] : [])] },
           ] },
         { title: nl ? '📅 Agenda' : '📅 Calendar', path: 'agenda', type: 'panel', cards: [{ type: 'custom:family-agenda-card' }] },
         { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,

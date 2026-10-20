@@ -323,3 +323,40 @@ async def test_account_later_aanmaken(hass: HomeAssistant, gezin) -> None:
     assert await g.gebruikersnaam(emma) == "emma"
     with pytest.raises(FamilyFout):
         await g.account_aanmaken(emma["id"], "emma2", "maan-tulp-vos-42")
+
+
+async def test_muurscherm_account_en_rechten(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.ha_family import muur
+
+    g = gezin.runtime_data
+    emma = await g.lid_toevoegen("Emma", "kind")
+    m = await muur.aanmaken(g, "muur", "maan-tulp-vos-42")
+    user = await hass.auth.async_get_user(m["user_id"])
+    assert user.local_only and not user.is_admin and user.name == "Muurscherm"
+    store = await async_user_store(hass, user.id)
+    assert store.data["core"]["default_panel"] == "gezin-muur"
+    with pytest.raises(FamilyFout):
+        await muur.aanmaken(g, "muur2", "maan-tulp-vos-42")
+    # klusje voor Emma afvinken vanaf de muur: als het kind zelf, dus met goedkeuring
+    k = g.taken.klusje({"titel": "Tafel dekken", "punten": 2, "wie": [emma["id"]], "dagen": list(range(7)), "goedkeuren": True})
+    s = await g.taken.klusje_gedaan(k["id"], emma["id"], dt_util.now().date().isoformat(), user.id)
+    assert s["status"] == "wacht" and g.taken.saldo(emma["id"]) == 0
+    # de muur mag niets beheren
+    refresh = await hass.auth.async_create_refresh_token(user, "https://example.com/")
+    ws = await hass_ws_client(hass, hass.auth.async_create_access_token(refresh))
+    await ws.send_json({"id": 1, "type": "ha_family/klusje", "titel": "Snoep", "punten": 99, "wie": [emma["id"]], "dagen": [0]})
+    assert not (await ws.receive_json())["success"]
+    await ws.send_json({"id": 2, "type": "ha_family/muur"})
+    r = await ws.receive_json()
+    assert r["result"]["ben_muur"] is True and r["result"]["heeft_account"] is True
+    await ws.send_json({"id": 3, "type": "ha_family/boodschap", "tekst": "melk"})
+    assert (await ws.receive_json())["success"]                  # boodschappen toevoegen mag wel
+    # instellingen
+    muur.bijwerken(g, {"nacht": {"aan": True, "van": "23:00", "tot": "07:00"}, "blokken": {"agenda": False}})
+    assert muur.openbaar(g)["nacht"]["van"] == "23:00" and muur.openbaar(g)["blokken"]["agenda"] is False
+    with pytest.raises(FamilyFout):
+        muur.bijwerken(g, {"nacht": {"aan": True, "van": "laat", "tot": "07:00"}})
+    await muur.verwijderen(g)
+    assert await hass.auth.async_get_user(user.id) is None

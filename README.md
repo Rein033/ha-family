@@ -10,9 +10,11 @@ Installeer HA Family en Home Assistant wordt een gezinsapp. Iedereen opent metee
 hem past, en gezinsleden toevoegen of een telefoon koppelen gaat met een wizard in plaats van met instellingen, YAML en
 entiteiten. Ook voor huishoudens met huisgenoten.
 
-| Startscherm van Noor (normaal) | Gezin beheren |
+![Startscherm](docs/images/50-thuis-nieuw.png)
+
+| Tablet aan de muur | Gezin beheren |
 |---|---|
-| ![Startscherm](docs/images/13-noor-normaal.png) | ![Gezin beheren](docs/images/09-overzicht.png) |
+| ![Muurscherm](docs/images/55-muurscherm-na.png) | ![Gezin beheren](docs/images/09-overzicht.png) |
 
 ## Wat gebeurt er als je het installeert
 
@@ -68,6 +70,36 @@ te lossen.
 het gezin halen (eventueel met het account).
 
 ![Bewerken](docs/images/11-bewerken-weergave.png)
+
+## Startscherm
+
+Iedereen opent op **Thuis**: een groet met het weer en wie er thuis is, de klusjes (een kind ziet alleen de eigen, als grote
+tegels), *Vandaag* (afspraken, afval van morgen, wie er binnenkort jarig is), de boodschappen als tikbare lijstjes (tik op
+wat je gekocht hebt) en *Mijn taken*. Toevoegen kan meteen vanaf het startscherm.
+
+## Tablet aan de muur
+
+Een groot scherm voor het hele gezin, zonder knoppen en balken van Home Assistant:
+
+- **links** een grote klok, de datum, het weer met de komende dagen en welk afval er (morgen) aan de straat moet;
+- **midden** de agenda van vandaag en morgen en de rest van de week, in de kleur van wie het betreft;
+- **rechts** de klusjes per kind (aanraken = gedaan, met een feestje) en wie er thuis is;
+- **onderaan** de boodschappen: tik op wat er gekocht is, of zet er meteen iets bij.
+
+'s Nachts staat er alleen een gedimde klok (die langzaam verschuift tegen inbranden); aanraken maakt hem twee minuten
+wakker. Het scherm blijft aan waar de browser dat toestaat. Staand of liggend werkt allebei.
+
+| Overdag | 's Nachts | Staand |
+|---|---|---|
+| ![Muurscherm](docs/images/53-muurscherm.png) | ![Nacht](docs/images/57-muur-nacht.png) | ![Staand](docs/images/56-muur-staand.png) |
+
+**Instellen** in **Gezin beheren → Muurscherm**: één klik maakt een apart account *muur* dat **alleen thuis** kan inloggen.
+Open het getoonde adres (of scan de QR-code) op de tablet, in de browser, de Home Assistant-app of een kiosk-app zoals
+Fully Kiosk Browser, en log in met dat account. Het muurscherm wordt dan het startscherm van de tablet en de zijbalk
+verdwijnt. Op de muur kunnen kinderen hun klusjes afvinken (met goedkeuring als dat nodig is) en kan iedereen boodschappen
+toevoegen; beheren kan er niet. Je kiest er ook de nachtstand (van–tot), het weerbericht en welke onderdelen erop staan.
+
+![Muurscherm instellen](docs/images/52-muur-ingesteld.png)
 
 ## Gezinsagenda
 
@@ -145,17 +177,17 @@ boodschappenlijst"*.
 ## Kaarten
 
 ```yaml
-type: custom:family-gezin-card     # groet, datum en wie er thuis is
+type: custom:family-gezin-card     # groet, datum, weer en wie er thuis is (weer: weather.x optioneel)
 type: custom:family-vandaag-card   # vandaag, afval van morgen, binnenkort jarig
 type: custom:family-agenda-card    # de gezinsagenda
 type: custom:family-klusjes-card   # klusjes: kind ziet de eigen tegels, ouder ziet iedereen (lid: <id> = altijd die persoon)
-type: custom:family-taken-card     # gezinstaken
-type: custom:family-boodschappen-card
+type: custom:family-taken-card     # gezinstaken (compact: true = 'Mijn taken' met snel toevoegen)
+type: custom:family-boodschappen-card   # (compact: true = tikbare lijstjes met snel toevoegen)
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```
 
-Het hele dashboard: `strategy: { type: custom:ha-family }`. Wil je het zelf aanpassen: open het dashboard → ✏️ → **Overnemen**.
+Het hele dashboard: `strategy: { type: custom:ha-family }`. Het muurscherm staat op `/gezin-muur`. Wil je het zelf aanpassen: open het dashboard → ✏️ → **Overnemen**.
 
 ## Wat komt er
 

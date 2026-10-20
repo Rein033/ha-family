@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 — nieuw startscherm en het muurscherm
+
+- **Muurscherm** voor een tablet aan de muur (`/gezin-muur`): klok, datum, weer met de komende dagen, afval, de agenda van
+  vandaag/morgen/deze week, klusjes per kind (aanraken = gedaan), wie er thuis is en de boodschappen (afvinken en toevoegen).
+  Nachtstand met een gedimde, verschuivende klok; scherm blijft aan waar mogelijk; liggend en staand.
+- **Gezin beheren → Muurscherm**: maakt een account *muur* dat alleen thuis kan inloggen, met QR-code en stappen voor de
+  tablet; nachtstand, weerbericht en onderdelen instellen. Op de tablet verdwijnt de zijbalk en is het muurscherm het
+  startscherm. Vanaf de muur mag je klusjes afvinken en boodschappen toevoegen, niet beheren.
+- **Nieuw startscherm** (Thuis) in drie kolommen: groet met het weer, klusjes, vandaag, boodschappen en *Mijn taken*.
+- Kaarten *taken* en *boodschappen* hebben een compacte vorm (`compact: true`) met snel toevoegen.
+- HA Family verwijderen haalt ook het muuraccount weg.
+
 ## 0.3.0 — klusjes, taken en boodschappen
 
 - **Klusjes met punten**: elke dag, werkdagen, weekend, eigen dagen of één keer; voor wie; voorbeelden met één klik.

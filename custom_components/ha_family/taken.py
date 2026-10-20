@@ -194,7 +194,9 @@ class Taken:
             raise FamilyFout("Dit klusje staat niet op die dag.")
         ik = self.lid_van(door_user)
         ouder = await self.is_ouder(door_user)
-        if not ouder and (not ik or ik["id"] != lid_id):
+        from .muur import is_muur
+
+        if not ouder and not is_muur(self.gezin, door_user) and (not ik or ik["id"] != lid_id):
             raise FamilyFout("Je kunt alleen je eigen klusjes afvinken.")
         dag = self.gezin.data["klusjes_gedaan"].setdefault(datum, {}).setdefault(klusje_id, {})
         if not gedaan:
@@ -285,7 +287,9 @@ class Taken:
     async def inwisselen(self, beloning_id: str, lid_id: str, door_user: str | None) -> dict[str, Any]:
         b = self._zoek("beloningen", beloning_id)
         ik, ouder = self.lid_van(door_user), await self.is_ouder(door_user)
-        if not ouder and (not ik or ik["id"] != lid_id):
+        from .muur import is_muur
+
+        if not ouder and not is_muur(self.gezin, door_user) and (not ik or ik["id"] != lid_id):
             raise FamilyFout("Je kunt alleen je eigen punten inwisselen.")
         if self.beschikbaar(lid_id) < b["punten"]:
             raise FamilyFout(f"Nog niet genoeg punten: je hebt er {self.beschikbaar(lid_id)}, nodig zijn {b['punten']}.")
