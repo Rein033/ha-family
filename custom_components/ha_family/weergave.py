@@ -27,7 +27,7 @@ ZICHTBAAR = {
     "eenvoudig": [DASHBOARD_URL],
     "normaal": [DASHBOARD_URL, "calendar", "todo", "map"],
     "beheerder": [DASHBOARD_URL, BEHEER_URL, "config"],
-    "expert": [DASHBOARD_URL, BEHEER_URL, ADMIN_URL, "hacs"],
+    "expert": [DASHBOARD_URL, BEHEER_URL, ADMIN_URL],
 }
 # Deze staan niet in de lijst van panelen of kunnen niet weg; nooit aanraken
 NOOIT = {"profile", "notfound", "developer-tools-legacy"}

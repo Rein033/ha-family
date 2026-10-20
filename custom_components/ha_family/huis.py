@@ -54,7 +54,7 @@ class Huis:
         in_groep: set[str] = set()
         dubbel: set[str] = set()
         gezien: dict[frozenset, str] = {}
-        groepen = [(st, ent) for st, ent in alle if st.domain == "light" and isinstance(st.attributes.get("entity_id"), list) and st.attributes["entity_id"]]
+        groepen = [(st, ent) for st, ent in alle if st.domain == "light" and isinstance(st.attributes.get("entity_id"), (list, tuple, set, frozenset)) and st.attributes["entity_id"]]
         groepen.sort(key=lambda x: (self._kamer_van(x[1], devreg)[0] is None, x[0].entity_id))   # die met een kamer wint
         for st, _ in groepen:
             leden = frozenset(st.attributes["entity_id"])

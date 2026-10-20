@@ -71,6 +71,18 @@ het gezin halen (eventueel met het account).
 
 ![Bewerken](docs/images/11-bewerken-weergave.png)
 
+## AI
+
+Is er in Home Assistant een AI gekoppeld (*AI Task*: bijvoorbeeld Ollama, OpenAI of Google), dan doet HA Family meer:
+
+- **Dagoverzicht**: 's ochtends een kort, vrolijk overzicht van de dag in *Vandaag* (agenda, afval, eten, klusjes, weer);
+- **Weekmenu bedenken**: vult de lege dagen met jullie eigen recepten, afwisselend, met jullie wensen ("vrijdag pizza");
+- **Recept bedenken**: "iets snels met kip en rijst" wordt een recept met ingrediënten en bereiding;
+- **Klusjes-ideeën** per kind, passend bij leeftijd en interesses;
+- **Cadeau-ideeën** (zie Cadeaus).
+
+Zonder AI werkt alles ook: dan komen weekmenu, klusjes en dagoverzicht uit HA Family zelf.
+
 ## Weergave per gezinslid
 
 Per gezinslid kies je in **Gezin beheren → Bewerken** hoe Home Assistant eruitziet:
@@ -80,12 +92,19 @@ Per gezinslid kies je in **Gezin beheren → Bewerken** hoe Home Assistant eruit
 | Eenvoudig | alleen het gezinsdashboard (kinderen, gasten) |
 | Normaal | gezin, agenda, takenlijsten en kaart |
 | Beheerder | gezin, Gezin beheren en de instellingen |
-| **Expert** | gezin, je persoonlijke dashboard, Gezin beheren, **Admin** en HACS |
+| **Expert** | gezin, je persoonlijke dashboard, Gezin beheren en **Admin** (met daarin HACS) |
 | Zoals het was | Home Assistant zonder aanpassingen |
 
 **Admin** zet al het andere op één plek, met een zoekveld: automatiseringen, scripts, apparaten, instellingen, je eigen
 dashboards, HACS en alle plugins en add-ons, en de AI. Wat je later installeert, komt er vanzelf bij. Wie al een account
 had toen HA Family erbij kwam, staat eerst op *Zoals het was*.
+
+**Bekijk als.** In Gezin beheren staat bij ieder gezinslid *Bekijk als*: je ziet HA Family zoals die persoon het ziet
+(groet, klusjes, apparaten, cadeaus zonder de stiekeme aankopen). Alleen kijken: wat je doet, doe je als jezelf.
+
+**Lampen en apparaten per persoon.** Bij *Bewerken* kies je *Alles* of *Zelf kiezen*: per apparaat *Verborgen*, *Zien*
+(met slotje) of *Bedienen*. Handig voor kinderen. Let op: dit regelt wat HA Family laat zien en bedienen; Home Assistant
+zelf kent geen rechten per apparaat.
 
 **Persoonlijk dashboard.** In Bewerken maak je voor iemand een eigen dashboard (gewoon te bewerken) of koppel je een
 bestaand dashboard, bijvoorbeeld met je 3D-printers. Het staat alleen in de zijbalk van die persoon. Let op: Home

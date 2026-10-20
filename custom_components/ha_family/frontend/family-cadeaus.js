@@ -4,7 +4,7 @@
  *
  * Bovenaan kies je wie: jezelf (je eigen lijstje maken en naar anderen sturen) of iemand anders (zijn lijstje bekijken,
  * afvinken wat jij koopt, en ideeën laten bedenken — met de AI van Home Assistant als die er is). */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.7.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.8.0';
 
 const TEKST = {
   nl: {
@@ -106,7 +106,7 @@ class FamilyCadeausCard extends HTMLElement {
     }
   }
   async _laad() {
-    try { this._d = await this._hass.callWS({ type: 'ha_family/cadeaus' }); this._fout = null; } catch (e) { this._fout = e.message; }
+    try { this._d = alsAntwoord(this._hass, await this._hass.callWS({ type: 'ha_family/cadeaus' })); this._fout = null; } catch (e) { this._fout = e.message; }
     if (!this._kies || !this._d.leden.some((l) => l.lid === this._kies)) this._kies = this._d && (this._d.ik || (this._d.leden[0] || {}).lid);
     this._teken();
   }

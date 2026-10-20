@@ -5,7 +5,7 @@
  *
  * Alle afspraken komen samengevoegd uit HA Family (ha_family/agenda): eigen afspraken, agenda's per gezinslid,
  * gezamenlijke agenda's, verjaardagen en afval. De kleur is die van wie het betreft. */
-import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.7.0';
+import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.8.0';
 
 const TEKST = {
   nl: {
@@ -16,7 +16,7 @@ const TEKST = {
     verwijderen: 'Verwijderen', zeker: 'Deze afspraak verwijderen?', zekerReeks: 'Deze herhalende afspraak verwijderen? Alle keren verdwijnen.',
     reeks: 'Dit is een herhalende afspraak: je past alle keren aan.', sluiten: 'Sluiten', bewerken: 'Bewerken',
     herhaal: { '': 'Niet', week: 'Elke week', '2weken': 'Om de week', maand: 'Elke maand', jaar: 'Elk jaar' },
-    uitAgenda: 'Uit de agenda', jarigBinnenkort: 'Binnenkort jarig', afvalMorgen: 'Morgen aan de straat', afvalVandaag: 'Vandaag wordt opgehaald',
+    uitAgenda: 'Uit de agenda', opnieuw: 'Opnieuw maken', jarigBinnenkort: 'Binnenkort jarig', afvalMorgen: 'Morgen aan de straat', afvalVandaag: 'Vandaag wordt opgehaald',
     gepland: 'Vandaag', bezig: 'nu', dagen: 'dagen', over: 'over', wordt: 'wordt', isJarig: 'jarig', eind: 'eind',
   },
   en: {
@@ -27,7 +27,7 @@ const TEKST = {
     verwijderen: 'Delete', zeker: 'Delete this event?', zekerReeks: 'Delete this repeating event? All occurrences disappear.',
     reeks: 'This is a repeating event: you change all occurrences.', sluiten: 'Close', bewerken: 'Edit',
     herhaal: { '': 'Never', week: 'Every week', '2weken': 'Every other week', maand: 'Every month', jaar: 'Every year' },
-    uitAgenda: 'From calendar', jarigBinnenkort: 'Birthdays coming up', afvalMorgen: 'Put out tomorrow', afvalVandaag: 'Collected today',
+    uitAgenda: 'From calendar', opnieuw: 'Make again', jarigBinnenkort: 'Birthdays coming up', afvalMorgen: 'Put out tomorrow', afvalVandaag: 'Collected today',
     gepland: 'Today', bezig: 'now', dagen: 'days', over: 'in', wordt: 'turns', isJarig: 'birthday', eind: 'end',
   },
 };
@@ -384,6 +384,7 @@ class FamilyVandaagCard extends HTMLElement {
     this._hass = hass;
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
     const dag = isoDag(new Date());
+    if (eerste) this.shadowRoot.addEventListener('click', (e) => { if (e.target.closest('[data-a=opnieuw]')) this._opnieuw(); });
     if (eerste || dag !== this._dag) { this._dag = dag; this._laad(); }
   }
   t(k) { return tt(this._hass, k); }
@@ -391,6 +392,15 @@ class FamilyVandaagCard extends HTMLElement {
     const nu = new Date(); nu.setHours(0, 0, 0, 0);
     try { this._events = (await this._hass.callWS({ type: 'ha_family/agenda', van: isoDag(nu), tot: isoDag(plusDagen(nu, 15)) })).events; this._fout = null; }
     catch (e) { this._fout = e.message; this._events = []; }
+    this._teken();
+    // ✨ dagoverzicht: één keer per dag gemaakt (met AI als die er is), daarna uit de opslag
+    if (this._config.overzicht !== false) {
+      try { this._overzicht = await this._hass.callWS({ type: 'ha_family/dagoverzicht' }); this._teken(); } catch (e) { /* zonder overzicht */ }
+    }
+  }
+  async _opnieuw() {
+    this._overzicht = { ...(this._overzicht || {}), bezig: true }; this._teken();
+    try { this._overzicht = await this._hass.callWS({ type: 'ha_family/dagoverzicht', opnieuw: true }); } catch (e) { this._overzicht = null; }
     this._teken();
   }
   _teken() {
@@ -404,8 +414,13 @@ class FamilyVandaagCard extends HTMLElement {
     this.shadowRoot.innerHTML = `<style>${CSS}${AGENDA_CSS}
       .kop { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
       .blok { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: var(--secondary-background-color); display: grid; gap: 4px; }
-      .blok b { font-size: .95rem; }</style><ha-card>
+      .blok b { font-size: .95rem; }
+      .overzicht { margin: 6px 0 10px; padding: 12px 14px; border-radius: 16px; line-height: 1.45; position: relative; padding-right: 36px;
+        background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
+      .opnieuw { position: absolute; top: 6px; right: 6px; border: 0; background: none; cursor: pointer; font-size: 1rem; color: var(--secondary-text-color); width: 28px; height: 28px; border-radius: 50%; }</style><ha-card>
       <div class="kop">📅 ${esc(this.t('vandaag'))}</div>
+      ${this._overzicht && this._overzicht.tekst ? `<div class="overzicht">${this._overzicht.bron === 'ai' ? '✨ ' : '☀️ '}${esc(this._overzicht.bezig ? '…' : this._overzicht.tekst)}
+        ${h.user && h.user.is_admin && this._overzicht.ai ? `<button class="opnieuw" data-a="opnieuw" title="${esc(this.t('opnieuw'))}">↻</button>` : ''}</div>` : ''}
       ${this._fout ? `<div class="fout">${esc(this._fout)}</div>` : ''}
       ${nu.length ? nu.map((e) => `<div class="item"><span class="streep" style="background:${esc(kleurenVan(e, lmap)[0])}"></span><span class="tijd">${esc(tijd(h, e))}</span>
           <span class="wat">${esc(e.titel)}${e.plek ? `<br/><span class="sub">📍 ${esc(e.plek)}</span>` : ''}</span><span class="avs">${av(e)}</span></div>`).join('')

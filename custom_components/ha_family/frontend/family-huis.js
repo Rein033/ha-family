@@ -5,15 +5,15 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc } from './family-ui.js?v=0.7.0';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.8.0';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
     instellen: 'Kamers instellen', nuBinnen: 'nu', modus: { off: 'Uit', heat: 'Verwarmen', cool: 'Koelen', heat_cool: 'Automatisch', auto: 'Automatisch', dry: 'Drogen', fan_only: 'Ventileren' },
-    lampenAan: '{x} aan', zonder: 'Zonder kamer' },
+    lampenAan: '{x} aan', zonder: 'Zonder kamer', slot: 'Dit mag je bekijken, maar niet bedienen.' },
   en: { kamers: 'Home', aan: 'On', uit: 'Off', open: 'Open', dicht: 'Closed', speelt: 'Playing', alleUit: 'All off', geen: 'No rooms with devices yet.',
     instellen: 'Set up rooms', nuBinnen: 'now', modus: { off: 'Off', heat: 'Heating', cool: 'Cooling', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' },
-    lampenAan: '{x} on', zonder: 'No room' },
+    lampenAan: '{x} on', zonder: 'No room', slot: 'You can see this, but not control it.' },
 };
 const ICOON = { light: ['mdi:lightbulb-outline', 'mdi:lightbulb'], climate: ['mdi:air-conditioner', 'mdi:air-conditioner'], fan: ['mdi:fan-off', 'mdi:fan'],
   cover: ['mdi:window-shutter', 'mdi:window-shutter-open'], switch: ['mdi:power-socket-eu', 'mdi:power-socket-eu'], media_player: ['mdi:speaker-off', 'mdi:speaker'] };
@@ -64,6 +64,8 @@ const STIJL = `
   .pil.aan ha-icon { color: var(--k); }
   .rij .rond { width: 42px; height: 42px; }
   .rij .rond.lbl { width: auto; padding: 0 12px; border-radius: 21px; font-size: .9rem; font-weight: 600; gap: 4px; display: inline-flex; }
+  .slot { opacity: .5; cursor: not-allowed !important; }
+  .slot input[type=range] { pointer-events: none; }
   .leeg { color: var(--secondary-text-color); text-align: center; padding: 8px 0; display: grid; gap: 8px; justify-items: center; }
   .naar { border: 0; background: none; color: var(--primary-color); font: inherit; cursor: pointer; padding: 0; }
   :host([muur]) ha-card { border-radius: 24px; padding: 14px 18px; }
@@ -101,10 +103,16 @@ export class FamilyKamersCard extends HTMLElement {
     }, this._d ? 400 : 0);
   }
 
+  _mag() {
+    // per gezinslid instelbaar (Gezin beheren): welke apparaten iemand ziet en mag bedienen; de muur en beheerders zonder lid zien alles
+    if (this._config && this._config.muur) return null;
+    const ik = ikLid(this._hass);
+    return ik && ik.apparaten && ik.apparaten.beperkt ? ik.apparaten : null;
+  }
   _kamers() {
-    const d = this._d, h = this._hass;
+    const d = this._d, h = this._hass, mag = this._mag();
     const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer))
-      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
+      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && (!mag || mag.zien.includes(a.entity)) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
       .filter((k) => k.apps.length);
     return per;
   }
@@ -138,6 +146,8 @@ export class FamilyKamersCard extends HTMLElement {
     // focus van een schuifje bewaren: anders springt hij weg terwijl je sleept
     if (this.shadowRoot.activeElement && this.shadowRoot.activeElement.type === 'range') return;
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><ha-card>${titel}${binnen}</ha-card>`;
+    const mag = this._mag();
+    if (mag) this.shadowRoot.querySelectorAll('[data-e]').forEach((el) => { if (!mag.bedienen.includes(el.dataset.e)) { el.classList.add('slot'); el.title = this.t('slot'); } });
   }
 
   _kamer(k) {
@@ -196,6 +206,7 @@ export class FamilyKamersCard extends HTMLElement {
     if (e.target.type === 'range') return;            // het schuifje zelf, niet de tegel eronder
     const b = e.target.closest && e.target.closest('[data-a]');
     if (!b) return;
+    if (b.classList.contains('slot')) return this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message: `🔒 ${this.t('slot')}` }, bubbles: true, composed: true }));
     const a = b.dataset.a, id = b.dataset.e, h = this._hass, s = id && h.states[id];
     if (a === 'instellen') { history.pushState(null, '', '/gezin-beheer'); window.dispatchEvent(new CustomEvent('location-changed')); return; }
     if (a === 'schakel') {
@@ -224,6 +235,7 @@ export class FamilyKamersCard extends HTMLElement {
     }
   }
   _wijzig(e) {
+    if (e.target.classList.contains('slot')) return;
     if (e.target.dataset.a === 'dim') e.target.blur(), this._dienst('light', 'turn_on', { entity_id: e.target.dataset.e, brightness_pct: Number(e.target.value) }).then(() => this._teken());
   }
 }

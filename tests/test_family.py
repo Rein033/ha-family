@@ -510,8 +510,8 @@ async def test_lampgroepen_en_samenvoegen(hass: HomeAssistant, gezin, hass_ws_cl
     entreg.async_update_entity(g1.entity_id, area_id=keuken.id)
     for e in (l1,):
         hass.states.async_set(e.entity_id, "on")
-    for g in (g1, g2):
-        hass.states.async_set(g.entity_id, "on", {"entity_id": [l1.entity_id]})
+    for g in (g1, g2):                                   # echte Hue geeft een set of tuple, geen lijst
+        hass.states.async_set(g.entity_id, "on", {"entity_id": {l1.entity_id} if g is g1 else (l1.entity_id,), "is_hue_group": True})
     sensor = entreg.async_get_or_create("sensor", "test", "temp", suggested_object_id="keuken_temp")
     entreg.async_update_entity(sensor.entity_id, area_id=kitchen.id)
     dev = devreg.async_get_or_create(config_entry_id=bron.entry_id, identifiers={("test", "k")}, name="Koelkast")
@@ -657,3 +657,59 @@ async def test_persoonlijk_dashboard(hass: HomeAssistant, gezin, hass_ws_client)
     await client.send_json_auto_id({"type": "ha_family/lid/dashboard", "lid": rein["id"], "actie": "los"})
     assert (await client.receive_json())["success"]
     assert url not in hass.data[DATA_PANELS] and g.lid(rein["id"])["dashboard"] is None
+
+
+async def test_apparaten_per_kind(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    g = gezin.runtime_data
+    hass.states.async_set("person.romy", "home", {"friendly_name": "Romy"})
+    romy = g.persoon_toevoegen("person.romy", "kind")
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/lid/bijwerken", "lid": romy["id"], "apparaten": {
+        "beperkt": True, "zien": ["light.romy", "light.gang", "light.romy"], "bedienen": ["light.romy", "light.woonkamer"]}})
+    assert (await client.receive_json())["success"]
+    a = g.lid(romy["id"])["apparaten"]
+    assert a == {"beperkt": True, "zien": ["light.romy", "light.gang"], "bedienen": ["light.romy"]}   # bedienen alleen wat ze ziet
+    assert next(l for l in g.openbaar()["leden"] if l["id"] == romy["id"])["apparaten"]["bedienen"] == ["light.romy"]
+    g.lid_bijwerken(romy["id"], apparaten={"beperkt": False})
+    assert next(l for l in g.openbaar()["leden"] if l["id"] == romy["id"])["apparaten"] is None
+
+
+async def test_ai_functies_met_en_zonder_ai(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    from homeassistant.core import SupportsResponse
+    from custom_components.ha_family import ai
+
+    g = gezin.runtime_data
+    g.maaltijden.startpakket()
+    van = dt.date(2026, 11, 2)
+    # zonder AI: lege dagen worden gevuld uit de eigen recepten
+    r = await ai.weekmenu(g, van, 3, None)
+    assert r["bron"] == "lijst" and len(r["gepland"]) == 3
+    d = await ai.dagoverzicht(g)
+    assert d["bron"] == "lijst" and d["tekst"]
+    hass.states.async_set("person.romy", "home", {"friendly_name": "Romy"})
+    romy = g.persoon_toevoegen("person.romy", "kind")
+    k = await ai.klusjes(g, romy["id"])
+    assert k["bron"] == "lijst" and k["ideeen"]
+
+    # met AI
+    hass.states.async_set("ai_task.test", "unknown")
+    pasta = g.data["recepten"][0]["id"]
+    antwoorden = {
+        "weekmenu": f'[{{"datum": "2026-11-05", "recept": "{pasta}"}}, {{"datum": "2026-11-06", "recept": "bestaat-niet"}}]',
+        "recept": '{"naam": "Kip teriyaki", "emoji": "🍗", "personen": 4, "ingredienten": ["400 g kipfilet", "300 g rijst"], "bereiding": ["Kook de rijst", "Bak de kip"], "labels": ["snel", "onzin"]}',
+        "dagoverzicht": "Goedemorgen! Vandaag een rustige dag 🌤️",
+        "klusjes": '[{"emoji": "🧺", "titel": "Sokken sorteren", "punten": 2}]',
+    }
+
+    async def gen(call):
+        return {"data": antwoorden[call.data["task_name"]]}
+    hass.services.async_register("ai_task", "generate_data", gen, supports_response=SupportsResponse.ONLY)
+    r = await ai.weekmenu(g, dt.date(2026, 11, 5), 2, "liefst vega")
+    assert r["bron"] == "ai" and r["gepland"] == ["2026-11-05", "2026-11-06"]       # onbekend recept → gewone suggestie
+    assert g.maaltijden.menu(dt.date(2026, 11, 5), 1)[0]["recept"] == pasta
+    rec = await ai.recept(g, "iets snels met kip", None)
+    assert rec["naam"] == "Kip teriyaki" and rec["labels"] == ["snel"] and "Bak de kip" in rec["bereiding"]
+    d = await ai.dagoverzicht(g, opnieuw=True)
+    assert d["bron"] == "ai" and "rustige dag" in d["tekst"]
+    assert (await ai.klusjes(g, romy["id"]))["ideeen"][0]["titel"] == "Sokken sorteren"

@@ -167,6 +167,12 @@ class Gezin:
             if v and v not in ("man", "vrouw", "anders"):
                 raise FamilyFout("Onbekend geslacht.")
             lid["geslacht"] = v
+        if "apparaten" in velden:
+            # welke apparaten iemand ziet en mag bedienen (kamers-kaart); beperkt=False is alles
+            a = velden.pop("apparaten") or {}
+            zien = [e for e in dict.fromkeys(a.get("zien") or []) if isinstance(e, str) and "." in e][:500]
+            bedienen = [e for e in dict.fromkeys(a.get("bedienen") or []) if e in zien]
+            lid["apparaten"] = {"beperkt": bool(a.get("beperkt")), "zien": zien, "bedienen": bedienen}
         if "interesses" in velden:
             lid["interesses"] = list(dict.fromkeys(str(i).strip()[:30] for i in (velden.pop("interesses") or []) if str(i).strip()))[:15]
         for k in ("naam", "rol", "kleur", "emoji", "lamp", "notify", "weergave"):
@@ -313,7 +319,8 @@ class Gezin:
         return {"naam": self.naam, "type": self.type, "leden": [
             {"id": l["id"], "naam": l["naam"], "rol": l["rol"], "kleur": l["kleur"], "emoji": l["emoji"], "person": l["person"],
              "user_id": self.user_id(l), "verjaardag": (l.get("geboortedatum") or "")[5:] or None,
-             "expert": l.get("weergave") in ("expert", "origineel")} for l in self.leden]}
+             "expert": l.get("weergave") in ("expert", "origineel"),
+             "apparaten": l["apparaten"] if (l.get("apparaten") or {}).get("beperkt") else None} for l in self.leden]}
 
     async def status(self) -> dict[str, Any]:
         """Alles voor het beheerpaneel, met per lid een gezondheidscheck."""

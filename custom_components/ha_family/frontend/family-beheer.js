@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.7.0';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.8.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -79,7 +79,9 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Agenda-app → Agenda\'s → ⓘ bij je agenda → zet "Openbare agenda" aan → Deel link.',
     linkOutlook: 'Outlook.com: Instellingen → Agenda → Gedeelde agenda\'s → Een agenda publiceren → ICS-link.',
     verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
-    geboortedatum: 'Geboortedatum', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
+    geboortedatum: 'Geboortedatum', klAi: 'Ideeën voor…', klAiMet: 'Bedacht door de AI, passend bij leeftijd en interesses. Tik om toe te voegen.', klAiZonder: 'Uit de voorbeelden (koppel een AI voor ideeën op maat). Tik om toe te voegen.', apTitel: 'Lampen en apparaten van {x}', apAlles: 'Alles', apAllesUitleg: '{x} ziet en bedient alle lampen en apparaten in het gezinsdashboard.',
+    apKiezen: 'Zelf kiezen', apKiezenUitleg: 'Jij kiest per apparaat wat {x} ziet en wat {x} mag aan- en uitzetten.', apLegenda: 'Verborgen: staat er niet. Zien: alleen kijken (met slotje). Bedienen: aan/uit en instellen.',
+    apVerborgen: 'Verborgen', apZien: 'Zien', apBedienen: 'Bedienen', apAllesBedienen: 'Alles bedienen', apNiets: 'Niets', bekijkAls: 'Bekijk als', bekijkAlsUitleg: 'Zie HA Family zoals dit gezinslid het ziet (alleen kijken).', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
     meldingOm: 'Melding om', aan: 'Aan',
     afvalTitel: 'Afvalkalender', afvalUitleg: 'De avond voor het ophalen krijgt het gezin een seintje.',
     afvalBedrijf: 'Mijn afvalbedrijf', afvalBedrijfUitleg: 'Postcode en huisnummer, de rest gaat vanzelf.', afvalBedrijfKies: 'Afvalbedrijf',
@@ -158,7 +160,9 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Calendar app → Calendars → ⓘ next to your calendar → turn on "Public Calendar" → Share Link.',
     linkOutlook: 'Outlook.com: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.',
     verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
-    geboortedatum: 'Date of birth', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
+    geboortedatum: 'Date of birth', klAi: 'Ideas for…', klAiMet: 'Made up by the AI, fitting age and interests. Tap to add.', klAiZonder: 'From the examples (connect an AI for tailored ideas). Tap to add.', apTitel: "{x}'s lights and devices", apAlles: 'Everything', apAllesUitleg: '{x} sees and controls all lights and devices on the family dashboard.',
+    apKiezen: 'Choose', apKiezenUitleg: 'You choose per device what {x} sees and may switch.', apLegenda: 'Hidden: not shown. See: view only (with a lock). Control: on/off and settings.',
+    apVerborgen: 'Hidden', apZien: 'See', apBedienen: 'Control', apAllesBedienen: 'Control all', apNiets: 'None', bekijkAls: 'View as', bekijkAlsUitleg: 'See HA Family the way this family member sees it (view only).', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
     meldingOm: 'Notification at', aan: 'On',
     afvalTitel: 'Waste collection', afvalUitleg: 'The evening before collection the family gets a note.',
     afvalBedrijf: 'My waste company', afvalBedrijfUitleg: 'Postcode and house number, the rest is automatic.', afvalBedrijfKies: 'Waste company',
@@ -275,6 +279,7 @@ class HaFamilyBeheer extends HTMLElement {
         ${l.kan_inloggen && !tel ? `<button class="fam-knop" data-a="koppel" data-id="${l.id}"><ha-icon icon="mdi:qrcode"></ha-icon>${esc(this.t('koppelen'))}</button>` : ''}
         ${tel ? `<button class="fam-knop zacht" data-a="test" data-id="${l.id}"><ha-icon icon="mdi:bell-ring"></ha-icon>${esc(this.t('testMelding'))}</button>` : ''}
         <button class="fam-knop rand" data-a="bewerk" data-id="${l.id}"><ha-icon icon="mdi:pencil"></ha-icon>${esc(this.t('bewerken'))}</button>
+        ${l.user_id !== (this._hass.user || {}).id ? `<button class="fam-knop rand" data-a="bekijk-als" data-id="${l.id}" title="${esc(this.t('bekijkAlsUitleg'))}"><ha-icon icon="mdi:eye"></ha-icon>${esc(this.t('bekijkAls'))}</button>` : ''}
       </div></div>`;
   }
 
@@ -622,7 +627,11 @@ class HaFamilyBeheer extends HTMLElement {
             <button class="fam-knop gevaar klein" data-a="kl-weg" data-k="${x.id}" data-t="${esc(x.titel)}">✕</button></div>`).join('')
           : `<p>${esc(this.t('klGeen'))}</p>`}
         <h3>${esc(this.t('klVoorbeelden'))}</h3>
-        <div class="vb">${k.voorbeelden.filter((v) => !bestaand.has(v.titel.toLowerCase())).map((v) => `<button class="fam-chip vbk" data-a="kl-voorbeeld" data-e="${esc(v.emoji)}" data-t="${esc(v.titel)}" data-p="${v.punten}">${esc(v.emoji)} ${esc(v.titel)} · ${v.punten} ⭐</button>`).join('')}</div></div>
+        <div class="vb">${k.voorbeelden.filter((v) => !bestaand.has(v.titel.toLowerCase())).map((v) => `<button class="fam-chip vbk" data-a="kl-voorbeeld" data-e="${esc(v.emoji)}" data-t="${esc(v.titel)}" data-p="${v.punten}">${esc(v.emoji)} ${esc(v.titel)} · ${v.punten} ⭐</button>`).join('')}</div>
+        ${this._s.leden.some((l) => l.rol === 'kind') ? `<h3>✨ ${esc(this.t('klAi'))}</h3><div class="vb">${this._s.leden.filter((l) => l.rol === 'kind').map((l) =>
+          `<button class="fam-chip vbk ${this._klAi && this._klAi.lid === l.id ? 'aan' : ''}" data-a="kl-ai" data-id="${l.id}">${esc(this._klAi && this._klAi.lid === l.id && this._klAi.bezig ? '…' : l.emoji + ' ' + l.naam.split(' ')[0])}</button>`).join('')}</div>
+          ${this._klAi && this._klAi.ideeen ? `<p class="fam-sub" style="margin:6px 0">${esc(this.t(this._klAi.bron === 'ai' ? 'klAiMet' : 'klAiZonder'))}</p><div class="vb">${this._klAi.ideeen.map((v) =>
+            `<button class="fam-chip vbk" data-a="kl-voorbeeld" data-e="${esc(v.emoji)}" data-t="${esc(v.titel)}" data-p="${v.punten}">${esc(v.emoji)} ${esc(v.titel)} · ${v.punten} ⭐</button>`).join('')}</div>` : ''}` : ''}</div>
 
       <div class="kaart"><h2>🎁 ${esc(this.t('blBeloningen'))}</h2><p class="fam-sub">${esc(this.t('blUitleg'))}</p>
         ${k.beloningen.map((b) => `<div class="arij"><span class="kl-em">${esc(b.emoji)}</span><b class="anaam groei">${esc(b.titel)}</b><span class="fam-chip">${b.punten} ⭐</span>
@@ -680,6 +689,11 @@ class HaFamilyBeheer extends HTMLElement {
     const nieuw = (extra = {}) => this._open({ soort: 'klusje', emoji: '⭐', titel: '', punten: 2, wie: kinderen.length ? kinderen : this._s.leden.map((l) => l.id),
       dagen: [0, 1, 2, 3, 4, 5, 6], eenmalig: false, datum: '', goedkeuren: false, ...extra });
     if (a === 'kl-nieuw') return nieuw();
+    if (a === 'kl-ai') {
+      this._klAi = { lid: b.dataset.id, bezig: true }; this._teken();
+      try { this._klAi = { lid: b.dataset.id, ...(await this._ws('ha_family/klusjes/ai', { lid: b.dataset.id })) }; } catch (er) { this._klAi = null; this._melding(er.message); }
+      return this._teken();
+    }
     if (a === 'kl-voorbeeld') return nieuw({ emoji: b.dataset.e, titel: b.dataset.t, punten: Number(b.dataset.p) });
     if (a === 'kl-bewerk') {
       const x = k.klusjes.find((y) => y.id === b.dataset.k);
@@ -799,6 +813,26 @@ class HaFamilyBeheer extends HTMLElement {
       <div class="rij eind"><button class="fam-knop" data-a="sluit">${esc(this.t('klaar'))}</button></div>`;
   }
 
+  _apparatenKeuze(d, l) {
+    const ap = d.apparaten, naam = l.naam.split(' ')[0], h = this._huisApp;
+    const kop = `<div class="kaart zacht" style="margin-top:16px"><b>💡 ${esc(this.t('apTitel', naam))}</b>
+      <div class="keuzes twee" style="margin-top:8px">${[[false, 'apAlles'], [true, 'apKiezen']].map(([v, k]) => `<button class="keuze ${!!ap.beperkt === v ? 'aan' : ''}" data-a="ap-beperkt" data-v="${v ? 1 : ''}"><b>${esc(this.t(k))}</b><small>${esc(this.t(k + 'Uitleg', naam))}</small></button>`).join('')}</div>`;
+    if (!ap.beperkt) return kop + '</div>';
+    if (!h) return kop + '<p class="fam-sub">…</p></div>';
+    const stand = (e) => (ap.bedienen.includes(e) ? 'b' : ap.zien.includes(e) ? 'z' : '');
+    const kamers = h.kamers.filter((k) => !k.verborgen).map((k) => ({ ...k, apps: h.apparaten.filter((a) => a.kamer === k.kamer && a.tonen) })).filter((k) => k.apps.length);
+    return kop + `<p class="fam-sub" style="margin:8px 0 0">${esc(this.t('apLegenda'))}</p>${kamers.map((k) => `<details class="ap-kamer" ${k.apps.some((a) => stand(a.entity)) ? 'open' : ''}>
+        <summary><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><b>${esc(k.naam)}</b><span class="fam-sub">${k.apps.filter((a) => stand(a.entity)).length}/${k.apps.length}</span>
+          <span class="groei"></span><button class="fam-chip vbk" data-a="ap-kamer" data-k="${k.kamer}" data-v="b">${esc(this.t('apAllesBedienen'))}</button><button class="fam-chip vbk" data-a="ap-kamer" data-k="${k.kamer}" data-v="">${esc(this.t('apNiets'))}</button></summary>
+        ${k.apps.map((a) => `<div class="ap-rij"><span class="groei">${esc(a.naam)}</span><span class="ap-seg">${[['', 'apVerborgen'], ['z', 'apZien'], ['b', 'apBedienen']].map(([v, t]) =>
+          `<button class="${stand(a.entity) === v ? 'aan' : ''}" data-a="ap-zet" data-e="${esc(a.entity)}" data-v="${v}">${esc(this.t(t))}</button>`).join('')}</span></div>`).join('')}</details>`).join('')}</div>`;
+  }
+  _apZet(d, e, v) {
+    const ap = d.apparaten;
+    ap.zien = ap.zien.filter((x) => x !== e); ap.bedienen = ap.bedienen.filter((x) => x !== e);
+    if (v) ap.zien.push(e);
+    if (v === 'b') ap.bedienen.push(e);
+  }
   _leesOver(d) { const g = this.shadowRoot.getElementById('geboorte'); if (g) d.geboortedatum = g.value; }
   _dlgBewerk(d) {
     const l = this._s.leden.find((x) => x.id === d.id);
@@ -827,6 +861,7 @@ class HaFamilyBeheer extends HTMLElement {
           : `<div class="rij"><button class="fam-knop zacht" data-a="pd-maak" data-id="${l.id}"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('pdMaak'))}</button>
             ${this._s.dashboards.length ? `<span class="fam-sub">${esc(this.t('pdOf'))}</span><select class="veld smal" id="pd-kies"><option value="">${esc(this.t('pdKies'))}</option>${this._s.dashboards.map((x) => `<option value="${esc(x.url_path)}">${esc(x.titel)}</option>`).join('')}</select>
             <button class="fam-knop rand klein" data-a="pd-koppel" data-id="${l.id}">${esc(this.t('pdKoppel'))}</button>` : ''}</div>`}</div>
+      ${this._apparatenKeuze(d, l)}
       <label class="lbl">${esc(this.t('lamp', l.naam))}</label><small class="fam-sub">${esc(this.t('lampUitleg'))}</small><div class="lampform"></div>
       ${l.telefoons.length ? `<label class="lbl">${esc(this.t('meldingen'))}</label><select class="veld" id="notify"><option value="">${esc(this.t('automatisch'))}</option>
         ${l.telefoons.map((t) => `<option value="${esc(t.notify)}" ${l.notify === t.notify ? 'selected' : ''}>${esc(t.naam)}</option>`).join('')}</select>` : ''}
@@ -904,6 +939,13 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'kleur' && d) { d.kleur = b.dataset.v; return this._herteken(); }
     if (a === 'rol' && d) { d.rol = b.dataset.v; return this._herteken(); }
     if (a === 'weergave' && d) { d.weergave = b.dataset.v; return this._herteken(); }
+    if (a === 'ap-beperkt' && d) { this._leesOver(d); d.apparaten.beperkt = !!b.dataset.v; return this._herteken(); }
+    if (a === 'ap-zet' && d) { this._leesOver(d); this._apZet(d, b.dataset.e, b.dataset.v); return this._herteken(); }
+    if (a === 'ap-kamer' && d) {
+      e.preventDefault && e.preventDefault(); this._leesOver(d);
+      this._huisApp.apparaten.filter((x) => x.kamer === b.dataset.k && x.tonen).forEach((x) => this._apZet(d, x.entity, b.dataset.v));
+      return this._herteken();
+    }
     if (a === 'geslacht' && d) { this._leesOver(d); d.geslacht = d.geslacht === b.dataset.v ? null : b.dataset.v; return this._herteken(); }
     if (a === 'interesse' && d) { this._leesOver(d); const v = b.dataset.v; d.interesses = d.interesses.includes(v) ? d.interesses.filter((x) => x !== v) : [...d.interesses, v]; return this._herteken(); }
     if (a === 'interesse-plus' && d) {
@@ -948,7 +990,8 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'bewerk') {
       const l = s.leden.find((x) => x.id === b.dataset.id);
       return this._open({ soort: 'bewerk', id: l.id, naam: l.naam, rol: l.rol, emoji: l.emoji, kleur: l.kleur, weergave: l.weergave, lamp: l.lamp, notify: l.notify || '',
-        geboortedatum: l.geboortedatum || '', geslacht: l.geslacht || null, interesses: [...(l.interesses || [])] });
+        geboortedatum: l.geboortedatum || '', geslacht: l.geslacht || null, interesses: [...(l.interesses || [])],
+        apparaten: { beperkt: false, zien: [], bedienen: [], ...(l.apparaten || {}) } }), this._ws('ha_family/huis').then((h) => { this._huisApp = h; if (this._dlg && this._dlg.soort === 'bewerk') this._herteken(); });
     }
     if (a === 'account-start') { d.account = { gebruikersnaam: slug(d.naam), wachtwoord: (await this._ws('ha_family/voorstel')).wachtwoord }; return this._herteken(); }
     if (a === 'account-maak') {
@@ -959,6 +1002,7 @@ class HaFamilyBeheer extends HTMLElement {
         return this._open({ soort: 'koppel', id: d.id, wachtwoord: ww });           // meteen door naar telefoon koppelen
       } catch (er) { d.fout = er.message; return this._herteken(); }
     }
+    if (a === 'bekijk-als') return weergevenAls(b.dataset.id);
     if (a === 'pd-maak' || a === 'pd-los' || a === 'pd-koppel') {
       const url_path = a === 'pd-koppel' ? this.shadowRoot.getElementById('pd-kies').value : undefined;
       if (a === 'pd-koppel' && !url_path) return;
@@ -970,7 +1014,7 @@ class HaFamilyBeheer extends HTMLElement {
       const l = s.leden.find((x) => x.id === d.id);
       this._leesOver(d);
       const data = { lid: d.id, naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, lamp: d.lamp || null, notify: d.notify || null,
-        geboortedatum: d.geboortedatum || null, geslacht: d.geslacht || null, interesses: d.interesses };
+        geboortedatum: d.geboortedatum || null, geslacht: d.geslacht || null, interesses: d.interesses, apparaten: d.apparaten };
       if (l.kan_inloggen) data.weergave = d.weergave;
       if (await this._doe('ha_family/lid/bijwerken', data)) this._sluit();
       return;
@@ -1112,6 +1156,13 @@ const STIJL = `
   .hu-app ha-icon.aan { color: var(--state-light-active-color, #ffb300); }
   .hu-app select { max-width: 45%; }
   .hu-app.uit > span, .hu-app.uit > ha-icon { opacity: .45; }
+  .ap-kamer { margin-top: 8px; border-top: 1px solid var(--divider-color); padding-top: 6px; }
+  .ap-kamer summary { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; }
+  .ap-kamer summary ha-icon { color: var(--primary-color); --mdc-icon-size: 20px; }
+  .ap-rij { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 28px; font-size: .92rem; }
+  .ap-seg { display: inline-flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--divider-color); flex: none; }
+  .ap-seg button { border: 0; background: none; font: inherit; font-size: .8rem; padding: 5px 10px; cursor: pointer; color: var(--primary-text-color); }
+  .ap-seg button.aan { background: var(--primary-color); color: var(--text-primary-color, #fff); }
   .hu-los summary { cursor: pointer; padding: 8px 0; }
   .hu-los .hu-app { opacity: .6; }
   .hu-balk { position: sticky; top: 8px; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding: 10px 14px; border-radius: 16px;

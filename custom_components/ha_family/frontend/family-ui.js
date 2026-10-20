@@ -2,7 +2,7 @@
  * Groot, rustig en duidelijk: grote tikvlakken, ronde vormen, een eigen kleur en emoji per gezinslid.
  * Volgt het thema van Home Assistant (licht en donker) via de gewone thema-variabelen. */
 
-export const VERSIE = '0.7.0';
+export const VERSIE = '0.8.0';
 
 const TEKST = {
   nl: {
@@ -30,7 +30,45 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 /** De sensor 'Gezin' (attribuut ha_family: gezin) met de leden. */
 export const gezinState = (hass) => Object.values(hass.states).find((s) => s.attributes.ha_family === 'gezin');
 export const leden = (hass) => (gezinState(hass) || { attributes: { leden: [] } }).attributes.leden || [];
-export const ikLid = (hass) => leden(hass).find((l) => hass.user && l.user_id === hass.user.id);
+/* 'Weergeven als': een beheerder bekijkt HA Family zoals een ander gezinslid het ziet (alleen kijken). Bewaard per tabblad. */
+const ALS = 'ha-family-als';
+export function alsLid(hass) {
+  let id = null;
+  try { id = sessionStorage.getItem(ALS); } catch (e) { /* geen opslag */ }
+  if (!id || !hass || !hass.user || !hass.user.is_admin) return null;
+  return leden(hass).find((l) => l.id === id) || null;
+}
+export function weergevenAls(lidId) {
+  try { lidId ? sessionStorage.setItem(ALS, lidId) : sessionStorage.removeItem(ALS); } catch (e) { /* geen opslag */ }
+  location.href = lidId ? '/gezin/thuis' : '/gezin-beheer';
+}
+/** Antwoord van de server aanpassen aan 'weergeven als': wie ben ik, ben ik ouder, en geen stiekeme cadeau-info van jezelf. */
+export function alsAntwoord(hass, r) {
+  const als = alsLid(hass);
+  if (!als || !r || typeof r !== 'object') return r;
+  r = { ...r, ik: als.id };
+  if ('ouder' in r) r.ouder = als.rol === 'ouder';
+  if (r.lijsten && r.lijsten[als.id]) r.lijsten = { ...r.lijsten, [als.id]: r.lijsten[als.id].map(({ gekocht, door_mij, gekocht_door, ...w }) => w) };
+  if ('ideeen' in r && Array.isArray(r.ideeen)) r.ideeen = [];
+  return r;
+}
+export const ikLid = (hass) => alsLid(hass) || leden(hass).find((l) => hass.user && l.user_id === hass.user.id);
+
+/** Balk bovenin zolang je 'weergeven als' gebruikt. */
+export function alsBalk(hass) {
+  const als = alsLid(hass), id = 'ha-family-als-balk';
+  let b = document.getElementById(id);
+  if (!als) { if (b) b.remove(); return; }
+  if (b && b.dataset.lid === als.id) return;
+  if (!b) { b = document.createElement('div'); b.id = id; document.body.appendChild(b); }
+  const nl = taal(hass) === 'nl';
+  b.dataset.lid = als.id;
+  b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:9999;display:flex;align-items:center;gap:12px;padding:10px 12px 10px 18px;'
+    + 'border-radius:999px;background:#311b92;color:#fff;font:500 14px/1.3 Roboto,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35);max-width:calc(100vw - 32px)';
+  b.innerHTML = `<span>👁 ${nl ? 'Je bekijkt HA Family als' : 'Viewing HA Family as'} <b>${esc(als.naam)}</b> <small style="opacity:.75">· ${nl ? 'alleen kijken: wat je doet, doe je als jezelf' : 'view only: actions are done as yourself'}</small></span>`
+    + `<button style="border:0;border-radius:999px;padding:6px 14px;font:600 13px Roboto,sans-serif;cursor:pointer;background:#fff;color:#311b92">${nl ? 'Stoppen' : 'Stop'}</button>`;
+  b.querySelector('button').onclick = () => weergevenAls(null);
+}
 
 export function groet(hass) {
   const u = new Date().getHours();

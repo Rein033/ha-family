@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — meer AI, bekijk als, apparaten per kind
+
+- **AI** (met AI Task, anders zonder): dagoverzicht in *Vandaag*, weekmenu bedenken, recept bedenken, klusjes-ideeën per kind.
+- **Bekijk als**: als beheerder HA Family zien zoals een gezinslid het ziet (alleen kijken).
+- **Lampen en apparaten per persoon**: per apparaat verborgen, zien (met slotje) of bedienen.
+- HACS staat niet meer in de Expert-zijbalk (wel in Admin).
+- Opgelost: bij echte Hue-ruimtes stonden de losse lampen en dubbele zones er toch bij (Hue geeft de lampen als set).
+
 ## 0.7.0 — Admin, persoonlijk dashboard en afval van ROVA
 
 - **Expert** heeft nu een rustige zijbalk: gezin, persoonlijk dashboard, Gezin beheren, **Admin** en HACS. In Admin staat al

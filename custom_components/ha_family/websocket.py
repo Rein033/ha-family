@@ -17,7 +17,7 @@ from .afdelingen import AFDELINGEN
 from .agenda import AFVAL
 from .maaltijden import LABELS
 from .taken import VOORBEELDEN
-from . import afvalbedrijf, muur
+from . import afvalbedrijf, ai, muur
 from .gezin import FamilyFout, Gezin, wachtwoord_voorstel
 from .weergave import WEERGAVEN
 
@@ -45,7 +45,7 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
                 ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen, ws_apparaat_tonen, ws_kamer_samenvoegen,
-                ws_lid_dashboard, ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
+                ws_ai_week, ws_ai_recept, ws_dagoverzicht, ws_ai_klusjes, ws_lid_dashboard, ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -143,6 +143,7 @@ async def ws_persoon_toevoegen(hass, connection, msg):
     vol.Optional("geboortedatum"): vol.Any(None, cv.string),
     vol.Optional("geslacht"): vol.Any(None, cv.string),
     vol.Optional("interesses"): [cv.string],
+    vol.Optional("apparaten"): {vol.Required("beperkt"): bool, vol.Optional("zien", default=[]): [cv.string], vol.Optional("bedienen", default=[]): [cv.string]},
 })
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -616,7 +617,7 @@ async def ws_eten(hass, connection, msg):
 
     ik = g.lid_van_user(connection.user.id)
     return {"menu": g.maaltijden.menu(msg.get("van") or dt_util.now().date(), msg["dagen"]), "recepten": g.data["recepten"], "labels": LABELS,
-            "instellingen": g.data["eten_instellingen"], "ik": ik["id"] if ik else None}
+            "instellingen": g.data["eten_instellingen"], "ik": ik["id"] if ik else None, "ai": bool(ai.ai_entity(hass))}
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ha_family/recept", vol.Optional("recept"): cv.string, vol.Required("naam"): cv.string,
@@ -895,3 +896,44 @@ async def ws_lid_dashboard(hass, connection, msg):
         persoonlijk.loskoppelen(g, lid)
     await alles_toepassen(g)                                # bij hem bovenaan, bij de anderen weg
     return {"dashboard": lid.get("dashboard"), "eigen": lid.get("dashboard_eigen", False)}
+
+
+# ── ✨ AI ──
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/eten/ai_week", vol.Optional("van"): cv.date, vol.Optional("dagen", default=7): vol.All(int, vol.Range(min=1, max=14)),
+                                  vol.Optional("wens"): vol.Any(None, cv.string)})
+@websocket_api.async_response
+@_antwoord
+async def ws_ai_week(hass, connection, msg):
+    from homeassistant.util import dt as dt_util
+
+    g = _gezin(hass)
+    _magschrijven(g, connection)
+    return await ai.weekmenu(g, msg.get("van") or dt_util.now().date(), msg["dagen"], msg.get("wens"))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/recept/ai", vol.Required("vraag"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_ai_recept(hass, connection, msg):
+    g = _gezin(hass)
+    door = _magschrijven(g, connection)
+    if len(msg["vraag"].strip()) < 3:
+        raise FamilyFout("Waar heb je zin in? Bijvoorbeeld: iets snels met kip en rijst.")
+    return await ai.recept(g, msg["vraag"], door)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/dagoverzicht", vol.Optional("opnieuw", default=False): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_dagoverzicht(hass, connection, msg):
+    g = _gezin(hass)
+    return {**await ai.dagoverzicht(g, msg["opnieuw"] and connection.user.is_admin), "ai": bool(ai.ai_entity(hass))}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/klusjes/ai", vol.Required("lid"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_ai_klusjes(hass, connection, msg):
+    return await ai.klusjes(_gezin(hass), msg["lid"])

@@ -2,7 +2,7 @@
  *
  *   type: custom:family-eten-card        het weekmenu: per dag een gerecht en wie er kookt (compact: true = 'Vanavond eten we')
  *   type: custom:family-recepten-card    recepten: zoeken, bekijken, inplannen, op de boodschappenlijst, importeren van een website */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.7.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.8.0';
 
 const TEKST = {
   nl: {
@@ -15,7 +15,9 @@ const TEKST = {
     zeker: 'Recept "{x}" verwijderen?', naam: 'Naam van het gerecht', ingrUitleg: 'Ingrediënten, één per regel (bijv. 500 g gehakt)',
     bereidingUitleg: 'Bereiding (mag leeg)', linkUitleg: 'Link (mag leeg)', labels: 'Labels', importeren: 'Importeren', plakLink: 'Plak de link van het recept',
     importUitleg: 'Werkt met de meeste receptensites, zoals Allerhande, 24Kitchen, Leukerecepten en Jumbo.', bezig: 'Bezig…', ingepland: 'Ingepland',
-    favoriet: 'Favoriet', allesBekijken: 'Weekmenu', herinnering: 'Herinnering sturen om', pakketKlaar: '🍝 {x} recepten toegevoegd', herinneringUitleg: 'De kok krijgt een berichtje; staat er niets, dan krijgen de ouders een idee.', nogNiks: 'Nog niks gepland',
+    favoriet: 'Favoriet', allesBekijken: 'Weekmenu', herinnering: 'Herinnering sturen om', pakketKlaar: '🍝 {x} recepten toegevoegd', weekAi: 'Weekmenu bedenken', weekAiUitleg: 'Vult de lege dagen met jullie recepten (met AI als die er is).',
+    weekAiWens: 'Wensen voor deze week? (mag leeg, bijv. "twee keer vega, vrijdag pizza")', weekAiKlaar: '✨ {x} dagen ingevuld met AI', weekKlaar: '🍝 {x} dagen ingevuld', weekVol: 'Alle dagen staan al vol',
+    aiRecept: 'Recept bedenken', aiReceptUitleg: 'Zeg waar je zin in hebt; de AI maakt er een recept van met ingrediënten en bereiding.', aiReceptVb: 'bijv. iets snels met kip en rijst, kinderen eten mee', bedenk: 'Bedenk', herinneringUitleg: 'De kok krijgt een berichtje; staat er niets, dan krijgen de ouders een idee.', nogNiks: 'Nog niks gepland',
     lbl: { snel: '⚡ Snel', vega: '🥕 Vega', vis: '🐟 Vis', kinderen: '🧒 Kinderen', feest: '🎉 Feest', budget: '💶 Budget', oven: '🔥 Oven', soep: '🍲 Soep' },
   },
   en: {
@@ -28,7 +30,9 @@ const TEKST = {
     zeker: 'Delete recipe "{x}"?', naam: 'Name of the dish', ingrUitleg: 'Ingredients, one per line (e.g. 500 g minced meat)',
     bereidingUitleg: 'Method (optional)', linkUitleg: 'Link (optional)', labels: 'Labels', importeren: 'Import', plakLink: 'Paste the link of the recipe',
     importUitleg: 'Works with most recipe websites.', bezig: 'Working…', ingepland: 'Planned',
-    favoriet: 'Favourite', allesBekijken: 'Meal plan', herinnering: 'Send a reminder at', pakketKlaar: '🍝 {x} recipes added', herinneringUitleg: 'The cook gets a message; if nothing is planned, the parents get an idea.', nogNiks: 'Nothing planned yet',
+    favoriet: 'Favourite', allesBekijken: 'Meal plan', herinnering: 'Send a reminder at', pakketKlaar: '🍝 {x} recipes added', weekAi: 'Plan the week', weekAiUitleg: 'Fills empty days with your recipes (with AI if available).',
+    weekAiWens: 'Wishes for this week? (optional, e.g. "veggie twice, pizza on Friday")', weekAiKlaar: '✨ {x} days planned with AI', weekKlaar: '🍝 {x} days planned', weekVol: 'All days are already planned',
+    aiRecept: 'Invent a recipe', aiReceptUitleg: "Say what you fancy; the AI turns it into a recipe with ingredients and method.", aiReceptVb: 'e.g. something quick with chicken and rice, kids eat along', bedenk: 'Create', herinneringUitleg: 'The cook gets a message; if nothing is planned, the parents get an idea.', nogNiks: 'Nothing planned yet',
     lbl: { snel: '⚡ Quick', vega: '🥕 Veggie', vis: '🐟 Fish', kinderen: '🧒 Kids', feest: '🎉 Party', budget: '💶 Budget', oven: '🔥 Oven', soep: '🍲 Soup' },
   },
 };
@@ -117,7 +121,7 @@ class EtenBasis extends HTMLElement {
   }
   async _laad() {
     const van = this._van || isoDag(new Date());
-    try { this._d = await this._hass.callWS({ type: 'ha_family/eten', van, dagen: 7 }); this._fout = null; } catch (e) { this._fout = e.message; }
+    try { this._d = alsAntwoord(this._hass, await this._hass.callWS({ type: 'ha_family/eten', van, dagen: 7 })); this._fout = null; } catch (e) { this._fout = e.message; }
     if (!this._dlg) this._teken();
   }
   async _ws(type, data, melding) {
@@ -178,6 +182,13 @@ class EtenBasis extends HTMLElement {
         <label class="lbl">${esc(this.t('labels'))}</label><div class="chips">${(this._d.labels || []).map((l) => `<button class="chip ${d.labels.includes(l) ? 'aan' : ''}" data-a="r-label" data-l="${l}">${esc(this.t('lbl')[l] || l)}</button>`).join('')}</div>
         ${d.fout ? `<div class="fout">${esc(d.fout)}</div>` : ''}
         <div class="knoppen"><button class="fam-knop rand" data-sluit="1">${esc(this.t('annuleren'))}</button><button class="fam-knop" data-a="r-opslaan">${esc(this.t('opslaan'))}</button></div></div></div>`;
+    }
+    if (d.soort === 'ai') {
+      return `<div class="achter" data-sluit="1"><div class="dlg"><h2>✨ ${esc(this.t('aiRecept'))}</h2><p class="sub">${esc(this.t('aiReceptUitleg'))}</p>
+        <textarea class="veld" id="ai-vraag" rows="3" placeholder="${esc(this.t('aiReceptVb'))}">${esc(d.vraag || '')}</textarea>
+        ${d.fout ? `<div class="fout">${esc(d.fout)}</div>` : ''}
+        <div class="knoppen"><button class="fam-knop rand" data-sluit="1">${esc(this.t('annuleren'))}</button>
+          <button class="fam-knop" data-a="ai-go" ${d.bezig ? 'disabled' : ''}>${esc(d.bezig ? this.t('bezig') : '✨ ' + this.t('bedenk'))}</button></div></div></div>`;
     }
     if (d.soort === 'import') {
       return `<div class="achter" data-sluit="1"><div class="dlg"><h2>🔗 ${esc(this.t('website'))}</h2><p class="sub">${esc(this.t('importUitleg'))}</p>
@@ -257,6 +268,12 @@ class EtenBasis extends HTMLElement {
       } catch (er) { d.fout = er.message; this._teken(); }
       return;
     }
+    if (a === 'ai-go') {
+      d.vraag = this.shadowRoot.getElementById('ai-vraag').value; d.bezig = true; d.fout = null; this._teken();
+      try { const r = await this._hass.callWS({ type: 'ha_family/recept/ai', vraag: d.vraag }); this._dlg = { soort: 'recept', recept: r.id }; this._gewijzigd(); await this._laad(); this._teken(); }
+      catch (er) { d.bezig = false; d.fout = er.message; this._teken(); }
+      return;
+    }
     if (a === 'i-go') {
       this._lees(); d.bezig = true; d.fout = null; this._teken();
       try { const r = await this._hass.callWS({ type: 'ha_family/recept/import', url: d.url }); this._dlg = { soort: 'recept', recept: r.id }; this._gewijzigd(); await this._laad(); this._teken(); }
@@ -290,7 +307,8 @@ class FamilyEtenCard extends EtenBasis {
     const weeknr = (() => { const t = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate() + 3)); const j = t.getUTCFullYear(); return Math.ceil(((t - Date.UTC(j, 0, 1)) / 864e5 + 1) / 7); })();
     this._schil(`<div class="kop"><div class="titel">🍝 ${esc(this.t('eten'))}</div>
         <button class="x" data-a="stap" data-n="-7">‹</button><span class="sub">${esc(this.t('week'))} ${weeknr}</span><button class="x" data-a="stap" data-n="7">›</button>
-        <button class="fam-knop zacht" data-a="week-lijst">🛒 ${esc(this.t('weekLijst'))}</button></div>
+        <button class="fam-knop zacht" data-a="week-lijst">🛒 ${esc(this.t('weekLijst'))}</button>
+        <button class="fam-knop zacht" data-a="week-ai" ${this._denkt ? 'disabled' : ''} title="${esc(this.t('weekAiUitleg'))}">✨ ${esc(this._denkt ? this.t('bezig') : this.t('weekAi'))}</button></div>
       ${d.menu.map((m) => { const dag = new Date(m.datum + 'T00:00:00');
         const dl = m.datum === vandaag ? this.t('vandaag') : dag.toLocaleDateString(h.locale?.language, { weekday: 'short', day: 'numeric' });
         return `<button class="dag ${m.datum === vandaag ? 'nu' : ''}" data-a="dag" data-d="${m.datum}"><span class="dl">${esc(dl)}</span><span class="em">${esc(m.emoji || '')}</span>
@@ -314,6 +332,14 @@ class FamilyEtenCard extends EtenBasis {
     if (a === 'stap') {
       const s = new Date((this._van || isoDag(maandag(new Date()))) + 'T00:00:00'); s.setDate(s.getDate() + Number(b.dataset.n));
       this._van = isoDag(s); await this._laad(); return true;
+    }
+    if (a === 'week-ai') {
+      const wens = window.prompt(this.t('weekAiWens'), '');
+      if (wens === null) return true;
+      this._denkt = true; this._teken();
+      await this._ws('ha_family/eten/ai_week', { van: this._van || isoDag(maandag(new Date())), dagen: 7, wens: wens || null },
+        (r) => (r.gepland.length ? this.t(r.bron === 'ai' ? 'weekAiKlaar' : 'weekKlaar', r.gepland.length) : this.t('weekVol')));
+      this._denkt = false; this._teken(); return true;
     }
     if (a === 'week-lijst') { await this._ws('ha_family/eten/boodschappen', { van: this._van || isoDag(maandag(new Date())), dagen: 7 }, (r) => this._boodschappenMelding(r)); return true; }
     if (a === 'dag') {
@@ -339,6 +365,7 @@ class FamilyReceptenCard extends EtenBasis {
     const lijst = d.recepten.filter((r) => (!zoek || r.naam.toLowerCase().includes(zoek) || r.ingredienten.some((i) => i.toLowerCase().includes(zoek))) && (!this._label || (r.labels || []).includes(this._label)))
       .sort((a, b) => (b.favoriet - a.favoriet) || a.naam.localeCompare(b.naam));
     this._schil(`<div class="kop"><div class="titel">📖 ${esc(this.t('recepten'))} <span class="sub">${d.recepten.length}</span></div>
+        ${d.ai ? `<button class="fam-knop rand" data-a="ai-recept">✨ ${esc(this.t('aiRecept'))}</button>` : ''}
         <button class="fam-knop rand" data-a="import">🔗 ${esc(this.t('website'))}</button><button class="fam-knop" data-a="nieuw">+ ${esc(this.t('nieuw'))}</button></div>
       ${d.recepten.length ? `<input class="zoek" id="lzoek" placeholder="${esc(this.t('zoek'))}" value="${esc(this._zoek || '')}"/>
         <div class="chips">${d.labels.map((l) => `<button class="chip ${this._label === l ? 'aan' : ''}" data-a="lfilter" data-l="${l}">${esc(this.t('lbl')[l] || l)}</button>`).join('')}</div>
@@ -354,6 +381,7 @@ class FamilyReceptenCard extends EtenBasis {
     if (a === 'open') { this._dlg = { soort: 'recept', recept: b.dataset.r }; this._teken(); return true; }
     if (a === 'nieuw') { this._bewerk(null); return true; }
     if (a === 'import') { this._dlg = { soort: 'import', url: '' }; this._teken(); return true; }
+    if (a === 'ai-recept') { this._dlg = { soort: 'ai', vraag: '' }; this._teken(); return true; }
     if (a === 'lfilter') { this._label = this._label === b.dataset.l ? null : b.dataset.l; this._teken(); return true; }
     if (a === 'startpakket') { await this._ws('ha_family/recept/startpakket', {}, (r) => this.t('pakketKlaar', r.toegevoegd)); return true; }
     return false;

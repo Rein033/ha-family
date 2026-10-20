@@ -6,7 +6,7 @@
  *   type: custom:family-boodschappen-card  boodschappen op volgorde van de looproute
  *
  * Alles komt uit ha_family/taken; de kaarten verversen zodra een van de lijsten of puntensensoren verandert. */
-import { CSS, avatar, esc, leden } from './family-ui.js?v=0.7.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.8.0';
 
 const TEKST = {
   nl: {
@@ -117,7 +117,7 @@ class TakenBasis extends HTMLElement {
     if (sleutel !== this._sleutel) { this._sleutel = sleutel; this._laad(); }
   }
   async _laad(eigen) {
-    try { this._d = await this._hass.callWS({ type: 'ha_family/taken' }); this._fout = null; } catch (e) { this._fout = e.message; }
+    try { this._d = alsAntwoord(this._hass, await this._hass.callWS({ type: 'ha_family/taken' })); this._fout = null; } catch (e) { this._fout = e.message; }
     if (eigen || !this._typt()) {
       // na een eigen actie altijd opnieuw tekenen, en de cursor terug in het veld waar je stond
       const focus = this.shadowRoot.activeElement && this.shadowRoot.activeElement.id;
