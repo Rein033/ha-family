@@ -3,7 +3,7 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.5.0';
+import { CSS, avatar, esc, locatie, taal } from './family-ui.js?v=0.5.1';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -14,7 +14,7 @@ const T = {
   nl: {
     titel: 'Gezin beheren', leden: 'Gezinsleden', toevoegen: 'Gezinslid toevoegen', welkom: 'Welkom bij HA Family!',
     welkomTekst: 'Begin met het toevoegen van de mensen in jullie huis. Iedereen krijgt een eigen kleur en emoji, en wie een telefoon heeft, kan meldingen krijgen.',
-    alInHa: 'Al in Home Assistant', alInHaTekst: 'Deze personen bestaan al. Voeg ze met één klik toe:', als: 'als',
+    alInHa: 'Al in Home Assistant', alInHaTekst: 'Deze personen bestaan al. Voeg ze met één klik toe; wie een account heeft, houdt Home Assistant zoals het was (kies later een eenvoudiger weergave bij Bewerken):', als: 'als',
     rollen: { ouder: 'Ouder', kind: 'Kind', huisgenoot: 'Huisgenoot', gast: 'Gast' },
     rolUitleg: { ouder: 'Beheert mee, ziet alles van het gezin', kind: 'Eenvoudige weergave, eigen klusjes en agenda', huisgenoot: 'Deelt taken, boodschappen en agenda', gast: 'Logeert of past op, ziet alleen het belangrijkste' },
     gezin: 'Gezin', huishouden: 'Huishouden', wijzig: 'Wijzigen', opslaan: 'Opslaan', annuleren: 'Annuleren', volgende: 'Volgende', terug: 'Terug', klaar: 'Klaar',
@@ -46,11 +46,11 @@ const T = {
     tabLeden: 'Gezinsleden', tabAgenda: 'Agenda', tabKlusjes: 'Klusjes', tabMuur: 'Muurscherm', tabHuis: 'Huis',
     huKamers: 'Kamers', huUitleg: 'Kamers zijn de ruimtes van Home Assistant: wat je hier maakt, zie je overal terug. Verborgen kamers staan niet op het dashboard en het muurscherm.',
     huNaam: 'Naam van de kamer', huNieuw: 'Nieuwe kamer', huToevoegen: 'Kamer toevoegen', huApparaten: 'Apparaten',
-    huApparatenUitleg: 'Vink apparaten aan en zet ze in één keer in een kamer, of kies per apparaat.', huZonder: 'Nog geen kamer', huGeenKamer: '— geen kamer —',
+    huApparatenUitleg: 'Vink apparaten aan en zet ze in één keer in een kamer, of kies per apparaat. Met het oogje haal je iets van het dashboard; apparaten die offline zijn, staan er vanzelf niet op.', huZonder: 'Nog geen kamer', huGeenKamer: '— geen kamer —',
     huGekozen: 'gekozen', huZetIn: 'Zet in', huZeker: 'Kamer "{x}" verwijderen? De apparaten blijven gewoon bestaan, ze hebben dan geen kamer meer.',
     huVerbergen: 'Verbergen', huTonen: 'Tonen', huKanNiet: 'Dit apparaat kan geen kamer krijgen (geen vaste ID).', huVia: 'via het apparaat',
     huGeen: 'Geen lampen, klimaat of andere apparaten gevonden.', huAlles: 'Alles', huApp: 'apparaten', huApp1: 'apparaat', huVerplaatst: 'Verplaatst', huLeeg: 'Nog geen kamers. Begin met bijvoorbeeld Woonkamer, Keuken en Slaapkamer.',
-    huSnel: 'Snel toevoegen', huLos: 'apparaten kunnen geen kamer krijgen (geen vaste ID in Home Assistant)', huDomein: { light: '💡 Lampen', climate: '❄️ Klimaat', fan: '🌀 Ventilatoren', cover: '🪟 Rolluiken', switch: '🔌 Stopcontacten', media_player: '🔊 Speakers' },
+    huSnel: 'Snel toevoegen', huSamen: 'Samenvoegen met', huSamenKnop: 'Samenvoegen', huSamenZeker: 'Alles uit "{x}" naar "{y}" verplaatsen (ook sensoren) en "{x}" verwijderen?', huBijzaak: 'instelling, verborgen', huOffline: 'offline', huLos: 'apparaten kunnen geen kamer krijgen (geen vaste ID in Home Assistant)', huDomein: { light: '💡 Lampen', climate: '❄️ Klimaat', fan: '🌀 Ventilatoren', cover: '🪟 Rolluiken', switch: '🔌 Stopcontacten', media_player: '🔊 Speakers' },
     huVoorbeelden: ['Woonkamer', 'Keuken', 'Slaapkamer', 'Kinderkamer', 'Badkamer', 'Hal', 'Zolder', 'Tuin'],
     muTitel: 'Een tablet aan de muur', muUitleg: 'Een groot scherm voor iedereen: klok, weer, de agenda van vandaag en morgen, de klusjes van de kinderen en de boodschappen. \'s Nachts alleen een gedimde klok.',
     muInstellen: 'Muurscherm instellen', muAccountUitleg: 'De tablet krijgt een eigen account dat alleen thuis kan inloggen. Kinderen kunnen er hun klusjes afvinken; beheren kan er niet.',
@@ -90,7 +90,7 @@ const T = {
   en: {
     titel: 'Family settings', leden: 'Family members', toevoegen: 'Add family member', welkom: 'Welcome to HA Family!',
     welkomTekst: 'Start by adding the people in your home. Everyone gets their own colour and emoji, and whoever has a phone can get notifications.',
-    alInHa: 'Already in Home Assistant', alInHaTekst: 'These people already exist. Add them with one click:', als: 'as',
+    alInHa: 'Already in Home Assistant', alInHaTekst: 'These people already exist. Add them with one click; anyone with an account keeps Home Assistant as it was (pick a simpler view later under Edit):', als: 'as',
     rollen: { ouder: 'Parent', kind: 'Child', huisgenoot: 'Housemate', gast: 'Guest' },
     rolUitleg: { ouder: 'Helps manage, sees everything', kind: 'Simple view, own chores and calendar', huisgenoot: 'Shares tasks, groceries and calendar', gast: 'Staying over or babysitting, sees the essentials' },
     gezin: 'Family', huishouden: 'Household', wijzig: 'Change', opslaan: 'Save', annuleren: 'Cancel', volgende: 'Next', terug: 'Back', klaar: 'Done',
@@ -122,11 +122,11 @@ const T = {
     tabLeden: 'Family members', tabAgenda: 'Calendar', tabKlusjes: 'Chores', tabMuur: 'Wall screen', tabHuis: 'Home',
     huKamers: 'Rooms', huUitleg: 'Rooms are Home Assistant areas: what you create here shows up everywhere. Hidden rooms are not shown on the dashboard and the wall screen.',
     huNaam: 'Name of the room', huNieuw: 'New room', huToevoegen: 'Add room', huApparaten: 'Devices',
-    huApparatenUitleg: 'Tick devices and put them in a room at once, or choose per device.', huZonder: 'No room yet', huGeenKamer: '— no room —',
+    huApparatenUitleg: 'Tick devices and put them in a room at once, or choose per device. The eye removes something from the dashboard; offline devices are left out automatically.', huZonder: 'No room yet', huGeenKamer: '— no room —',
     huGekozen: 'selected', huZetIn: 'Move to', huZeker: 'Delete room "{x}"? The devices stay, they just have no room anymore.',
     huVerbergen: 'Hide', huTonen: 'Show', huKanNiet: 'This device cannot get a room (no unique ID).', huVia: 'via the device',
     huGeen: 'No lights, climate or other devices found.', huAlles: 'All', huApp: 'devices', huApp1: 'device', huVerplaatst: 'Moved', huLeeg: 'No rooms yet. Start with, for example, Living room, Kitchen and Bedroom.',
-    huSnel: 'Quick add', huLos: 'devices cannot get a room (no unique ID in Home Assistant)', huDomein: { light: '💡 Lights', climate: '❄️ Climate', fan: '🌀 Fans', cover: '🪟 Covers', switch: '🔌 Plugs', media_player: '🔊 Speakers' },
+    huSnel: 'Quick add', huSamen: 'Merge into', huSamenKnop: 'Merge', huSamenZeker: 'Move everything from "{x}" to "{y}" (sensors too) and delete "{x}"?', huBijzaak: 'setting, hidden', huOffline: 'offline', huLos: 'devices cannot get a room (no unique ID in Home Assistant)', huDomein: { light: '💡 Lights', climate: '❄️ Climate', fan: '🌀 Fans', cover: '🪟 Covers', switch: '🔌 Plugs', media_player: '🔊 Speakers' },
     huVoorbeelden: ['Living room', 'Kitchen', 'Bedroom', 'Kids room', 'Bathroom', 'Hallway', 'Attic', 'Garden'],
     muTitel: 'A tablet on the wall', muUitleg: "A big screen for everyone: clock, weather, today's and tomorrow's calendar, the children's chores and the groceries. At night only a dimmed clock.",
     muInstellen: 'Set up the wall screen', muAccountUitleg: 'The tablet gets its own account that can only log in at home. Children can tick off their chores there; it cannot manage anything.',
@@ -476,6 +476,8 @@ class HaFamilyBeheer extends HTMLElement {
       if (this._huBewerk === k.kamer) {
         const b = this._huB;
         return `<div class="hu-kamer bewerk"><input class="veld" id="hu-b-naam" value="${esc(b.naam)}" maxlength="50"/>${iconen(b.icoon, 'hu-b-icoon')}
+          <div class="rij"><span class="fam-sub">${esc(this.t('huSamen'))}</span><select class="veld smal" id="hu-samen"><option value="">—</option>${h.kamers.filter((x) => x.kamer !== k.kamer).map((x) => `<option value="${x.kamer}">${esc(x.naam)}</option>`).join('')}</select>
+            <button class="fam-knop rand klein" data-a="hu-samen">${esc(this.t('huSamenKnop'))}</button></div>
           <div class="rij eind"><button class="fam-knop rand klein" data-a="hu-annuleer">${esc(this.t('annuleren'))}</button><button class="fam-knop klein" data-a="hu-opslaan">${esc(this.t('opslaan'))}</button></div></div>`;
       }
       return `<div class="hu-kamer ${k.verborgen ? 'uit' : ''}"><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon><b class="groei">${esc(k.naam)}</b>
@@ -495,9 +497,10 @@ class HaFamilyBeheer extends HTMLElement {
       const kunnen = lijst.filter((a) => a.kan), alle = kunnen.length && kunnen.every((a) => sel.has(a.entity));
       return `<div class="hu-groep ${k ? '' : 'zonder'}"><h3><label class="vink kort"><input type="checkbox" data-a="hu-allemaal" data-k="${k}" ${alle ? 'checked' : ''}/></label>
           <ha-icon icon="${ico}"></ha-icon> ${esc(titel)} <span class="fam-sub">${alles.length}</span></h3>
-        ${[...lijst, ...los].map((a, i) => `${i === lijst.length && los.length ? `<details class="hu-los"><summary class="fam-sub">${los.length} ${esc(this.t('huLos'))}</summary>` : ''}<div class="hu-app"><input type="checkbox" data-a="hu-vink" data-e="${esc(a.entity)}" ${sel.has(a.entity) ? 'checked' : ''} ${a.kan ? '' : 'disabled'}/>
+        ${[...lijst, ...los].map((a, i) => `${i === lijst.length && los.length ? `<details class="hu-los"><summary class="fam-sub">${los.length} ${esc(this.t('huLos'))}</summary>` : ''}<div class="hu-app ${a.tonen ? '' : 'uit'}"><input type="checkbox" data-a="hu-vink" data-e="${esc(a.entity)}" ${sel.has(a.entity) ? 'checked' : ''} ${a.kan ? '' : 'disabled'}/>
           <ha-icon icon="${DICO[a.domein]}" class="${(this._hass.states[a.entity] || {}).state === 'on' ? 'aan' : ''}"></ha-icon>
-          <span class="groei">${esc(a.naam)}${a.via_apparaat ? ` <small class="fam-sub">· ${esc(this.t('huVia'))}</small>` : ''}</span>
+          <span class="groei">${esc(a.naam)}${a.via_apparaat ? ` <small class="fam-sub">· ${esc(this.t('huVia'))}</small>` : ''}${a.bijzaak ? ` <small class="fam-sub">· ${esc(this.t('huBijzaak'))}</small>` : ''}${['unavailable', 'unknown'].includes((this._hass.states[a.entity] || {}).state) ? ` <small class="fam-sub">· ${esc(this.t('huOffline'))}</small>` : ''}</span>
+          <button class="hu-x" data-a="hu-tonen" data-e="${esc(a.entity)}" data-t="${a.tonen ? '' : '1'}" title="${esc(a.tonen ? this.t('huVerbergen') : this.t('huTonen'))}"><ha-icon icon="${a.tonen ? 'mdi:eye' : 'mdi:eye-off'}"></ha-icon></button>
           <select class="veld smal" data-a="hu-zet" data-e="${esc(a.entity)}" ${a.kan ? '' : 'disabled'}>${opties(a.kamer)}</select></div>`).join('')}${los.length ? '</details>' : ''}</div>`;
     };
     const domeinen = [...new Set(h.apparaten.map((a) => a.domein))];
@@ -526,6 +529,12 @@ class HaFamilyBeheer extends HTMLElement {
     }
     if (a === 'hu-bewerk') { const k = h.kamers.find((x) => x.kamer === b.dataset.k); this._huBewerk = k.kamer; this._huB = { naam: k.naam, icoon: k.icoon || 'mdi:home' }; return this._teken(); }
     if (a === 'hu-b-icoon') { this._huB = { naam: q('hu-b-naam').value, icoon: b.dataset.i }; return this._teken(); }
+    if (a === 'hu-samen') {
+      const naar = q('hu-samen').value, van = h.kamers.find((x) => x.kamer === this._huBewerk), doel = h.kamers.find((x) => x.kamer === naar);
+      if (!naar || !confirm(this.t('huSamenZeker').replace('{x}', van.naam).replace('{y}', doel.naam))) return;
+      if (await this._doe('ha_family/kamer/samenvoegen', { van: van.kamer, naar }, `${van.naam} → ${doel.naam}`)) { this._huBewerk = null; this._teken(); }
+      return;
+    }
     if (a === 'hu-annuleer') { this._huBewerk = null; return this._teken(); }
     if (a === 'hu-opslaan') {
       if (await this._doe('ha_family/kamer', { kamer: this._huBewerk, naam: q('hu-b-naam').value, icoon: this._huB.icoon }, this.t('bewaard'))) { this._huBewerk = null; this._teken(); }
@@ -540,6 +549,7 @@ class HaFamilyBeheer extends HTMLElement {
       const v = h.kamers.filter((x) => x.verborgen).map((x) => x.kamer), k = b.dataset.k;
       return this._doe('ha_family/huis/instellingen', { verborgen: v.includes(k) ? v.filter((x) => x !== k) : [...v, k] });
     }
+    if (a === 'hu-tonen') return this._doe('ha_family/apparaat/tonen', { entity: b.dataset.e, tonen: !!b.dataset.t });
     if (a === 'hu-filter') { this._huFilter = b.dataset.d || null; return this._teken(); }
     if (a === 'hu-wis') { this._huSel.clear(); return this._teken(); }
     if (a === 'hu-bulk') {
@@ -1052,6 +1062,7 @@ const STIJL = `
   .hu-app ha-icon { color: var(--secondary-text-color); }
   .hu-app ha-icon.aan { color: var(--state-light-active-color, #ffb300); }
   .hu-app select { max-width: 45%; }
+  .hu-app.uit > span, .hu-app.uit > ha-icon { opacity: .45; }
   .hu-los summary { cursor: pointer; padding: 8px 0; }
   .hu-los .hu-app { opacity: .6; }
   .hu-balk { position: sticky; top: 8px; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding: 10px 14px; border-radius: 16px;

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1 — kamers in een bestaand huis
+
+- Lampgroepen (zoals Hue-ruimtes): de groep staat in de kamer, de losse lampen erin niet; twee groepen met dezelfde lampen
+  maar één keer.
+- Schakelaars die bij een ander apparaat horen (kinderslot en slaapstand van de airco, screensaver van een tablet) staan
+  niet meer los in de kamer; apparaten die offline zijn ook niet. Met het oogje in *Gezin beheren → Huis* kies je zelf.
+- **Kamers samenvoegen** (bij *wijzigen*): alles uit de ene kamer, ook sensoren, gaat naar de andere.
+- Bestaande personen met een account houden bij het toevoegen hun eigen Home Assistant (weergave *expert*); een
+  eenvoudiger weergave kies je zelf bij *Bewerken*.
+- Hernoemen van een kamer laat het icoon staan.
+
 ## 0.5.0 — maaltijdplanner en kamers
 
 - **Weekmenu** (tabblad *🍝 Eten*): per dag een recept of eigen tekst, wie er kookt, *🎲 Verrassing*, week vooruit/terug.

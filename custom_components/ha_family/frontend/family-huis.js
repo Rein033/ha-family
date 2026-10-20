@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc } from './family-ui.js?v=0.5.0';
+import { CSS, esc } from './family-ui.js?v=0.5.1';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
@@ -98,13 +98,13 @@ export class FamilyKamersCard extends HTMLElement {
   _kamers() {
     const d = this._d, h = this._hass;
     const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer))
-      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && h.states[a.entity]) }))
+      .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
       .filter((k) => k.apps.length);
     return per;
   }
   _kort(naam, kamer) {                               // 'Woonkamer plafondlamp' in de woonkamer → 'Plafondlamp'
     const n = naam.replace(new RegExp(`^${kamer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]?\\s*`, 'i'), '');
-    return n ? n.charAt(0).toUpperCase() + n.slice(1) : naam;
+    return /[\p{L}\p{N}]/u.test(n) ? n.charAt(0).toUpperCase() + n.slice(1) : naam;   // 'Gang beneden.' in 'Gang beneden' → niet '.'
   }
   _temp(k) { const s = k.temperatuur && this._hass.states[k.temperatuur]; return s && !isNaN(parseFloat(s.state)) ? `${Math.round(parseFloat(s.state) * 10) / 10}°` : ''; }
 

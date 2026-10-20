@@ -449,3 +449,85 @@ async def test_kamers_en_apparaten(hass: HomeAssistant, gezin, hass_ws_client) -
     await client.send_json_auto_id({"type": "ha_family/kamer/weg", "kamer": k})
     assert (await client.receive_json())["success"]
     assert ar.async_get(hass).async_get_area(k) is None
+
+
+async def test_schakelaars_van_airco_zijn_bijzaak(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    from homeassistant.helpers import device_registry as dr, entity_registry as er
+
+    entreg, devreg = er.async_get(hass), dr.async_get(hass)
+    bron = MockConfigEntry(domain="test")
+    bron.add_to_hass(hass)
+    dev = devreg.async_get_or_create(config_entry_id=bron.entry_id, identifiers={("test", "airco")}, name="Airco")
+    ac = entreg.async_get_or_create("climate", "test", "ac", device_id=dev.id, suggested_object_id="airco")
+    slot = entreg.async_get_or_create("switch", "test", "slot", device_id=dev.id, suggested_object_id="airco_kinderslot")
+    los = entreg.async_get_or_create("switch", "test", "stekker", suggested_object_id="kerstboom")
+    for e in (ac, slot, los):
+        hass.states.async_set(e.entity_id, "off")
+    huis = gezin.runtime_data.huis
+    rij = {a["entity"]: a for a in huis.overzicht()["apparaten"]}
+    assert rij[slot.entity_id]["bijzaak"] and not rij[slot.entity_id]["tonen"]
+    assert rij[ac.entity_id]["tonen"] and rij[los.entity_id]["tonen"]
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/apparaat/tonen", "entity": slot.entity_id, "tonen": True})
+    assert (await client.receive_json())["success"]
+    await client.send_json_auto_id({"type": "ha_family/apparaat/tonen", "entity": los.entity_id, "tonen": False})
+    assert (await client.receive_json())["success"]
+    rij = {a["entity"]: a for a in huis.overzicht()["apparaten"]}
+    assert rij[slot.entity_id]["tonen"] and not rij[los.entity_id]["tonen"]
+
+
+async def test_bestaande_persoon_met_account_houdt_zijn_ha(hass: HomeAssistant, gezin, hass_ws_client, hass_admin_user) -> None:
+    from homeassistant.components import person
+
+    await person.async_create_person(hass, "Papa", user_id=hass_admin_user.id)
+    await hass.async_block_till_done()
+    store = await async_user_store(hass, hass_admin_user.id)
+    voor = dict(store.data or {})
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/lid/persoon", "person": "person.papa", "rol": "ouder"})
+    r = await client.receive_json()
+    assert r["success"], r
+    assert r["result"]["weergave"] == "expert"
+    assert (store.data or {}).get("sidebar") == voor.get("sidebar")
+
+
+async def test_lampgroepen_en_samenvoegen(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
+
+    entreg, devreg, areas = er.async_get(hass), dr.async_get(hass), ar.async_get(hass)
+    bron = MockConfigEntry(domain="test")
+    bron.add_to_hass(hass)
+    keuken, kitchen = areas.async_create("Keuken"), areas.async_create("Kitchen")
+    l1 = entreg.async_get_or_create("light", "test", "l1", suggested_object_id="bol_1")
+    g1 = entreg.async_get_or_create("light", "test", "g1", suggested_object_id="keuken_2")
+    g2 = entreg.async_get_or_create("light", "test", "g2", suggested_object_id="kitchen")
+    entreg.async_update_entity(g1.entity_id, area_id=keuken.id)
+    for e in (l1,):
+        hass.states.async_set(e.entity_id, "on")
+    for g in (g1, g2):
+        hass.states.async_set(g.entity_id, "on", {"entity_id": [l1.entity_id]})
+    sensor = entreg.async_get_or_create("sensor", "test", "temp", suggested_object_id="keuken_temp")
+    entreg.async_update_entity(sensor.entity_id, area_id=kitchen.id)
+    dev = devreg.async_get_or_create(config_entry_id=bron.entry_id, identifiers={("test", "k")}, name="Koelkast")
+    devreg.async_update_device(dev.id, area_id=kitchen.id)
+
+    rij = {a["entity"]: a for a in gezin.runtime_data.huis.overzicht()["apparaten"]}
+    assert rij[g1.entity_id]["tonen"]                       # de groep met een kamer
+    assert not rij[g2.entity_id]["tonen"]                   # dezelfde lampen nog een keer
+    assert not rij[l1.entity_id]["tonen"]                   # lamp die in een groep zit
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": "ha_family/kamer/samenvoegen", "van": kitchen.id, "naar": keuken.id})
+    r = await client.receive_json()
+    assert r["success"] and r["result"]["verplaatst"] == 2
+    assert entreg.async_get(sensor.entity_id).area_id == keuken.id
+    assert devreg.async_get(dev.id).area_id == keuken.id
+    assert areas.async_get_area(kitchen.id) is None
+
+    await client.send_json_auto_id({"type": "ha_family/kamer", "kamer": keuken.id, "naam": "Keuken!"})
+    assert (await client.receive_json())["success"]
+    areas.async_update(keuken.id, icon="mdi:stove")
+    await client.send_json_auto_id({"type": "ha_family/kamer", "kamer": keuken.id, "naam": "Keuken"})
+    assert (await client.receive_json())["success"]
+    assert areas.async_get_area(keuken.id).icon == "mdi:stove"   # hernoemen laat het icoon staan

@@ -46,13 +46,32 @@ class Huis:
         volgorde = self._inst["volgorde"]
         kamers = sorted(areas.async_list_areas(), key=lambda a: (volgorde.index(a.id) if a.id in volgorde else len(volgorde), a.name.lower()))
         apparaten = []
-        for st in self.hass.states.async_all(DOMEINEN):
-            ent = entreg.async_get(st.entity_id)
+        alle = [(st, entreg.async_get(st.entity_id)) for st in self.hass.states.async_all(DOMEINEN)]
+        # apparaten met een 'hoofdding' (airco, lamp, tv): hun losse schakelaars (kinderslot, slaapstand, screensaver) zijn bijzaak
+        met_hoofd = {ent.device_id for st, ent in alle if ent and ent.device_id and st.domain != "switch"}
+        zicht = self._inst.setdefault("zicht", {})          # eigen keuze per apparaat: tonen (True) of verbergen (False)
+        # lampgroepen (Hue-ruimtes, groepen): de groep tonen, de losse lampen erin niet; twee groepen met dezelfde lampen maar één keer
+        in_groep: set[str] = set()
+        dubbel: set[str] = set()
+        gezien: dict[frozenset, str] = {}
+        groepen = [(st, ent) for st, ent in alle if st.domain == "light" and isinstance(st.attributes.get("entity_id"), list) and st.attributes["entity_id"]]
+        groepen.sort(key=lambda x: (self._kamer_van(x[1], devreg)[0] is None, x[0].entity_id))   # die met een kamer wint
+        for st, _ in groepen:
+            leden = frozenset(st.attributes["entity_id"])
+            in_groep |= leden
+            if leden in gezien:
+                dubbel.add(st.entity_id)
+            else:
+                gezien[leden] = st.entity_id
+        for st, ent in alle:
             if ent and (ent.hidden_by or ent.disabled_by or ent.entity_category):
                 continue                                    # instellingen-schakelaars en verborgen dingen niet
             kamer, via = self._kamer_van(ent, devreg)
+            bijzaak = bool(st.domain == "switch" and ent and ent.device_id in met_hoofd) or st.entity_id in dubbel \
+                or (st.domain == "light" and st.entity_id in in_groep and st.entity_id not in {g.entity_id for g, _ in groepen})
             apparaten.append({"entity": st.entity_id, "naam": st.name, "domein": st.domain, "kamer": kamer, "via_apparaat": via,
-                              "kan": ent is not None})       # zonder unieke id kan HA er geen kamer aan geven
+                              "kan": ent is not None,        # zonder unieke id kan HA er geen kamer aan geven
+                              "bijzaak": bijzaak, "tonen": zicht.get(st.entity_id, not bijzaak)})
         apparaten.sort(key=lambda x: (DOMEINEN.index(x["domein"]), x["naam"].lower()))
         # temperatuur per kamer: wat in de kamer is ingesteld, anders de eerste temperatuursensor die erin staat
         temp: dict[str, str] = {}
@@ -75,7 +94,7 @@ class Huis:
             if kamer_id:
                 if bestaand and bestaand.id != kamer_id:
                     raise FamilyFout(f"Er is al een kamer die '{naam}' heet.")
-                a = areas.async_update(kamer_id, name=naam, icon=icoon)
+                a = areas.async_update(kamer_id, name=naam, **({"icon": icoon} if icoon is not None else {}))
             else:
                 if bestaand:
                     raise FamilyFout(f"Er is al een kamer die '{naam}' heet.")
@@ -95,6 +114,21 @@ class Huis:
         self._inst["volgorde"] = [k for k in self._inst["volgorde"] if k != kamer_id]
         self.gezin.opslaan()
 
+    def samenvoegen(self, van: str, naar: str) -> int:
+        """Alles uit kamer 'van' (ook sensoren en apparaten die HA Family niet toont) naar 'naar', daarna 'van' weg."""
+        areas, entreg, devreg = ar.async_get(self.hass), er.async_get(self.hass), dr.async_get(self.hass)
+        if van == naar or not areas.async_get_area(van) or not areas.async_get_area(naar):
+            raise FamilyFout("Kies twee verschillende kamers die bestaan.")
+        n = 0
+        for dev in dr.async_entries_for_area(devreg, van):
+            devreg.async_update_device(dev.id, area_id=naar)
+            n += 1
+        for ent in er.async_entries_for_area(entreg, van):
+            entreg.async_update_entity(ent.entity_id, area_id=naar)
+            n += 1
+        self.kamer_weg(van)
+        return n
+
     def apparaat(self, entity_id: str, kamer_id: str | None) -> None:
         if kamer_id and not ar.async_get(self.hass).async_get_area(kamer_id):
             raise FamilyFout("Die kamer bestaat niet meer.")
@@ -107,6 +141,11 @@ class Huis:
             dev = devreg.async_get(ent.device_id)
             if dev and dev.area_id:
                 devreg.async_update_device(dev.id, area_id=None)
+
+    def tonen(self, entity_id: str, tonen: bool) -> None:
+        """Een apparaat wel of niet op het dashboard en de muur."""
+        self._inst.setdefault("zicht", {})[entity_id] = tonen
+        self.gezin.opslaan()
 
     def instellingen(self, verborgen: list[str] | None = None, volgorde: list[str] | None = None) -> None:
         if verborgen is not None:

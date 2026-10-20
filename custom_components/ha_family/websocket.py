@@ -44,7 +44,7 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_wachtwoord, ws_test_melding, ws_voorstel, ws_huishouden, ws_account,
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
-                ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen,
+                ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen, ws_apparaat_tonen, ws_kamer_samenvoegen,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -122,6 +122,9 @@ async def ws_lid_toevoegen(hass, connection, msg):
 async def ws_persoon_toevoegen(hass, connection, msg):
     g = _gezin(hass)
     lid = g.persoon_toevoegen(msg["person"], msg["rol"], msg.get("kleur"), msg.get("emoji"))
+    if g.user_id(lid):
+        # wie al een account had, houdt zijn Home Assistant zoals hij het kent; een eenvoudiger weergave kies je zelf
+        lid = g.lid_bijwerken(lid["id"], weergave="expert")
     await g.weergave_zetten(lid)
     return lid
 
@@ -730,3 +733,20 @@ async def ws_kamer_apparaat(hass, connection, msg):
 async def ws_huis_instellingen(hass, connection, msg):
     _gezin(hass).huis.instellingen(msg.get("verborgen"), msg.get("volgorde"))
     return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/apparaat/tonen", vol.Required("entity"): cv.entity_id, vol.Required("tonen"): bool})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_apparaat_tonen(hass, connection, msg):
+    _gezin(hass).huis.tonen(msg["entity"], msg["tonen"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/kamer/samenvoegen", vol.Required("van"): cv.string, vol.Required("naar"): cv.string})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_kamer_samenvoegen(hass, connection, msg):
+    return {"verplaatst": _gezin(hass).huis.samenvoegen(msg["van"], msg["naar"])}
