@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.2 — grote knoppen op het muurscherm
+
+- Muurscherm: lampen, stekkers en de rest per kamer als grote aanraakknoppen (naam, aan/uit en een groot icoon), twee of
+  drie naast elkaar. Het startscherm houdt de compacte knoppen.
+
 ## 0.11.1 — de taal van het huishouden
 
 - HA Family (kaarten, muurscherm, beheer) volgt nu de taal van Home Assistant zelf, niet die van de browser of het profiel.

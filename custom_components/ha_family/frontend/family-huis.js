@@ -5,7 +5,7 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.11.1';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.11.2';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
@@ -109,8 +109,19 @@ const STIJL = `
   :host([muur]) ha-card { border-radius: 24px; padding: 14px 18px; }
   :host([muur]) .kop .titel { font-size: 1.25rem; }
   :host([muur]) .kop { margin-bottom: 2px; }
-  :host([muur]) .rij { padding: 5px 0; }
-  :host([muur]) .pil { font-size: .8rem; padding: 5px 10px 5px 7px; }
+  /* muurscherm: grote aanraakknoppen, twee of drie naast elkaar per kamer */
+  :host([muur]) .rij { padding: 8px 0; gap: 8px; }
+  :host([muur]) .rij .nm { font-size: 1.05rem; }
+  :host([muur]) .rij .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  :host([muur]) .pil { min-height: 58px; border-radius: 16px; padding: 8px 12px; font-size: .95rem; display: grid;
+    grid-template-columns: 30px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; }
+  :host([muur]) .pil ha-icon { --mdc-icon-size: 28px; grid-row: 1 / span 2; }
+  :host([muur]) .pil span { max-width: none; white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  :host([muur]) .pil small, :host([muur]) .pil b { grid-column: 2; font-size: .8rem; }
+  :host([muur]) .pil small.st { display: block; color: var(--secondary-text-color); }
+  :host([muur]) .pil.aan small.st { color: inherit; opacity: .8; }
+  :host([muur]) .pil:active { transform: scale(.97); }
+  .pil small.st { display: none; }
 `;
 
 export class FamilyKamersCard extends HTMLElement {
@@ -311,7 +322,7 @@ export class FamilyKamersCard extends HTMLElement {
         const kleur = a.domein === 'light' ? (at.rgb_color ? `rgb(${at.rgb_color.join(',')})` : '#ffb300') : a.domein === 'cover' ? '#7e57c2' : a.domein === 'fan' ? '#26a69a' : a.domein === 'media_player' ? '#5c6bc0' : '#43a047';
         const actie = ['cover', 'media_player', 'fan'].includes(a.domein) ? 'open' : 'schakel';
         return `<button class="pil ${aan ? 'aan' : ''}" style="--k:${kleur}" data-a="${actie}" data-e="${a.entity}" title="${esc(a.naam)}">
-          <ha-icon icon="${esc(at.icon || ICOON[a.domein][aan ? 1 : 0])}"></ha-icon><span>${esc(naam)}</span></button>`;
+          <ha-icon icon="${esc(at.icon || ICOON[a.domein][aan ? 1 : 0])}"></ha-icon><span>${esc(naam)}</span><small class="st">${esc(this.t(aan ? 'aan' : 'uit'))}</small></button>`;
       }).join('')}</div></div>`;
   }
 
