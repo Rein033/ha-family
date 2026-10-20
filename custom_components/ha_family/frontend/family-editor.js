@@ -3,7 +3,7 @@
  * Eén editor voor alle kaarten: per kaart een lijstje instellingen, getekend met Home Assistants eigen formulier
  * (ha-form). Alleen wie in HA Family op 'Expert' staat (of een beheerder die geen gezinslid is) ziet de instellingen;
  * de rest krijgt uitleg. Gewone gezinsleden hoeven de kaarten niet aan te passen: het gezinsdashboard bouwt zichzelf. */
-import { esc, leden } from './family-ui.js?v=0.10.0';
+import { esc, leden } from './family-ui.js?v=0.11.0';
 
 const nl = (h) => ((h && h.locale && h.locale.language) || 'en').startsWith('nl');
 const L = {
@@ -144,7 +144,7 @@ export class FamilyStrategieEditor extends FamilyKaartEditor {
       this.shadowRoot.querySelector('.sjabloon').addEventListener('click', async (e) => {
         if (!confirm(n ? 'Het gezinsdashboard wordt een gewoon dashboard dat je vrij kunt bewerken. Doorgaan?' : 'The family dashboard becomes a normal dashboard you can freely edit. Continue?')) return;
         e.target.disabled = true;
-        try { const m = await import('./family-sjabloon.js?v=0.10.0'); await m.naarSjabloon(h); location.reload(); }
+        try { const m = await import('./family-sjabloon.js?v=0.11.0'); await m.naarSjabloon(h); location.reload(); }
         catch (er) { e.target.disabled = false; alert(er.message); }
       });
       this._form = document.createElement('ha-form');

@@ -251,6 +251,9 @@ geeft helderheid en lichtkleur. op het tabblad **🏠 Huis**, rechts op het muur
 een lamp om hem aan of uit te zetten, schuif voor de helderheid; bij de airco of thermostaat zet je hem aan/uit en de
 temperatuur met − en +; rolluiken gaan op ▲ ■ ▼. *Alles uit* zet alle lampen in een kamer uit.
 
+**Snel aanpassen**: tik op de kamers-kaart op **✏️ Aanpassen** (beheerders): met het oogje haal je een lamp van het
+dashboard, en apparaten zonder kamer (onder *Overig*) zet je meteen in een kamer.
+
 **Instellen** in **Gezin beheren → Huis**:
 
 1. **Kamer aanmaken**: naam en icoon, of met één klik *Woonkamer*, *Keuken*, *Kinderkamer*, …

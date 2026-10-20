@@ -5,19 +5,19 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.10.0';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.11.0';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
     instellen: 'Kamers instellen', nuBinnen: 'nu', modus: { off: 'Uit', heat: 'Verwarmen', cool: 'Koelen', heat_cool: 'Automatisch', auto: 'Automatisch', dry: 'Drogen', fan_only: 'Ventileren' },
-    lampenAan: '{x} aan', zonder: 'Zonder kamer', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
+    lampenAan: '{x} aan', zonder: 'Zonder kamer', overig: 'Overig', aanpassen: 'Aanpassen', geenKamer: '— geen kamer —', offline: 'offline', instelling: 'instelling', verberg: 'Niet op het dashboard', toon: 'Op het dashboard', zekerUit: '{x} echt uitzetten?', bewerkUitleg: 'Met het oogje bepaal je wat op het dashboard staat (voor iedereen). Kies bij een apparaat een kamer om het te verplaatsen.', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
     helderheid: 'Helderheid', licht: 'Licht', kleur: 'Kleur', volume: 'Volume', snelheidLbl: 'Snelheid', klaar: 'Klaar',
     snelheid: { auto: 'Auto', low: 'Laag', medium: 'Middel', mid: 'Middel', middle: 'Middel', high: 'Hoog', silent: 'Stil', quiet: 'Stil', turbo: 'Turbo', strong: 'Sterk', mute: 'Stil' },
     presets: { none: 'Geen', eco: 'Eco', comfort: 'Comfort', away: 'Weg', home: 'Thuis', sleep: 'Slapen', boost: 'Boost', activity: 'Actief', on: 'Aan', off: 'Uit', vertical: 'Verticaal', horizontal: 'Horizontaal', both: 'Beide' },
     kleurtemp: { 2700: '🕯️ Warm', 4000: '☀️ Neutraal', 6000: '❄️ Koel' }, slot: 'Dit mag je bekijken, maar niet bedienen.' },
   en: { kamers: 'Home', aan: 'On', uit: 'Off', open: 'Open', dicht: 'Closed', speelt: 'Playing', alleUit: 'All off', geen: 'No rooms with devices yet.',
     instellen: 'Set up rooms', nuBinnen: 'now', modus: { off: 'Off', heat: 'Heating', cool: 'Cooling', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' },
-    lampenAan: '{x} on', zonder: 'No room', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
+    lampenAan: '{x} on', zonder: 'No room', overig: 'Other', aanpassen: 'Edit', geenKamer: '— no room —', offline: 'offline', instelling: 'setting', verberg: 'Not on the dashboard', toon: 'On the dashboard', zekerUit: 'Really turn off {x}?', bewerkUitleg: 'Use the eye to choose what is on the dashboard (for everyone). Pick a room for a device to move it.', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
     helderheid: 'Brightness', licht: 'Light', kleur: 'Colour', volume: 'Volume', snelheidLbl: 'Speed', klaar: 'Done',
     snelheid: { auto: 'Auto', low: 'Low', medium: 'Medium', mid: 'Medium', middle: 'Medium', high: 'High', silent: 'Silent', quiet: 'Quiet', turbo: 'Turbo', strong: 'Strong', mute: 'Silent' },
     presets: { none: 'None', eco: 'Eco', comfort: 'Comfort', away: 'Away', home: 'Home', sleep: 'Sleep', boost: 'Boost', activity: 'Activity', on: 'On', off: 'Off', vertical: 'Vertical', horizontal: 'Horizontal', both: 'Both' },
@@ -94,6 +94,14 @@ const STIJL = `
   .kleurbol { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--card-background-color); box-shadow: 0 0 0 1px var(--divider-color); cursor: pointer; }
   .paneel input[type=range] { width: 100%; accent-color: var(--primary-color); }
   .pvoet { display: flex; justify-content: flex-end; margin-top: 18px; }
+  .groei { flex: 1; min-width: 0; }
+  .b-kamer h3 { margin: 12px 0 4px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+  .b-kamer h3 ha-icon { color: var(--primary-color); --mdc-icon-size: 20px; }
+  .b-rij { display: flex; align-items: center; gap: 10px; padding: 5px 0 5px 28px; border-bottom: 1px solid var(--divider-color); }
+  .b-rij ha-icon { color: var(--secondary-text-color); --mdc-icon-size: 20px; }
+  .b-rij.uit > span, .b-rij.uit > ha-icon { opacity: .45; }
+  .b-rij small { color: var(--secondary-text-color); }
+  .b-sel { font: inherit; font-size: .85rem; padding: 5px 8px; border-radius: 10px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); max-width: 42%; }
   .slot { opacity: .5; cursor: not-allowed !important; }
   .slot input[type=range] { pointer-events: none; }
   .leeg { color: var(--secondary-text-color); text-align: center; padding: 8px 0; display: grid; gap: 8px; justify-items: center; }
@@ -158,7 +166,29 @@ export class FamilyKamersCard extends HTMLElement {
     const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer))
       .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && this._stand(a.entity, a.kamer) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
       .filter((k) => k.apps.length);
+    // apparaten zonder kamer (bijv. een stekker die nog nergens hoort): in 'Overig', zodat niets verdwijnt
+    if (!this._config.kamer) {
+      const los = d.apparaten.filter((a) => !a.kamer && a.kan && a.tonen && this._stand(a.entity, '') && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state));
+      if (los.length) per.push({ kamer: '', naam: this.t('overig'), icoon: 'mdi:dots-grid', apps: los });
+    }
     return per;
+  }
+  _beheerder() { return !!(this._hass.user && this._hass.user.is_admin) && !(this._config && this._config.muur); }
+  _bewerkHtml() {
+    // ✏️ Aanpassen: alle apparaten, ook verborgen en offline; oogje = op het dashboard of niet; zonder kamer: kamer kiezen
+    const d = this._d, h = this._hass, DICO = { light: 'mdi:lightbulb', climate: 'mdi:air-conditioner', fan: 'mdi:fan', cover: 'mdi:window-shutter', switch: 'mdi:power-socket-eu', media_player: 'mdi:speaker' };
+    const kamers = [...d.kamers.filter((k) => !k.verborgen), { kamer: '', naam: this.t('overig'), icoon: 'mdi:dots-grid' }];
+    const opties = (k) => `<option value="">${esc(this.t('geenKamer'))}</option>${d.kamers.map((x) => `<option value="${x.kamer}" ${x.kamer === k ? 'selected' : ''}>${esc(x.naam)}</option>`).join('')}`;
+    return `<p class="sub" style="margin:0 0 8px">${esc(this.t('bewerkUitleg'))}</p>${kamers.map((k) => {
+      const apps = d.apparaten.filter((a) => (a.kamer || '') === k.kamer && a.kan && (!a.bijzaak || a.tonen));
+      if (!apps.length) return '';
+      return `<div class="b-kamer"><h3><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon>${esc(k.naam)}</h3>${apps.map((a) => {
+        const st = h.states[a.entity], weg = !st || ['unavailable', 'unknown'].includes(st.state);
+        return `<div class="b-rij ${a.tonen ? '' : 'uit'}"><ha-icon icon="${DICO[a.domein]}"></ha-icon><span class="groei">${esc(a.naam)}${weg ? ` <small>· ${esc(this.t('offline'))}</small>` : ''}${a.bijzaak ? ` <small>· ${esc(this.t('instelling'))}</small>` : ''}</span>
+          <select class="b-sel" data-a="b-kamer" data-e="${esc(a.entity)}">${opties(a.kamer)}</select>
+          <button class="rond ${a.tonen ? 'aan' : ''}" style="--k:var(--primary-color)" data-a="b-tonen" data-e="${esc(a.entity)}" data-t="${a.tonen ? '' : '1'}" title="${esc(a.tonen ? this.t('verberg') : this.t('toon'))}"><ha-icon icon="${a.tonen ? 'mdi:eye' : 'mdi:eye-off'}"></ha-icon></button></div>`;
+      }).join('')}</div>`;
+    }).join('')}`;
   }
   _kort(naam, kamer) {
     // 'Verwarming Slaapkamer Rafi' in Slaapkamer Rafi → 'Verwarming'; 'air conditioner Air Conditioner' → 'Air conditioner'; 'Kast Socket 1' → 'Kast'
@@ -186,7 +216,9 @@ export class FamilyKamersCard extends HTMLElement {
       } else binnen = c.compact ? kamers.map((k) => this._rij(k)).join('') : `<div class="raster">${kamers.map((k) => this._kamer(k)).join('')}</div>`;
     }
     this.style.display = '';
-    const titel = c.titel === false ? '' : `<div class="kop"><div class="titel">🏠 ${esc(c.titel || this.t('kamers'))}</div></div>`;
+    const knop = this._beheerder() && this._d ? `<button class="fam-knop ${this._bewerk ? '' : 'rand'} klein" data-a="bewerkmodus" style="min-height:32px">${this._bewerk ? '✓ ' + esc(this.t('klaar')) : '✏️ ' + esc(this.t('aanpassen'))}</button>` : '';
+    const titel = c.titel === false ? (knop ? `<div class="kop"><div class="titel"></div>${knop}</div>` : '') : `<div class="kop"><div class="titel">🏠 ${esc(c.titel || this.t('kamers'))}</div>${knop}</div>`;
+    if (this._bewerk && this._d) binnen = this._bewerkHtml();
     // focus van een schuifje bewaren: anders springt hij weg terwijl je sleept
     if (this.shadowRoot.activeElement && this.shadowRoot.activeElement.type === 'range') return;
     this.shadowRoot.innerHTML = `<style>${CSS}${STIJL}</style><ha-card>${titel}${binnen}</ha-card>${this._paneel && this._hass.states[this._paneel] ? this._paneelHtml(this._paneel) : ''}`;
@@ -294,6 +326,12 @@ export class FamilyKamersCard extends HTMLElement {
     if (this._langGedaan) { this._langGedaan = false; return; }   // was lang drukken: niet ook nog schakelen
     if (b.classList.contains('slot')) return this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message: `🔒 ${this.t('slot')}` }, bubbles: true, composed: true }));
     const a = b.dataset.a, id = b.dataset.e, h = this._hass, s = id && h.states[id];
+    if (a === 'bewerkmodus') { this._bewerk = !this._bewerk; return this._teken(); }
+    if (a === 'b-tonen') {
+      try { await h.callWS({ type: 'ha_family/apparaat/tonen', entity: id, tonen: !!b.dataset.t }); this._d = await h.callWS({ type: 'ha_family/huis' }); this._teken(); }
+      catch (er) { this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message: er.message }, bubbles: true, composed: true })); }
+      return;
+    }
     if (a === 'sluit') { if (e.target === b || b.tagName === 'BUTTON') { this._paneel = null; this._teken(); } return; }
     if (a === 'open') { this._paneel = id; return this._teken(); }
     if (a === 'hvac') return this._dienst('climate', 'set_hvac_mode', { entity_id: id, hvac_mode: b.dataset.v });
@@ -307,6 +345,8 @@ export class FamilyKamersCard extends HTMLElement {
     if (a === 'instellen') { history.pushState(null, '', '/gezin-beheer'); window.dispatchEvent(new CustomEvent('location-changed')); return; }
     if (a === 'schakel') {
       const dom = id.split('.')[0];
+      // de koelkast of vriezer niet per ongeluk uitzetten
+      if (isAan(s) && /koel|vries|freezer|fridge/i.test(s.attributes.friendly_name || id) && !confirm(this.t('zekerUit').replace('{x}', s.attributes.friendly_name || id))) return;
       if (dom === 'media_player') return this._dienst('media_player', s.state === 'playing' ? 'media_pause' : s.state === 'off' ? 'turn_on' : 'media_play', { entity_id: id });
       return this._dienst(dom === 'switch' || dom === 'fan' || dom === 'light' ? dom : 'homeassistant', 'toggle', { entity_id: id });
     }
@@ -330,7 +370,12 @@ export class FamilyKamersCard extends HTMLElement {
       if (at.target_temp_high != null) return this._dienst('climate', 'set_temperature', { entity_id: id, target_temp_low: at.target_temp_low + n, target_temp_high: at.target_temp_high + n });
     }
   }
-  _wijzig(e) {
+  async _wijzig(e) {
+    if (e.target.dataset.a === 'b-kamer') {
+      try { await this._hass.callWS({ type: 'ha_family/kamer/apparaat', entity: e.target.dataset.e, kamer: e.target.value || null }); this._d = await this._hass.callWS({ type: 'ha_family/huis' }); this._teken(); }
+      catch (er) { this.dispatchEvent(new CustomEvent('hass-notification', { detail: { message: er.message }, bubbles: true, composed: true })); }
+      return;
+    }
     if (e.target.classList.contains('slot')) return;
     const id = e.target.dataset.e, v = Number(e.target.value);
     if (e.target.dataset.a === 'pos') { e.target.blur(); return this._dienst('cover', 'set_cover_position', { entity_id: id, position: v }).then(() => this._teken()); }

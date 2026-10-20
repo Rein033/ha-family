@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.0 — kamers aanpassen op het dashboard
+
+- **✏️ Aanpassen** op de kamers-kaart (beheerders): per apparaat met het oogje op of van het dashboard, en apparaten
+  zonder kamer meteen in een kamer zetten. Werkt ook in het automatische gezinsdashboard.
+- Apparaten zonder kamer (bijvoorbeeld een losse stekker) staan nu onder **Overig** in plaats van weg te vallen.
+- Een koelkast of vriezer uitzetten vraagt eerst om bevestiging.
+
 ## 0.10.0 — het gezinsdashboard aanpassen
 
 - **Dashboard bewerken** (✏️) heeft nu een editor: tabbladen aan/uit, kaarten op Thuis, titel en agenda-weergave. Het blijft

@@ -4,13 +4,13 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.10.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.10.0';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.10.0';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.10.0';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.10.0';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.10.0';
-import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.10.0';
+import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.11.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.11.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.11.0';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.11.0';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.11.0';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.11.0';
+import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.11.0';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
