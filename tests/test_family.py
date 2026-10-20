@@ -729,3 +729,13 @@ async def test_oude_apparaten_worden_omgezet(hass: HomeAssistant, local_auth, ha
     g = Gezin(hass, entry)
     await g.async_load()
     assert g.lid("r1")["apparaten"] == {"beperkt": True, "kamers": {}, "uitzonderingen": {"light.a": "b", "light.b": "z"}}
+
+
+async def test_dashboard_kopie(hass: HomeAssistant, gezin, hass_ws_client) -> None:
+    client = await hass_ws_client(hass)
+    for n in range(7):
+        await client.send_json_auto_id({"type": "ha_family/dashboard/kopie", "config": {"views": [{"title": f"v{n}"}]}})
+        assert (await client.receive_json())["success"]
+    await client.send_json_auto_id({"type": "ha_family/dashboard/kopie"})
+    r = (await client.receive_json())["result"]
+    assert r["config"]["views"][0]["title"] == "v6" and len(gezin.runtime_data.data["dashboard_kopieen"]) == 5

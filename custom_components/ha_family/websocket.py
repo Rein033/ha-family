@@ -45,7 +45,7 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_muur, ws_muur_aanmaken, ws_muur_bijwerken, ws_muur_verwijderen, ws_muur_wachtwoord,
                 ws_eten, ws_recept, ws_recept_weg, ws_recept_import, ws_startpakket, ws_plan, ws_eten_boodschappen, ws_suggestie, ws_eten_instellingen,
                 ws_huis, ws_kamer, ws_kamer_weg, ws_kamer_apparaat, ws_huis_instellingen, ws_apparaat_tonen, ws_kamer_samenvoegen,
-                ws_ai_week, ws_ai_recept, ws_dagoverzicht, ws_ai_klusjes, ws_lid_dashboard, ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
+                ws_dashboard_kopie, ws_ai_week, ws_ai_recept, ws_dagoverzicht, ws_ai_klusjes, ws_lid_dashboard, ws_cadeaus, ws_profiel, ws_wens, ws_wens_weg, ws_wens_kopen, ws_wensen_sturen, ws_cadeau_ideeen, ws_idee_bewaren, ws_idee_weg,
                 ws_agenda, ws_afspraak, ws_afspraak_weg, ws_week_titel, ws_agenda_instellingen, ws_lid_agendas, ws_extra_agendas,
                 ws_agenda_link, ws_verjaardag, ws_verjaardag_weg, ws_afval, ws_verjaardag_melding,
                 ws_taken, ws_taak, ws_taak_klaar, ws_taak_weg, ws_taken_opruimen,
@@ -939,3 +939,21 @@ async def ws_dagoverzicht(hass, connection, msg):
 @_antwoord
 async def ws_ai_klusjes(hass, connection, msg):
     return await ai.klusjes(_gezin(hass), msg["lid"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/dashboard/kopie", vol.Optional("config"): dict})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_antwoord
+async def ws_dashboard_kopie(hass, connection, msg):
+    """Kopie van het gezinsdashboard voor 'terug': met config bewaren (laatste 5), zonder config de laatste teruggeven."""
+    from homeassistant.util import dt as dt_util
+
+    g = _gezin(hass)
+    kopieen = g.data.setdefault("dashboard_kopieen", [])
+    if "config" in msg:
+        kopieen.append({"moment": dt_util.now().isoformat(), "config": msg["config"]})
+        del kopieen[:-5]
+        g.opslaan()
+        return {"aantal": len(kopieen)}
+    return kopieen[-1] if kopieen else {}

@@ -3,7 +3,8 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.9.0';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.10.0';
+import * as sjabloon from './family-sjabloon.js?v=0.10.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -79,7 +80,14 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Agenda-app → Agenda\'s → ⓘ bij je agenda → zet "Openbare agenda" aan → Deel link.',
     linkOutlook: 'Outlook.com: Instellingen → Agenda → Gedeelde agenda\'s → Een agenda publiceren → ICS-link.',
     verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
-    geboortedatum: 'Geboortedatum', klAi: 'Ideeën voor…', klAiMet: 'Bedacht door de AI, passend bij leeftijd en interesses. Tik om toe te voegen.', klAiZonder: 'Uit de voorbeelden (koppel een AI voor ideeën op maat). Tik om toe te voegen.', apTitel: 'Lampen en apparaten van {x}', apAlles: 'Alles', apAllesUitleg: '{x} ziet en bedient alle lampen en apparaten in het gezinsdashboard.',
+    geboortedatum: 'Geboortedatum', dbTitel: 'Gezinsdashboard', dbAutomatisch: 'automatisch', dbSjabloon: 'sjabloon',
+    dbAutomatischUitleg: 'Werkt zichzelf bij: nieuwe functies komen er vanzelf bij. Tabbladen en kaarten op Thuis kies je via ✏️ → Dashboard bewerken. Wil je elke kaart zelf aanpassen en verplaatsen? Zet het om naar een sjabloon.',
+    dbSjabloonUitleg: 'Een gewoon dashboard dat HA Family voor je heeft neergezet: elke kaart is vrij te bewerken. Na een update van HA Family voegt "Nieuwe onderdelen toevoegen" toe wat er nog niet is; jouw aanpassingen blijven staan.',
+    dbNaarSjabloon: 'Omzetten naar sjabloon', dbAanvullen: 'Nieuwe onderdelen toevoegen', dbNaarAutomatisch: 'Terug naar automatisch', dbVorige: 'Vorige versie terugzetten',
+    dbZekerSjabloon: 'Het gezinsdashboard wordt een gewoon dashboard dat je vrij kunt bewerken. Nieuwe functies voeg je later toe met "Nieuwe onderdelen toevoegen". Doorgaan?',
+    dbZekerAutomatisch: 'Terug naar automatisch? Je eigen aanpassingen aan het sjabloon gaan als kopie de opslag in (met "Vorige versie terugzetten" haal je ze terug).',
+    dbZekerTerug: 'De vorige versie van het gezinsdashboard terugzetten?', dbKlaarSjabloon: '📋 Sjabloon neergezet ({x} tabbladen). Klik nu op ✏️ in het dashboard om kaarten aan te passen.',
+    dbKlaarAanvullen: '✨ {t} tabblad(en) en {k} kaart(en) toegevoegd', dbNiksNieuw: 'Er zijn geen nieuwe onderdelen: je sjabloon is bij.', dbKlaarAutomatisch: '↩ Weer automatisch', dbKlaarTerug: 'Vorige versie teruggezet', klAi: 'Ideeën voor…', klAiMet: 'Bedacht door de AI, passend bij leeftijd en interesses. Tik om toe te voegen.', klAiZonder: 'Uit de voorbeelden (koppel een AI voor ideeën op maat). Tik om toe te voegen.', apTitel: 'Lampen en apparaten van {x}', apAlles: 'Alles', apAllesUitleg: '{x} ziet en bedient alle lampen en apparaten in het gezinsdashboard.',
     apKiezen: 'Zelf kiezen', apKiezenUitleg: 'Jij kiest per apparaat wat {x} ziet en wat {x} mag aan- en uitzetten.', apLegenda: 'Verborgen: staat er niet. Zien: alleen kijken (met slotje). Bedienen: aan/uit en instellen.',
     apLegendaKamer: 'Kies per kamer: Verborgen, Zien (met slotje) of Bedienen. Dat geldt voor alles in de kamer, ook wat er later bijkomt. Alleen als één apparaat anders moet, zet je dat bij "Per apparaat".',
     apUitz: 'Per apparaat ({x})', apAnders: 'anders', apZoalsKamer: 'Zoals kamer', apZelfdeAls: 'Zelfde als:', apGekopieerd: 'Overgenomen van {x}, vergeet niet op te slaan',
@@ -162,7 +170,14 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Calendar app → Calendars → ⓘ next to your calendar → turn on "Public Calendar" → Share Link.',
     linkOutlook: 'Outlook.com: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.',
     verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
-    geboortedatum: 'Date of birth', klAi: 'Ideas for…', klAiMet: 'Made up by the AI, fitting age and interests. Tap to add.', klAiZonder: 'From the examples (connect an AI for tailored ideas). Tap to add.', apTitel: "{x}'s lights and devices", apAlles: 'Everything', apAllesUitleg: '{x} sees and controls all lights and devices on the family dashboard.',
+    geboortedatum: 'Date of birth', dbTitel: 'Family dashboard', dbAutomatisch: 'automatic', dbSjabloon: 'template',
+    dbAutomatischUitleg: 'Updates itself: new features appear automatically. Choose tabs and Home cards via ✏️ → Edit dashboard. Want to edit and move every card yourself? Turn it into a template.',
+    dbSjabloonUitleg: 'A normal dashboard set up by HA Family: every card is free to edit. After an HA Family update, "Add new parts" adds what is missing; your changes stay.',
+    dbNaarSjabloon: 'Turn into template', dbAanvullen: 'Add new parts', dbNaarAutomatisch: 'Back to automatic', dbVorige: 'Restore previous version',
+    dbZekerSjabloon: 'The family dashboard becomes a normal dashboard you can freely edit. Add new features later with "Add new parts". Continue?',
+    dbZekerAutomatisch: 'Back to automatic? Your template changes are kept as a copy ("Restore previous version" brings them back).',
+    dbZekerTerug: 'Restore the previous version of the family dashboard?', dbKlaarSjabloon: '📋 Template set up ({x} tabs). Click ✏️ on the dashboard to edit cards.',
+    dbKlaarAanvullen: '✨ {t} tab(s) and {k} card(s) added', dbNiksNieuw: 'Nothing new: your template is up to date.', dbKlaarAutomatisch: '↩ Automatic again', dbKlaarTerug: 'Previous version restored', klAi: 'Ideas for…', klAiMet: 'Made up by the AI, fitting age and interests. Tap to add.', klAiZonder: 'From the examples (connect an AI for tailored ideas). Tap to add.', apTitel: "{x}'s lights and devices", apAlles: 'Everything', apAllesUitleg: '{x} sees and controls all lights and devices on the family dashboard.',
     apKiezen: 'Choose', apKiezenUitleg: 'You choose per device what {x} sees and may switch.', apLegenda: 'Hidden: not shown. See: view only (with a lock). Control: on/off and settings.',
     apLegendaKamer: 'Choose per room: Hidden, See (with a lock) or Control. It applies to everything in the room, also devices added later. Only if one device should differ, set it under "Per device".',
     apUitz: 'Per device ({x})', apAnders: 'different', apZoalsKamer: 'Like room', apZelfdeAls: 'Same as:', apGekopieerd: 'Copied from {x}, remember to save',
@@ -216,6 +231,9 @@ class HaFamilyBeheer extends HTMLElement {
   async _laad() {
     try {
       this._s = await this._ws('ha_family/status'); this._fout = null;
+      if ((!this._tab || this._tab === 'leden') && !this._dash) {
+        try { const c = await sjabloon.huidig(this._hass); this._dash = { soort: sjabloon.soort(c), versie: c && c.ha_family && c.ha_family.sjabloon }; } catch (e) { this._dash = null; }
+      }
       if (this._tab === 'agenda' && !this._typt()) this._ag = await this._ws('ha_family/agenda/instellingen');
       if (this._tab === 'klusjes' && !this._typt()) this._kl = await this._ws('ha_family/taken');
       if (this._tab === 'huis' && !this._typt()) this._hu = await this._ws('ha_family/huis');
@@ -255,6 +273,13 @@ class HaFamilyBeheer extends HTMLElement {
         : `<div class="huiskop"><div><div class="huisnaam">${esc(s.naam)}</div><div class="fam-sub">${esc(soort)} · ${s.leden.length} ${esc(this.t('leden').toLowerCase())}</div></div>
             <button class="fam-knop rand klein" data-a="huis-bewerk"><ha-icon icon="mdi:pencil"></ha-icon>${esc(this.t('wijzig'))}</button></div>`}
       </div>
+      ${this._dash ? `<div class="kaart"><h2>🏡 ${esc(this.t('dbTitel'))} · ${esc(this.t(this._dash.soort === 'sjabloon' ? 'dbSjabloon' : 'dbAutomatisch'))}${this._dash.versie ? ` <span class="fam-sub">(${esc(this._dash.versie)})</span>` : ''}</h2>
+        <p class="fam-sub">${esc(this.t(this._dash.soort === 'sjabloon' ? 'dbSjabloonUitleg' : 'dbAutomatischUitleg'))}</p>
+        <div class="rij">${this._dash.soort === 'sjabloon'
+          ? `<button class="fam-knop" data-a="db-aanvullen" ${this._dash.bezig ? 'disabled' : ''}>✨ ${esc(this.t('dbAanvullen'))}</button>
+             <button class="fam-knop rand" data-a="db-automatisch">↩ ${esc(this.t('dbNaarAutomatisch'))}</button>`
+          : `<button class="fam-knop" data-a="db-sjabloon" ${this._dash.bezig ? 'disabled' : ''}>📋 ${esc(this.t('dbNaarSjabloon'))}</button>`}
+          <button class="fam-knop rand klein" data-a="db-terug">${esc(this.t('dbVorige'))}</button></div></div>` : ''}
       ${!s.leden.length ? `<div class="kaart welkom"><div class="groot">👋</div><h2>${esc(this.t('welkom'))}</h2><p class="fam-sub">${esc(this.t('welkomTekst'))}</p>
           <button class="fam-knop" data-a="toevoegen"><ha-icon icon="mdi:account-plus"></ha-icon>${esc(this.t('toevoegen'))}</button></div>` : ''}
       ${losse}
@@ -1012,6 +1037,19 @@ class HaFamilyBeheer extends HTMLElement {
       } catch (er) { d.fout = er.message; return this._herteken(); }
     }
     if (a === 'bekijk-als') return weergevenAls(b.dataset.id);
+    if (a === 'db-sjabloon' || a === 'db-aanvullen' || a === 'db-automatisch' || a === 'db-terug') {
+      if (a === 'db-sjabloon' && !confirm(this.t('dbZekerSjabloon'))) return;
+      if (a === 'db-automatisch' && !confirm(this.t('dbZekerAutomatisch'))) return;
+      if (a === 'db-terug' && !confirm(this.t('dbZekerTerug'))) return;
+      this._dash = { ...this._dash, bezig: true }; this._teken();
+      try {
+        if (a === 'db-sjabloon') this._melding(this.t('dbKlaarSjabloon', await sjabloon.naarSjabloon(this._hass)));
+        if (a === 'db-aanvullen') { const r = await sjabloon.aanvullen(this._hass); this._melding(r.tabs || r.kaarten ? this.t('dbKlaarAanvullen').replace('{t}', r.tabs).replace('{k}', r.kaarten) : this.t('dbNiksNieuw')); }
+        if (a === 'db-automatisch') { await sjabloon.naarAutomatisch(this._hass); this._melding(this.t('dbKlaarAutomatisch')); }
+        if (a === 'db-terug') { await sjabloon.kopieTerug(this._hass); this._melding(this.t('dbKlaarTerug')); }
+      } catch (er) { this._melding(er.message); }
+      this._dash = null; return this._laad();
+    }
     if (a === 'pd-maak' || a === 'pd-los' || a === 'pd-koppel') {
       const url_path = a === 'pd-koppel' ? this.shadowRoot.getElementById('pd-kies').value : undefined;
       if (a === 'pd-koppel' && !url_path) return;

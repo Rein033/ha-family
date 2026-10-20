@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 — het gezinsdashboard aanpassen
+
+- **Dashboard bewerken** (✏️) heeft nu een editor: tabbladen aan/uit, kaarten op Thuis, titel en agenda-weergave. Het blijft
+  zichzelf bijwerken: we bewaren wat je verbergt, dus nieuwe onderdelen komen er vanzelf bij. Experts: `extra` en `extra_tabs`.
+- **Sjabloon**: het gezinsdashboard omzetten naar een gewoon dashboard dat je vrij bewerkt; later **Nieuwe onderdelen
+  toevoegen** (alleen wat echt nieuw is), **Terug naar automatisch** en **Vorige versie terugzetten** (laatste 5 kopieën).
+
 ## 0.9.0 — bediening per soort apparaat, rechten per kamer
 
 - **Bedieningspaneel per soort**: airco/thermostaat (temperatuur, stand, ventilator, zwenken, voorkeur), rolluik (op/stop/

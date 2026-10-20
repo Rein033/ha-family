@@ -308,6 +308,19 @@ weken: 6                           # aantal weken in de weekplanner
 Alle kaarten zijn ook via **Kaart toevoegen** te vinden en hebben een visuele editor. Die instellingen zijn alleen voor
 wie in HA Family op de weergave *Expert* staat (of een beheerder die geen gezinslid is); de rest krijgt uitleg.
 
+## Het gezinsdashboard aanpassen
+
+Het gezinsdashboard kan op twee manieren (in **Gezin beheren**, bovenaan):
+
+- **Automatisch** (standaard): het bouwt zichzelf en nieuwe functies van HA Family komen er vanzelf bij. Via ✏️ →
+  *Dashboard bewerken* kies je welke tabbladen je ziet, welke kaarten op Thuis staan en de standaardweergave van de agenda.
+  Experts kunnen in de code-editor eigen kaarten per tabblad (`extra: {thuis: [...]}`) en eigen tabbladen (`extra_tabs`)
+  toevoegen.
+- **Sjabloon**: HA Family zet het dashboard één keer neer als gewoon dashboard; daarna bewerk je elke kaart met de visuele
+  editor, verplaats je ze en zet je er eigen kaarten bij. Na een update voegt **Nieuwe onderdelen toevoegen** alleen toe wat
+  écht nieuw is; wat jij aanpaste of weghaalde, blijft zo. **Terug naar automatisch** en **Vorige versie terugzetten**
+  kunnen altijd.
+
 Het hele dashboard: `strategy: { type: custom:ha-family }`. Het muurscherm staat op `/gezin-muur`. Wil je het zelf aanpassen: open het dashboard → ✏️ → **Overnemen**.
 
 ## Wat komt er

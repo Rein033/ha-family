@@ -4,13 +4,13 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.9.0';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.9.0';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.9.0';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.9.0';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.9.0';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.9.0';
-import { FamilyKaartEditor, metEditor } from './family-editor.js?v=0.9.0';
+import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.10.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.10.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.10.0';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.10.0';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.10.0';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.10.0';
+import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.10.0';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -80,39 +80,60 @@ class FamilyGezinCard extends HTMLElement {
 }
 
 /* ── Dashboard-strategie: custom:ha-family ── */
-class FamilyStrategie extends HTMLElement {
+// Tabbladen en kaarten op Thuis die je in de dashboard-editor aan/uit zet (de volgorde hier is de volgorde op het scherm)
+export const TABS = ['thuis', 'agenda', 'taken', 'eten', 'huis', 'cadeaus', 'boodschappen'];
+export const THUIS = ['gezin', 'klusjes', 'vandaag', 'eten', 'boodschappen', 'kamers', 'taken', 'afval'];
+
+export class FamilyStrategie extends HTMLElement {
+  static getConfigElement() { return document.createElement('family-strategie-editor'); }
+  static getStubConfig() { return {}; }
+
+  /* Het dashboard bouwt zichzelf op; met de editor (✏️ → Dashboard bewerken) kies je tabbladen, kaarten op Thuis en
+   * opties. Experts kunnen in de code-editor ook eigen kaarten per tabblad (extra: {thuis: [...]}) en eigen tabbladen
+   * (extra_tabs: [...]) toevoegen. Nieuwe functies van HA Family komen er gewoon bij. */
   static async generate(config, hass) {
     alsBalk(hass);
-    const g = gezinState(hass), nl = taal(hass) === 'nl';
-    const titel = g ? g.attributes.huishouden : 'HA Family';
+    const c = config || {}, g = gezinState(hass), nl = taal(hass) === 'nl';
+    const titel = c.titel || (g ? g.attributes.huishouden : 'HA Family');
     const afval = Object.values(hass.states).find((s) => s.attributes.ha_family === 'volgende_afval');
-    return {
-      title: titel,
-      views: [
-        { title: nl ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
-          sections: [
-            { type: 'grid', cards: [{ type: 'custom:family-gezin-card' }, { type: 'custom:family-klusjes-card' }] },
-            { type: 'grid', cards: [{ type: 'custom:family-vandaag-card' }, { type: 'custom:family-eten-card', compact: true }, { type: 'custom:family-boodschappen-card', compact: true }] },
-            { type: 'grid', cards: [{ type: 'custom:family-kamers-card', compact: true }, { type: 'custom:family-taken-card', compact: true },
-              ...(afval && afval.state !== 'unknown' ? [{ type: 'tile', entity: afval.entity_id, name: nl ? 'Volgende afval' : 'Next waste collection' }] : [])] },
-          ] },
-        { title: nl ? '📅 Agenda' : '📅 Calendar', path: 'agenda', type: 'panel', cards: [{ type: 'custom:family-agenda-card' }] },
-        { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,
-          sections: [{ type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-taken-card' }] }] },
-        { title: nl ? '🍝 Eten' : '🍝 Meals', path: 'eten', type: 'sections', max_columns: 2,
-          sections: [{ type: 'grid', cards: [{ type: 'custom:family-eten-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-recepten-card' }] }] },
-        { title: nl ? '🏠 Huis' : '🏠 Home', path: 'huis', type: 'panel', cards: [{ type: 'custom:family-kamers-card' }] },
-        { title: nl ? '🎁 Cadeaus' : '🎁 Gifts', path: 'cadeaus', type: 'panel', cards: [{ type: 'custom:family-cadeaus-card' }] },
-        { title: nl ? '🛒 Boodschappen' : '🛒 Groceries', path: 'boodschappen', type: 'sections', max_columns: 1,
-          sections: [{ type: 'grid', cards: [{ type: 'custom:family-boodschappen-card' }] }] },
-      ],
+    // we bewaren wat je VERBERGT, zodat nieuwe tabbladen en kaarten uit een volgende versie er vanzelf bij komen
+    const tabs = TABS.filter((t) => !(c.tabs_uit || []).includes(t));
+    const thuis = new Set(THUIS.filter((k) => !(c.thuis_uit || []).includes(k)));
+    const kaart = {
+      gezin: { type: 'custom:family-gezin-card' }, klusjes: { type: 'custom:family-klusjes-card' }, vandaag: { type: 'custom:family-vandaag-card' },
+      eten: { type: 'custom:family-eten-card', compact: true }, boodschappen: { type: 'custom:family-boodschappen-card', compact: true },
+      kamers: { type: 'custom:family-kamers-card', compact: true }, taken: { type: 'custom:family-taken-card', compact: true },
+      afval: afval && afval.state !== 'unknown' ? { type: 'tile', entity: afval.entity_id, name: nl ? 'Volgende afval' : 'Next waste collection' } : null,
     };
+    const kolom = (lijst) => ({ type: 'grid', cards: lijst.filter((k) => thuis.has(k) && kaart[k]).map((k) => kaart[k]) });
+    const agenda = { type: 'custom:family-agenda-card', ...(c.agenda_weergave ? { weergave: c.agenda_weergave } : {}) };
+    const VIEWS = {
+      thuis: { title: nl ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
+        sections: [kolom(['gezin', 'klusjes']), kolom(['vandaag', 'eten', 'boodschappen']), kolom(['kamers', 'taken', 'afval'])].filter((x) => x.cards.length) },
+      agenda: { title: nl ? '📅 Agenda' : '📅 Calendar', path: 'agenda', type: 'panel', cards: [agenda] },
+      taken: { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,
+        sections: [{ type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-taken-card' }] }] },
+      eten: { title: nl ? '🍝 Eten' : '🍝 Meals', path: 'eten', type: 'sections', max_columns: 2,
+        sections: [{ type: 'grid', cards: [{ type: 'custom:family-eten-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-recepten-card' }] }] },
+      huis: { title: nl ? '🏠 Huis' : '🏠 House', path: 'huis', type: 'panel', cards: [{ type: 'custom:family-kamers-card' }] },
+      cadeaus: { title: nl ? '🎁 Cadeaus' : '🎁 Gifts', path: 'cadeaus', type: 'panel', cards: [{ type: 'custom:family-cadeaus-card' }] },
+      boodschappen: { title: nl ? '🛒 Boodschappen' : '🛒 Groceries', path: 'boodschappen', type: 'sections', max_columns: 1,
+        sections: [{ type: 'grid', cards: [{ type: 'custom:family-boodschappen-card' }] }] },
+    };
+    const views = tabs.filter((t) => VIEWS[t]).map((t) => {
+      const v = VIEWS[t], extra = c.extra && Array.isArray(c.extra[t]) ? c.extra[t] : [];
+      if (!extra.length) return v;
+      if (v.type === 'panel') return { title: v.title, path: v.path, type: 'sections', max_columns: 2, sections: [{ type: 'grid', column_span: 2, cards: v.cards }, { type: 'grid', cards: extra }] };
+      return { ...v, sections: [...v.sections, { type: 'grid', cards: extra }] };
+    });
+    if (Array.isArray(c.extra_tabs)) views.push(...c.extra_tabs.filter((v) => v && typeof v === 'object'));
+    return { title: titel, views: views.length ? views : [VIEWS.thuis] };
   }
 }
 
 const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN, ...CADEAU_KAARTEN];
 metEditor(KAARTEN);
-registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ['family-kaart-editor', FamilyKaartEditor], ...KAARTEN.map(([n, c]) => [n, c])]);
+registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ['family-kaart-editor', FamilyKaartEditor], ['family-strategie-editor', FamilyStrategieEditor], ...KAARTEN.map(([n, c]) => [n, c])]);
 window.customCards = window.customCards || [];
 KAARTEN.forEach(([type, , name, description]) => { if (!window.customCards.some((c) => c.type === type)) window.customCards.push({ type, name, description, preview: false, documentationURL: 'https://github.com/Rein033/ha-family#kaarten' }); });
 console.info(`%c HA FAMILY %c ${VERSIE} `, 'background:#7c4dff;color:#fff;font-weight:700', 'background:#333;color:#fff');
