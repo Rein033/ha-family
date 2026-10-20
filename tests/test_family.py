@@ -739,3 +739,18 @@ async def test_dashboard_kopie(hass: HomeAssistant, gezin, hass_ws_client) -> No
     await client.send_json_auto_id({"type": "ha_family/dashboard/kopie"})
     r = (await client.receive_json())["result"]
     assert r["config"]["views"][0]["title"] == "v6" and len(gezin.runtime_data.data["dashboard_kopieen"]) == 5
+
+
+async def test_trouwdagen_en_jubilea(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+
+    a = gezin.runtime_data.agenda
+    a.verjaardag("Papa & Mama", "2001-06-15", soort="trouwdag")
+    a.verjaardag("Opa", "1996-03-01", soort="jubileum")
+    a.verjaardag("Oma Truus", "03-09", soort="gedenkdag")
+    ev = {e["jaardag"]: e for e in a.verjaardag_events(dt.date(2026, 1, 1), dt.date(2027, 1, 1))}
+    assert ev["trouwdag"]["titel"] == "💍 Papa & Mama 25 jaar getrouwd" and ev["trouwdag"]["leeftijd"] is None
+    assert ev["jubileum"]["titel"] == "🎉 Opa: 30 jaar"
+    assert ev["gedenkdag"]["titel"] == "🕯️ Oma Truus"
+    with pytest.raises(FamilyFout):
+        a.verjaardag("x", "2001-01-01", soort="onzin")

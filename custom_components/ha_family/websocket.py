@@ -143,6 +143,7 @@ async def ws_persoon_toevoegen(hass, connection, msg):
     vol.Optional("geboortedatum"): vol.Any(None, cv.string),
     vol.Optional("geslacht"): vol.Any(None, cv.string),
     vol.Optional("interesses"): [cv.string],
+    vol.Optional("kamers"): vol.Any(None, [cv.string]),
     vol.Optional("apparaten"): {vol.Required("beperkt"): bool, vol.Optional("kamers"): {cv.string: vol.In(["", "z", "b"])},
                                  vol.Optional("uitzonderingen"): {cv.string: vol.In(["", "z", "b"])},
                                  vol.Optional("zien"): [cv.string], vol.Optional("bedienen"): [cv.string]},
@@ -312,12 +313,13 @@ async def ws_agenda_link(hass, connection, msg):
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ha_family/agenda/verjaardag", vol.Optional("verjaardag"): cv.string,
-                                  vol.Required("naam"): cv.string, vol.Required("datum"): cv.string})
+                                  vol.Required("naam"): cv.string, vol.Required("datum"): cv.string,
+                                  vol.Optional("soort", default="verjaardag"): cv.string, vol.Optional("wie"): [cv.string]})
 @websocket_api.require_admin
 @websocket_api.async_response
 @_antwoord
 async def ws_verjaardag(hass, connection, msg):
-    return _gezin(hass).agenda.verjaardag(msg["naam"], msg["datum"], msg.get("verjaardag"))
+    return _gezin(hass).agenda.verjaardag(msg["naam"], msg["datum"], msg.get("verjaardag"), msg["soort"], msg.get("wie"))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ha_family/agenda/verjaardag_weg", vol.Required("verjaardag"): cv.string})

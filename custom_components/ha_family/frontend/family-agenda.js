@@ -5,7 +5,7 @@
  *
  * Alle afspraken komen samengevoegd uit HA Family (ha_family/agenda): eigen afspraken, agenda's per gezinslid,
  * gezamenlijke agenda's, verjaardagen en afval. De kleur is die van wie het betreft. */
-import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.11.2';
+import { CSS, avatar, esc, ikLid, leden } from './family-ui.js?v=0.12.0';
 
 const TEKST = {
   nl: {
@@ -16,7 +16,7 @@ const TEKST = {
     verwijderen: 'Verwijderen', zeker: 'Deze afspraak verwijderen?', zekerReeks: 'Deze herhalende afspraak verwijderen? Alle keren verdwijnen.',
     reeks: 'Dit is een herhalende afspraak: je past alle keren aan.', sluiten: 'Sluiten', bewerken: 'Bewerken',
     herhaal: { '': 'Niet', week: 'Elke week', '2weken': 'Om de week', maand: 'Elke maand', jaar: 'Elk jaar' },
-    uitAgenda: 'Uit de agenda', opnieuw: 'Opnieuw maken', jarigBinnenkort: 'Binnenkort jarig', afvalMorgen: 'Morgen aan de straat', afvalVandaag: 'Vandaag wordt opgehaald',
+    uitAgenda: 'Uit de agenda', binnenkort: 'Binnenkort', opnieuw: 'Opnieuw maken', jarigBinnenkort: 'Binnenkort jarig', afvalMorgen: 'Morgen aan de straat', afvalVandaag: 'Vandaag wordt opgehaald',
     gepland: 'Vandaag', bezig: 'nu', dagen: 'dagen', over: 'over', wordt: 'wordt', isJarig: 'jarig', eind: 'eind',
   },
   en: {
@@ -27,7 +27,7 @@ const TEKST = {
     verwijderen: 'Delete', zeker: 'Delete this event?', zekerReeks: 'Delete this repeating event? All occurrences disappear.',
     reeks: 'This is a repeating event: you change all occurrences.', sluiten: 'Close', bewerken: 'Edit',
     herhaal: { '': 'Never', week: 'Every week', '2weken': 'Every other week', maand: 'Every month', jaar: 'Every year' },
-    uitAgenda: 'From calendar', opnieuw: 'Make again', jarigBinnenkort: 'Birthdays coming up', afvalMorgen: 'Put out tomorrow', afvalVandaag: 'Collected today',
+    uitAgenda: 'From calendar', binnenkort: 'Coming up', opnieuw: 'Make again', jarigBinnenkort: 'Birthdays coming up', afvalMorgen: 'Put out tomorrow', afvalVandaag: 'Collected today',
     gepland: 'Today', bezig: 'now', dagen: 'days', over: 'in', wordt: 'turns', isJarig: 'birthday', eind: 'end',
   },
 };
@@ -426,8 +426,8 @@ class FamilyVandaagCard extends HTMLElement {
           <span class="wat">${esc(e.titel)}${e.plek ? `<br/><span class="sub">📍 ${esc(e.plek)}</span>` : ''}</span><span class="avs">${av(e)}</span></div>`).join('')
         : `<div class="leeg">${esc(this.t('niks'))}</div>`}
       ${afvalV.length || afvalM.length ? `<div class="blok"><b>🗑️ ${esc(afvalV.length ? this.t('afvalVandaag') : this.t('afvalMorgen'))}</b><span>${(afvalV.length ? afvalV : afvalM).map((e) => esc(e.titel)).join(' · ')}</span></div>` : ''}
-      ${jarig.length ? `<div class="blok"><b>🎂 ${esc(this.t('jarigBinnenkort'))}</b>${jarig.slice(0, 4).map((e) => { const n = dagen(e.start.slice(0, 10));
-          return `<span>${esc(e.naam)}${e.leeftijd ? ` ${esc(this.t('wordt'))} ${e.leeftijd}` : ''} · <span class="fam-sub">${n === 0 ? esc(this.t('vandaag')) + ' 🎉' : n === 1 ? esc(this.t('morgen')) : `${esc(this.t('over'))} ${n} ${esc(this.t('dagen'))}`}</span></span>`; }).join('')}</div>` : ''}
+      ${jarig.length ? `<div class="blok"><b>🎂 ${esc(this.t(jarig.some((e) => e.jaardag && e.jaardag !== 'verjaardag') ? 'binnenkort' : 'jarigBinnenkort'))}</b>${jarig.slice(0, 4).map((e) => { const n = dagen(e.start.slice(0, 10));
+          return `<span>${e.jaardag && e.jaardag !== 'verjaardag' ? `${esc(e.icoon)} ${esc(e.tekst)}` : `${esc(e.naam)}${e.leeftijd ? ` ${esc(this.t('wordt'))} ${e.leeftijd}` : ''}`} · <span class="fam-sub">${n === 0 ? esc(this.t('vandaag')) + ' 🎉' : n === 1 ? esc(this.t('morgen')) : `${esc(this.t('over'))} ${n} ${esc(this.t('dagen'))}`}</span></span>`; }).join('')}</div>` : ''}
     </ha-card>`;
   }
 }

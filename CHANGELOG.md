@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0 — eigen tabblad en trouwdagen
+
+- **Eigen tabblad** voor iedereen (👤 met je eigen naam): de knoppen van je eigen kamer(s), je klusjes en je taken. Ieder
+  ziet zijn eigen. De kamers worden geraden op naam ("Slaapkamer Romy"); aanpassen in Gezin beheren → Bewerken → Mijn kamers.
+- **Trouwdagen, jubilea, samen-sinds en gedenkdagen** naast verjaardagen: in de agenda met het aantal jaren
+  ("Papa & Mama 25 jaar getrouwd"), in *Vandaag*, op het muurscherm en een melding op de dag zelf.
+
 ## 0.11.2 — grote knoppen op het muurscherm
 
 - Muurscherm: lampen, stekkers en de rest per kamer als grote aanraakknoppen (naam, aan/uit en een groot icoon), twee of

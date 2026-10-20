@@ -186,6 +186,9 @@ class Gezin:
                 if e in (a.get("zien") or []):
                     uitz[e] = "b"
             lid["apparaten"] = {"beperkt": bool(a.get("beperkt")), "kamers": kamers, "uitzonderingen": dict(list(uitz.items())[:1000])}
+        if "kamers" in velden:                           # 'mijn kamers': de knoppen op het eigen tabblad (None = raden op naam)
+            k = velden.pop("kamers")
+            lid["kamers"] = None if k is None else [str(x) for x in dict.fromkeys(k)][:20]
         if "interesses" in velden:
             lid["interesses"] = list(dict.fromkeys(str(i).strip()[:30] for i in (velden.pop("interesses") or []) if str(i).strip()))[:15]
         for k in ("naam", "rol", "kleur", "emoji", "lamp", "notify", "weergave"):
@@ -333,7 +336,7 @@ class Gezin:
             {"id": l["id"], "naam": l["naam"], "rol": l["rol"], "kleur": l["kleur"], "emoji": l["emoji"], "person": l["person"],
              "user_id": self.user_id(l), "verjaardag": (l.get("geboortedatum") or "")[5:] or None,
              "expert": l.get("weergave") in ("expert", "origineel"),
-             "apparaten": l["apparaten"] if (l.get("apparaten") or {}).get("beperkt") else None} for l in self.leden]}
+             "apparaten": l["apparaten"] if (l.get("apparaten") or {}).get("beperkt") else None, "kamers": l.get("kamers")} for l in self.leden]}
 
     async def status(self) -> dict[str, Any]:
         """Alles voor het beheerpaneel, met per lid een gezondheidscheck."""

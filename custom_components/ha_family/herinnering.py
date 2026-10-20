@@ -45,6 +45,10 @@ async def afval_herinnering(agenda: Agenda, nu: dt.datetime) -> int:
 async def verjaardag_herinnering(agenda: Agenda, nu: dt.datetime) -> int:
     n = 0
     for e in agenda.verjaardag_events(nu.date(), nu.date() + dt.timedelta(days=1)):
+        if e.get("jaardag", "verjaardag") != "verjaardag":   # trouwdag, jubileum, gedenkdag: één seintje voor iedereen
+            kop = {"trouwdag": "💍 Trouwdag", "jubileum": "🎉 Jubileum", "samen": "❤️ Samen", "gedenkdag": "🕯️ Gedenkdag"}.get(e["jaardag"], "📅 Vandaag")
+            n += await _naar(agenda, None, kop, f"Vandaag: {e['tekst']}" + (" 🎉" if e["jaardag"] in ("trouwdag", "jubileum", "samen") else ""))
+            continue
         jarige = e["wie"][0] if e["wie"] else None
         leeftijd = f" ({e['leeftijd']})" if e.get("leeftijd") else ""
         n += await _naar(agenda, None, "🎂 Jarig", f"Vandaag is {e['naam']} jarig{leeftijd}! 🎉", behalve=jarige)

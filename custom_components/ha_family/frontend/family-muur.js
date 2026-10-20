@@ -3,8 +3,8 @@
  * Volledig scherm zonder balken: links klok, datum, weer en afval; midden de agenda van vandaag en morgen voor het hele
  * gezin; rechts de klusjes per kind, de kamers en wie er thuis is; onderaan de boodschappen. 's Nachts alleen een gedimde klok.
  * Op de tablet zelf (het account 'muur') verdwijnt de zijbalk en blijft het scherm aan waar de browser dat toestaat. */
-import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.11.2';
-import { FamilyKamersCard } from './family-huis.js?v=0.11.2';
+import { CSS, avatar, esc, leden, locatie, taal } from './family-ui.js?v=0.12.0';
+import { FamilyKamersCard } from './family-huis.js?v=0.12.0';
 
 if (!customElements.get('family-kamers-card')) customElements.define('family-kamers-card', FamilyKamersCard);
 
@@ -149,7 +149,8 @@ class HaFamilyMuur extends HTMLElement {
       ${w ? `<div class="blok weer"><div class="nu"><span class="wi">${WEER[w.state] || '🌡️'}</span><span class="temp">${Math.round(w.attributes.temperature)}${esc(eenheid.replace('°C', '°').replace('°F', '°'))}</span>
           ${fc[0] ? `<span class="minmax">${Math.round(fc[0].temperature)}° / ${Math.round(fc[0].templow ?? fc[0].temperature)}°</span>` : ''}</div>
         ${fc.length > 1 ? `<div class="fc">${fc.slice(1).map((f) => `<div><small>${esc(new Date(f.datetime).toLocaleDateString(this.lang, { weekday: 'short' }))}</small><span>${WEER[f.condition] || ''}</span><b>${Math.round(f.temperature)}°</b></div>`).join('')}</div>` : ''}</div>` : ''}
-      ${jarig.map((e) => `<div class="blok feest">🎂 <b>${esc(e.naam)}</b> ${e.leeftijd ? `${esc(this.t('wordt'))} ${e.leeftijd}!` : esc(this.t('jarig'))}</div>`).join('')}
+      ${jarig.map((e) => e.jaardag && e.jaardag !== 'verjaardag' ? `<div class="blok feest">${esc(e.icoon)} <b>${esc(e.tekst)}</b></div>`
+        : `<div class="blok feest">🎂 <b>${esc(e.naam)}</b> ${e.leeftijd ? `${esc(this.t('wordt'))} ${e.leeftijd}!` : esc(this.t('jarig'))}</div>`).join('')}
       ${afvalV.length || afvalM.length ? `<div class="blok afval"><small>🗑️ ${esc(afvalV.length ? this.t('afvalVandaag') : this.t('afvalMorgen'))}</small>
         <div class="afv">${(afvalV.length ? afvalV : afvalM).map((e) => `<span style="--k:${esc(e.kleur || '#43a047')}">${esc(e.titel)}</span>`).join('')}</div></div>` : ''}`;
   }

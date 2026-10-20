@@ -107,6 +107,9 @@ had toen HA Family erbij kwam, staat eerst op *Zoals het was*.
 je dat per apparaat. Met *Zelfde als* neem je de keuze van een ander gezinslid over. Handig voor kinderen. Let op: dit regelt wat HA Family laat zien en bedienen; Home Assistant
 zelf kent geen rechten per apparaat.
 
+**Eigen tabblad.** Iedereen heeft in het gezinsdashboard een tabblad met zijn eigen naam: de knoppen van de eigen
+kamer(s), de eigen klusjes en taken. Welke kamers dat zijn, staat bij *Bewerken → Mijn kamers* (eerst geraden op naam).
+
 **Persoonlijk dashboard.** In Bewerken maak je voor iemand een eigen dashboard (gewoon te bewerken) of koppel je een
 bestaand dashboard, bijvoorbeeld met je 3D-printers. Het staat alleen in de zijbalk van die persoon. Let op: Home
 Assistant kent geen dashboards per gebruiker; wie het adres weet, kan het openen.
@@ -169,6 +172,7 @@ te bewerken of te verwijderen. Afspraken uit gekoppelde agenda's kun je bekijken
 - **Agenda's per gezinslid**: een agenda die al in Home Assistant staat, of een link (Google Agenda, iCloud, Outlook). Die
   afspraken krijgen de kleur van dat gezinslid. Waar je de link vindt, staat er gewoon bij.
 - **Gezamenlijke agenda's**: school, sport, vakanties of feestdagen, in de kleur van het gezin.
+- **Trouwdagen, jubilea en gedenkdagen**: naast verjaardagen, met het aantal jaren en een melding op de dag zelf.
 - **Verjaardagen**: de geboortedatum van gezinsleden en een lijst met opa, oma en vrienden (jaar mag onbekend zijn). In de
   agenda staat *🎂 Emma wordt 8*, en 's ochtends krijgt iedereen een seintje (de jarige krijgt een felicitatie).
 - **Afvalkalender**: zelf invullen (per soort de volgende ophaaldag en elke hoeveel weken), een link van de gemeente, of een

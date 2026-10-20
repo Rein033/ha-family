@@ -5,19 +5,19 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.11.2';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.12.0';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
     instellen: 'Kamers instellen', nuBinnen: 'nu', modus: { off: 'Uit', heat: 'Verwarmen', cool: 'Koelen', heat_cool: 'Automatisch', auto: 'Automatisch', dry: 'Drogen', fan_only: 'Ventileren' },
-    lampenAan: '{x} aan', zonder: 'Zonder kamer', overig: 'Overig', aanpassen: 'Aanpassen', geenKamer: '— geen kamer —', offline: 'offline', instelling: 'instelling', verberg: 'Niet op het dashboard', toon: 'Op het dashboard', zekerUit: '{x} echt uitzetten?', bewerkUitleg: 'Met het oogje bepaal je wat op het dashboard staat (voor iedereen). Kies bij een apparaat een kamer om het te verplaatsen.', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
+    lampenAan: '{x} aan', zonder: 'Zonder kamer', geenMijn: 'Nog geen eigen kamer. Kies je kamer in Gezin beheren → Bewerken → Mijn kamers.', overig: 'Overig', aanpassen: 'Aanpassen', geenKamer: '— geen kamer —', offline: 'offline', instelling: 'instelling', verberg: 'Niet op het dashboard', toon: 'Op het dashboard', zekerUit: '{x} echt uitzetten?', bewerkUitleg: 'Met het oogje bepaal je wat op het dashboard staat (voor iedereen). Kies bij een apparaat een kamer om het te verplaatsen.', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
     helderheid: 'Helderheid', licht: 'Licht', kleur: 'Kleur', volume: 'Volume', snelheidLbl: 'Snelheid', klaar: 'Klaar',
     snelheid: { auto: 'Auto', low: 'Laag', medium: 'Middel', mid: 'Middel', middle: 'Middel', high: 'Hoog', silent: 'Stil', quiet: 'Stil', turbo: 'Turbo', strong: 'Sterk', mute: 'Stil' },
     presets: { none: 'Geen', eco: 'Eco', comfort: 'Comfort', away: 'Weg', home: 'Thuis', sleep: 'Slapen', boost: 'Boost', activity: 'Actief', on: 'Aan', off: 'Uit', vertical: 'Verticaal', horizontal: 'Horizontaal', both: 'Beide' },
     kleurtemp: { 2700: '🕯️ Warm', 4000: '☀️ Neutraal', 6000: '❄️ Koel' }, slot: 'Dit mag je bekijken, maar niet bedienen.' },
   en: { kamers: 'Home', aan: 'On', uit: 'Off', open: 'Open', dicht: 'Closed', speelt: 'Playing', alleUit: 'All off', geen: 'No rooms with devices yet.',
     instellen: 'Set up rooms', nuBinnen: 'now', modus: { off: 'Off', heat: 'Heating', cool: 'Cooling', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' },
-    lampenAan: '{x} on', zonder: 'No room', overig: 'Other', aanpassen: 'Edit', geenKamer: '— no room —', offline: 'offline', instelling: 'setting', verberg: 'Not on the dashboard', toon: 'On the dashboard', zekerUit: 'Really turn off {x}?', bewerkUitleg: 'Use the eye to choose what is on the dashboard (for everyone). Pick a room for a device to move it.', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
+    lampenAan: '{x} on', zonder: 'No room', geenMijn: 'No room of your own yet. Pick it in Family management → Edit → My rooms.', overig: 'Other', aanpassen: 'Edit', geenKamer: '— no room —', offline: 'offline', instelling: 'setting', verberg: 'Not on the dashboard', toon: 'On the dashboard', zekerUit: 'Really turn off {x}?', bewerkUitleg: 'Use the eye to choose what is on the dashboard (for everyone). Pick a room for a device to move it.', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
     helderheid: 'Brightness', licht: 'Light', kleur: 'Colour', volume: 'Volume', snelheidLbl: 'Speed', klaar: 'Done',
     snelheid: { auto: 'Auto', low: 'Low', medium: 'Medium', mid: 'Medium', middle: 'Medium', high: 'High', silent: 'Silent', quiet: 'Quiet', turbo: 'Turbo', strong: 'Strong', mute: 'Silent' },
     presets: { none: 'None', eco: 'Eco', comfort: 'Comfort', away: 'Away', home: 'Home', sleep: 'Sleep', boost: 'Boost', activity: 'Activity', on: 'On', off: 'Off', vertical: 'Vertical', horizontal: 'Horizontal', both: 'Both' },
@@ -174,15 +174,24 @@ export class FamilyKamersCard extends HTMLElement {
   }
   _kamers() {
     const d = this._d, h = this._hass;
-    const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer))
+    const mijn = this._config.mijn ? this._mijnKamers() : null;
+    const per = d.kamers.filter((k) => !k.verborgen && (!this._config.kamer || k.kamer === this._config.kamer) && (!mijn || mijn.includes(k.kamer)))
       .map((k) => ({ ...k, apps: d.apparaten.filter((a) => a.kamer === k.kamer && a.tonen && this._stand(a.entity, a.kamer) && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state)) }))
       .filter((k) => k.apps.length);
     // apparaten zonder kamer (bijv. een stekker die nog nergens hoort): in 'Overig', zodat niets verdwijnt
-    if (!this._config.kamer) {
+    if (!this._config.kamer && !mijn) {
       const los = d.apparaten.filter((a) => !a.kamer && a.kan && a.tonen && this._stand(a.entity, '') && h.states[a.entity] && !['unavailable', 'unknown'].includes(h.states[a.entity].state));
       if (los.length) per.push({ kamer: '', naam: this.t('overig'), icoon: 'mdi:dots-grid', apps: los });
     }
     return per;
+  }
+  _mijnKamers() {
+    // de eigen kamers van wie kijkt: zelf gekozen in Gezin beheren, anders geraden op naam ('Slaapkamer Romy', 'Slaapkamer Papa & Mama')
+    const ik = ikLid(this._hass);
+    if (!ik) return [];
+    if (Array.isArray(ik.kamers)) return ik.kamers;
+    const voor = ik.naam.split(' ')[0].toLowerCase();
+    return this._d.kamers.filter((k) => k.naam.toLowerCase().split(/[^\p{L}]+/u).includes(voor)).map((k) => k.kamer);
   }
   _beheerder() { return !!(this._hass.user && this._hass.user.is_admin) && !(this._config && this._config.muur); }
   _bewerkHtml() {
@@ -223,6 +232,8 @@ export class FamilyKamersCard extends HTMLElement {
       const kamers = this._kamers();
       if (!kamers.length) {
         if (c.compact) { this.style.display = 'none'; return; }          // op het startscherm/muur niets tonen als er niets is
+        if (c.mijn) { this.style.display = ''; binnen = `<div class="leeg">${esc(this.t('geenMijn'))}</div>`; }
+        else
         binnen = `<div class="leeg">${esc(this.t('geen'))}${this._hass.user && this._hass.user.is_admin ? `<button class="naar" data-a="instellen">${esc(this.t('instellen'))} →</button>` : ''}</div>`;
       } else binnen = c.compact ? kamers.map((k) => this._rij(k)).join('') : `<div class="raster">${kamers.map((k) => this._kamer(k)).join('')}</div>`;
     }

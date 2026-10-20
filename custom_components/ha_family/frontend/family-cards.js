@@ -4,13 +4,13 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.11.2';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.11.2';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.11.2';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.11.2';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.11.2';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.11.2';
-import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.11.2';
+import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.12.0';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.12.0';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.12.0';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.12.0';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.12.0';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.12.0';
+import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.12.0';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -81,7 +81,7 @@ class FamilyGezinCard extends HTMLElement {
 
 /* ── Dashboard-strategie: custom:ha-family ── */
 // Tabbladen en kaarten op Thuis die je in de dashboard-editor aan/uit zet (de volgorde hier is de volgorde op het scherm)
-export const TABS = ['thuis', 'agenda', 'taken', 'eten', 'huis', 'cadeaus', 'boodschappen'];
+export const TABS = ['thuis', 'mijn', 'agenda', 'taken', 'eten', 'huis', 'cadeaus', 'boodschappen'];
 export const THUIS = ['gezin', 'klusjes', 'vandaag', 'eten', 'boodschappen', 'kamers', 'taken', 'afval'];
 
 export class FamilyStrategie extends HTMLElement {
@@ -93,7 +93,7 @@ export class FamilyStrategie extends HTMLElement {
    * (extra_tabs: [...]) toevoegen. Nieuwe functies van HA Family komen er gewoon bij. */
   static async generate(config, hass) {
     alsBalk(hass);
-    const c = config || {}, g = gezinState(hass), nl = taal(hass) === 'nl';
+    const c = config || {}, g = gezinState(hass), nl = taal(hass) === 'nl', ik = ikLid(hass);
     const titel = c.titel || (g ? g.attributes.huishouden : 'HA Family');
     const afval = Object.values(hass.states).find((s) => s.attributes.ha_family === 'volgende_afval');
     // we bewaren wat je VERBERGT, zodat nieuwe tabbladen en kaarten uit een volgende versie er vanzelf bij komen
@@ -110,6 +110,10 @@ export class FamilyStrategie extends HTMLElement {
     const VIEWS = {
       thuis: { title: nl ? '🏠 Thuis' : '🏠 Home', path: 'thuis', type: 'sections', max_columns: 3,
         sections: [kolom(['gezin', 'klusjes']), kolom(['vandaag', 'eten', 'boodschappen']), kolom(['kamers', 'taken', 'afval'])].filter((x) => x.cards.length) },
+      // ieder zijn eigen tabblad: de knoppen van de eigen kamer(s), eigen klusjes en taken (de kaarten kijken wie er kijkt)
+      mijn: { title: `👤 ${ik ? ik.naam.split(' ')[0] : (nl ? 'Mijn' : 'Mine')}`, path: 'mijn', type: 'sections', max_columns: 2,
+        sections: [{ type: 'grid', cards: [{ type: 'custom:family-kamers-card', mijn: true, titel: nl ? 'Mijn knoppen' : 'My buttons' }] },
+          { type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }, { type: 'custom:family-taken-card', compact: true }] }] },
       agenda: { title: nl ? '📅 Agenda' : '📅 Calendar', path: 'agenda', type: 'panel', cards: [agenda] },
       taken: { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,
         sections: [{ type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-taken-card' }] }] },

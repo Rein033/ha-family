@@ -51,6 +51,16 @@ def _bedrijven() -> dict[str, dict[str, str]]:
     return {k: {"naam": v["naam"], "gemeenten": v["gemeenten"]} for k, v in BEDRIJVEN.items()}
 
 
+# soorten jaardagen: tekst met en zonder bekend jaar
+JAARDAGEN = {
+    "verjaardag": {"icoon": "🎂", "met": "{naam} wordt {n}", "zonder": "{naam} is jarig"},
+    "trouwdag": {"icoon": "💍", "met": "{naam} {n} jaar getrouwd", "zonder": "Trouwdag {naam}"},
+    "jubileum": {"icoon": "🎉", "met": "{naam}: {n} jaar", "zonder": "Jubileum {naam}"},
+    "samen": {"icoon": "❤️", "met": "{naam} {n} jaar samen", "zonder": "{naam} samen"},
+    "gedenkdag": {"icoon": "🕯️", "met": "{naam} ({n} jaar geleden)", "zonder": "{naam}"},
+}
+
+
 def _datum(s: str) -> dt.date:
     return dt.date.fromisoformat(s[:10])
 
@@ -155,13 +165,17 @@ class Agenda:
         return uit
 
     # ── verjaardagen ──
-    def verjaardag(self, naam: str, datum: str, verjaardag_id: str | None = None) -> dict[str, Any]:
+    def verjaardag(self, naam: str, datum: str, verjaardag_id: str | None = None, soort: str = "verjaardag", wie: list[str] | None = None) -> dict[str, Any]:
+        """Een jaardag: verjaardag, trouwdag, jubileum of gedenkdag (met jaar: dan tellen we de jaren)."""
         naam = naam.strip()[:60]
         if not naam:
             raise FamilyFout("Vul een naam in.")
         if not re.fullmatch(r"(\d{4}-)?\d{2}-\d{2}", datum):
             raise FamilyFout("Kies een datum.")
-        v = {"id": verjaardag_id or secrets.token_hex(5), "naam": naam, "datum": datum}
+        if soort not in JAARDAGEN:
+            raise FamilyFout("Onbekende soort.")
+        leden = {l["id"] for l in self.gezin.leden}
+        v = {"id": verjaardag_id or secrets.token_hex(5), "naam": naam, "datum": datum, "soort": soort, "wie": [w for w in wie or [] if w in leden]}
         lijst = self.gezin.data["verjaardagen"]
         lijst[:] = [x for x in lijst if x["id"] != v["id"]] + [v]
         self.gezin.opslaan()
@@ -175,7 +189,7 @@ class Agenda:
         """Iedereen met een verjaardag: gezinsleden (geboortedatum) en de eigen lijst."""
         uit = [{"id": f"lid-{l['id']}", "naam": l["naam"], "datum": l["geboortedatum"], "lid": l["id"]}
                for l in self.gezin.leden if l.get("geboortedatum")]
-        return uit + [{**v, "lid": None} for v in self.gezin.data["verjaardagen"]]
+        return uit + [{"soort": "verjaardag", "wie": [], **v, "lid": None} for v in self.gezin.data["verjaardagen"]]
 
     def verjaardag_events(self, van: dt.date, tot: dt.date) -> list[dict[str, Any]]:
         uit = []
@@ -185,10 +199,13 @@ class Agenda:
                 d = _volgende_jaardatum(md, jaar)
                 if van <= d < tot:
                     leeftijd = jaar - int(v["datum"][:4]) if len(v["datum"]) == 10 else None
-                    titel = f"🎂 {v['naam']}" + (f" wordt {leeftijd}" if leeftijd and leeftijd > 0 else " is jarig")
-                    uit.append({"id": f"jarig-{v['id']}-{jaar}", "titel": titel, "start": d.isoformat(), "eind": None, "hele_dag": True,
-                                "wie": [v["lid"]] if v["lid"] else [], "soort": "verjaardag", "icoon": "🎂", "bewerkbaar": False,
-                                "naam": v["naam"], "leeftijd": leeftijd})
+                    j = JAARDAGEN[v.get("soort") or "verjaardag"]
+                    jaren = leeftijd if leeftijd and leeftijd > 0 else None
+                    tekst = j["met"].format(naam=v["naam"], n=jaren) if jaren else j["zonder"].format(naam=v["naam"])
+                    uit.append({"id": f"jarig-{v['id']}-{jaar}", "titel": f"{j['icoon']} {tekst}", "start": d.isoformat(), "eind": None, "hele_dag": True,
+                                "wie": [v["lid"]] if v["lid"] else list(v.get("wie") or []), "soort": "verjaardag", "jaardag": v.get("soort") or "verjaardag",
+                                "icoon": j["icoon"], "bewerkbaar": False, "naam": v["naam"], "leeftijd": leeftijd if (v.get("soort") or "verjaardag") == "verjaardag" else None,
+                                "tekst": tekst})
         return uit
 
     # ── afval ──

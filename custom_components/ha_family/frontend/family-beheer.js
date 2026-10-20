@@ -3,8 +3,8 @@
  * gezinsleden toevoegen (persoon + account in één keer), telefoons koppelen met een QR-code, meldingen testen,
  * lampen kiezen en per persoon kiezen hoe eenvoudig Home Assistant eruitziet. */
 import qrcode from './lib/qrcode.mjs';
-import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.11.2';
-import * as sjabloon from './family-sjabloon.js?v=0.11.2';
+import { CSS, avatar, esc, locatie, taal, weergevenAls } from './family-ui.js?v=0.12.0';
+import * as sjabloon from './family-sjabloon.js?v=0.12.0';
 
 const KLEUREN = ['#7c4dff', '#e91e63', '#00a6a6', '#ff8f00', '#43a047', '#1e88e5', '#8d6e63', '#f4511e', '#5e35b1', '#00897b'];
 const EMOJI = ['🦊', '🐻', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐙', '🦄', '🐝', '🐬', '🌻', '⭐', '🚀', '🎸', '⚽', '🎨', '🌈', '🍀'];
@@ -80,7 +80,7 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Agenda-app → Agenda\'s → ⓘ bij je agenda → zet "Openbare agenda" aan → Deel link.',
     linkOutlook: 'Outlook.com: Instellingen → Agenda → Gedeelde agenda\'s → Een agenda publiceren → ICS-link.',
     verjaardagen: 'Verjaardagen', verjaardagenUitleg: 'Verjaardagen staan in de agenda en \'s ochtends krijgt iedereen een seintje.',
-    geboortedatum: 'Geboortedatum', dbTitel: 'Gezinsdashboard', dbAutomatisch: 'automatisch', dbSjabloon: 'sjabloon',
+    geboortedatum: 'Geboortedatum', mkTitel: 'Mijn kamers (eigen tabblad)', mkUitleg: 'De knoppen van deze kamers staan op het eigen tabblad van {x}.', mkGeraden: 'Geraden op naam; tik om aan te passen. De knoppen staan op het eigen tabblad van {x}.', jaardagen: { verjaardag: 'Verjaardag', trouwdag: 'Trouwdag', samen: 'Samen sinds', jubileum: 'Jubileum', gedenkdag: 'Gedenkdag' }, dbTitel: 'Gezinsdashboard', dbAutomatisch: 'automatisch', dbSjabloon: 'sjabloon',
     dbAutomatischUitleg: 'Werkt zichzelf bij: nieuwe functies komen er vanzelf bij. Tabbladen en kaarten op Thuis kies je via ✏️ → Dashboard bewerken. Wil je elke kaart zelf aanpassen en verplaatsen? Zet het om naar een sjabloon.',
     dbSjabloonUitleg: 'Een gewoon dashboard dat HA Family voor je heeft neergezet: elke kaart is vrij te bewerken. Na een update van HA Family voegt "Nieuwe onderdelen toevoegen" toe wat er nog niet is; jouw aanpassingen blijven staan.',
     dbNaarSjabloon: 'Omzetten naar sjabloon', dbAanvullen: 'Nieuwe onderdelen toevoegen', dbNaarAutomatisch: 'Terug naar automatisch', dbVorige: 'Vorige versie terugzetten',
@@ -91,7 +91,7 @@ const T = {
     apKiezen: 'Zelf kiezen', apKiezenUitleg: 'Jij kiest per apparaat wat {x} ziet en wat {x} mag aan- en uitzetten.', apLegenda: 'Verborgen: staat er niet. Zien: alleen kijken (met slotje). Bedienen: aan/uit en instellen.',
     apLegendaKamer: 'Kies per kamer: Verborgen, Zien (met slotje) of Bedienen. Dat geldt voor alles in de kamer, ook wat er later bijkomt. Alleen als één apparaat anders moet, zet je dat bij "Per apparaat".',
     apUitz: 'Per apparaat ({x})', apAnders: 'anders', apZoalsKamer: 'Zoals kamer', apZelfdeAls: 'Zelfde als:', apGekopieerd: 'Overgenomen van {x}, vergeet niet op te slaan',
-    apVerborgen: 'Verborgen', apZien: 'Zien', apBedienen: 'Bedienen', apAllesBedienen: 'Alles bedienen', apNiets: 'Niets', bekijkAls: 'Bekijk als', bekijkAlsUitleg: 'Zie HA Family zoals dit gezinslid het ziet (alleen kijken).', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden…', naamJarige: 'Naam', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
+    apVerborgen: 'Verborgen', apZien: 'Zien', apBedienen: 'Bedienen', apAllesBedienen: 'Alles bedienen', apNiets: 'Niets', bekijkAls: 'Bekijk als', bekijkAlsUitleg: 'Zie HA Family zoals dit gezinslid het ziet (alleen kijken).', pdTitel: 'Persoonlijk dashboard', pdUitleg: 'Een eigen dashboard dat alleen in de zijbalk van {x} staat, bijvoorbeeld met 3D-printers of hobbykaarten.', pdEigen: 'Dashboard van {x}', pdOpen: 'Openen', pdLos: 'Loskoppelen', pdMaak: 'Nieuw dashboard', pdOf: 'of', pdKies: 'Bestaand dashboard…', pdKoppel: 'Koppelen', overLid: 'Over {x}', overLidUitleg: 'Voor verjaardagen en passende cadeau-ideeën.', geslacht: 'Geslacht', geslachten: { man: 'Man / jongen', vrouw: 'Vrouw / meisje', anders: 'Anders' }, interesses: 'Interesses en hobby\'s', interesseEigen: 'Zelf iets toevoegen, bijv. skateboarden', extraJarigen: 'Opa, oma, vrienden, trouwdagen en jubilea', naamJarige: 'Naam (bijv. Opa, of Papa & Mama)', jaarOnbekend: 'Jaar onbekend', toevoegenKort: 'Toevoegen',
     meldingOm: 'Melding om', aan: 'Aan',
     afvalTitel: 'Afvalkalender', afvalUitleg: 'De avond voor het ophalen krijgt het gezin een seintje.',
     afvalBedrijf: 'Mijn afvalbedrijf', afvalBedrijfUitleg: 'Postcode en huisnummer, de rest gaat vanzelf.', afvalBedrijfKies: 'Afvalbedrijf',
@@ -170,7 +170,7 @@ const T = {
     linkIcloud: 'iCloud (iPhone): Calendar app → Calendars → ⓘ next to your calendar → turn on "Public Calendar" → Share Link.',
     linkOutlook: 'Outlook.com: Settings → Calendar → Shared calendars → Publish a calendar → ICS link.',
     verjaardagen: 'Birthdays', verjaardagenUitleg: 'Birthdays appear in the calendar and everyone gets a note in the morning.',
-    geboortedatum: 'Date of birth', dbTitel: 'Family dashboard', dbAutomatisch: 'automatic', dbSjabloon: 'template',
+    geboortedatum: 'Date of birth', mkTitel: 'My rooms (own tab)', mkUitleg: 'The buttons of these rooms are on the own tab of {x}.', mkGeraden: 'Guessed from the name; tap to change. The buttons are on the own tab of {x}.', jaardagen: { verjaardag: 'Birthday', trouwdag: 'Wedding anniversary', samen: 'Together since', jubileum: 'Jubilee', gedenkdag: 'Memorial day' }, dbTitel: 'Family dashboard', dbAutomatisch: 'automatic', dbSjabloon: 'template',
     dbAutomatischUitleg: 'Updates itself: new features appear automatically. Choose tabs and Home cards via ✏️ → Edit dashboard. Want to edit and move every card yourself? Turn it into a template.',
     dbSjabloonUitleg: 'A normal dashboard set up by HA Family: every card is free to edit. After an HA Family update, "Add new parts" adds what is missing; your changes stay.',
     dbNaarSjabloon: 'Turn into template', dbAanvullen: 'Add new parts', dbNaarAutomatisch: 'Back to automatic', dbVorige: 'Restore previous version',
@@ -181,7 +181,7 @@ const T = {
     apKiezen: 'Choose', apKiezenUitleg: 'You choose per device what {x} sees and may switch.', apLegenda: 'Hidden: not shown. See: view only (with a lock). Control: on/off and settings.',
     apLegendaKamer: 'Choose per room: Hidden, See (with a lock) or Control. It applies to everything in the room, also devices added later. Only if one device should differ, set it under "Per device".',
     apUitz: 'Per device ({x})', apAnders: 'different', apZoalsKamer: 'Like room', apZelfdeAls: 'Same as:', apGekopieerd: 'Copied from {x}, remember to save',
-    apVerborgen: 'Hidden', apZien: 'See', apBedienen: 'Control', apAllesBedienen: 'Control all', apNiets: 'None', bekijkAls: 'View as', bekijkAlsUitleg: 'See HA Family the way this family member sees it (view only).', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends…', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
+    apVerborgen: 'Hidden', apZien: 'See', apBedienen: 'Control', apAllesBedienen: 'Control all', apNiets: 'None', bekijkAls: 'View as', bekijkAlsUitleg: 'See HA Family the way this family member sees it (view only).', pdTitel: 'Personal dashboard', pdUitleg: 'A dashboard of their own that only shows in the sidebar of {x}, e.g. with 3D printers or hobby cards.', pdEigen: "{x}'s dashboard", pdOpen: 'Open', pdLos: 'Unlink', pdMaak: 'New dashboard', pdOf: 'or', pdKies: 'Existing dashboard…', pdKoppel: 'Link', overLid: 'About {x}', overLidUitleg: 'For birthdays and fitting gift ideas.', geslacht: 'Gender', geslachten: { man: 'Male / boy', vrouw: 'Female / girl', anders: 'Other' }, interesses: 'Interests and hobbies', interesseEigen: 'Add your own, e.g. skateboarding', extraJarigen: 'Grandparents, friends, anniversaries and jubilees', naamJarige: 'Name', jaarOnbekend: 'Year unknown', toevoegenKort: 'Add',
     meldingOm: 'Notification at', aan: 'On',
     afvalTitel: 'Waste collection', afvalUitleg: 'The evening before collection the family gets a note.',
     afvalBedrijf: 'My waste company', afvalBedrijfUitleg: 'Postcode and house number, the rest is automatic.', afvalBedrijfKies: 'Waste company',
@@ -340,10 +340,12 @@ class HaFamilyBeheer extends HTMLElement {
         ${s.leden.map((l) => `<div class="arij">${avatar(l, { grootte: 40 })}<b class="anaam">${esc(l.naam)}</b>
           <label class="klein-lbl">${esc(this.t('geboortedatum'))}<input class="veld smal" type="date" data-a="geboorte" data-id="${l.id}" value="${esc((a.leden.find((x) => x.id === l.id) || {}).geboortedatum || '')}"/></label></div>`).join('')}
         <h3>${esc(this.t('extraJarigen'))}</h3>
-        ${a.verjaardagen.map((j) => `<div class="arij"><span class="fam-avatar" style="--k:#e91e63;width:40px;height:40px;font-size:20px">🎂</span><b class="anaam">${esc(j.naam)}</b>
+        ${a.verjaardagen.map((j) => `<div class="arij"><span class="fam-avatar" style="--k:#e91e63;width:40px;height:40px;font-size:20px">${(JAARDAG_ICOON[j.soort] || '🎂')}</span><b class="anaam">${esc(j.naam)}</b>
+          <span class="fam-sub">${esc(this.t('jaardagen')[j.soort || 'verjaardag'] || '')}</span>
           <span class="fam-sub">${esc(j.datum.length === 10 ? new Date(j.datum + 'T00:00:00').toLocaleDateString((h.config?.language || h.locale?.language), { day: 'numeric', month: 'long', year: 'numeric' }) : new Date('2000-' + j.datum + 'T00:00:00').toLocaleDateString((h.config?.language || h.locale?.language), { day: 'numeric', month: 'long' }))}</span>
           <button class="fam-knop gevaar klein" data-a="jarig-weg" data-id="${j.id}">✕</button></div>`).join('')}
-        <div class="rij"><input class="veld groei" id="jarig-naam" placeholder="${esc(this.t('naamJarige'))}" maxlength="60"/><input class="veld smal" type="date" id="jarig-datum"/>
+        <div class="rij"><select class="veld smal" id="jarig-soort">${Object.entries(this.t('jaardagen')).map(([k, n]) => `<option value="${k}">${JAARDAG_ICOON[k]} ${esc(n)}</option>`).join('')}</select>
+          <input class="veld groei" id="jarig-naam" placeholder="${esc(this.t('naamJarige'))}" maxlength="60"/><input class="veld smal" type="date" id="jarig-datum"/>
           <label class="vink kort"><input type="checkbox" id="jarig-geenjaar"/> ${esc(this.t('jaarOnbekend'))}</label>
           <button class="fam-knop" data-a="jarig-toevoegen"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('toevoegenKort'))}</button></div>
         <div class="rij"><label class="vink kort"><input type="checkbox" data-a="jarig-melding" ${a.verjaardag_melding.aan ? 'checked' : ''}/> ${esc(this.t('meldingOm'))}</label>
@@ -421,7 +423,7 @@ class HaFamilyBeheer extends HTMLElement {
       const naam = this.shadowRoot.getElementById('jarig-naam').value, datum = this.shadowRoot.getElementById('jarig-datum').value;
       const geenJaar = this.shadowRoot.getElementById('jarig-geenjaar').checked;
       if (!naam || !datum) return;
-      return this._doe('ha_family/agenda/verjaardag', { naam, datum: geenJaar ? datum.slice(5) : datum });
+      return this._doe('ha_family/agenda/verjaardag', { naam, datum: geenJaar ? datum.slice(5) : datum, soort: this.shadowRoot.getElementById('jarig-soort').value });
     }
     if (a === 'afval-modus') { v.modus = b.dataset.v; return this._teken(); }
     if (a === 'afval-wie') { const id = b.dataset.id; v.herinnering.leden = v.herinnering.leden.includes(id) ? v.herinnering.leden.filter((x) => x !== id) : [...v.herinnering.leden, id]; return this._teken(); }
@@ -862,6 +864,14 @@ class HaFamilyBeheer extends HTMLElement {
           ${k.apps.map((a) => `<div class="ap-rij"><span class="groei">${esc(a.naam)}</span>${seg('ap-zet', `data-e="${esc(a.entity)}"`, a.entity in ap.uitzonderingen ? ap.uitzonderingen[a.entity] : 'kamer',
             [['kamer', 'apZoalsKamer'], ['', 'apVerborgen'], ['z', 'apZien'], ['b', 'apBedienen']])}</div>`).join('')}</details></div>`; }).join('')}</div>`;
   }
+  _mijnKamers(d, l) {
+    const h = this._huisApp, naam = l.naam.split(' ')[0];
+    if (!h) return '';
+    const voor = naam.toLowerCase(), geraden = h.kamers.filter((k) => k.naam.toLowerCase().split(/[^\p{L}]+/u).includes(voor)).map((k) => k.kamer);
+    const lijst = Array.isArray(d.kamers) ? d.kamers : geraden;
+    return `<div class="kaart zacht" style="margin-top:16px"><b>👤 ${esc(this.t('mkTitel'))}</b><p class="fam-sub" style="margin:4px 0 8px">${esc(this.t(Array.isArray(d.kamers) ? 'mkUitleg' : 'mkGeraden', naam))}</p>
+      <div class="vb">${h.kamers.filter((k) => !k.verborgen).map((k) => `<button class="fam-chip vbk ${lijst.includes(k.kamer) ? 'aan' : ''}" data-a="mk" data-k="${k.kamer}">${esc(k.naam)}</button>`).join('')}</div></div>`;
+  }
   _apZet(d, e, v) {
     const u = d.apparaten.uitzonderingen = d.apparaten.uitzonderingen || {};
     if (v === 'kamer') delete u[e]; else u[e] = v;
@@ -894,6 +904,7 @@ class HaFamilyBeheer extends HTMLElement {
           : `<div class="rij"><button class="fam-knop zacht" data-a="pd-maak" data-id="${l.id}"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t('pdMaak'))}</button>
             ${this._s.dashboards.length ? `<span class="fam-sub">${esc(this.t('pdOf'))}</span><select class="veld smal" id="pd-kies"><option value="">${esc(this.t('pdKies'))}</option>${this._s.dashboards.map((x) => `<option value="${esc(x.url_path)}">${esc(x.titel)}</option>`).join('')}</select>
             <button class="fam-knop rand klein" data-a="pd-koppel" data-id="${l.id}">${esc(this.t('pdKoppel'))}</button>` : ''}</div>`}</div>
+      ${this._mijnKamers(d, l)}
       ${this._apparatenKeuze(d, l)}
       <label class="lbl">${esc(this.t('lamp', l.naam))}</label><small class="fam-sub">${esc(this.t('lampUitleg'))}</small><div class="lampform"></div>
       ${l.telefoons.length ? `<label class="lbl">${esc(this.t('meldingen'))}</label><select class="veld" id="notify"><option value="">${esc(this.t('automatisch'))}</option>
@@ -972,6 +983,12 @@ class HaFamilyBeheer extends HTMLElement {
     if (a === 'kleur' && d) { d.kleur = b.dataset.v; return this._herteken(); }
     if (a === 'rol' && d) { d.rol = b.dataset.v; return this._herteken(); }
     if (a === 'weergave' && d) { d.weergave = b.dataset.v; return this._herteken(); }
+    if (a === 'mk' && d) {
+      this._leesOver(d);
+      if (!Array.isArray(d.kamers)) { const voor = d.naam.split(' ')[0].toLowerCase(); d.kamers = this._huisApp.kamers.filter((k) => k.naam.toLowerCase().split(/[^\p{L}]+/u).includes(voor)).map((k) => k.kamer); }
+      d.kamers = d.kamers.includes(b.dataset.k) ? d.kamers.filter((x) => x !== b.dataset.k) : [...d.kamers, b.dataset.k];
+      return this._herteken();
+    }
     if (a === 'ap-beperkt' && d) { this._leesOver(d); d.apparaten.beperkt = !!b.dataset.v; return this._herteken(); }
     if (a === 'ap-zet' && d) { this._leesOver(d); this._apZet(d, b.dataset.e, b.dataset.v); return this._herteken(); }
     if (a === 'ap-kamerstand' && d) { this._leesOver(d); d.apparaten.kamers = { ...(d.apparaten.kamers || {}), [b.dataset.k]: b.dataset.v }; return this._herteken(); }
@@ -1025,7 +1042,7 @@ class HaFamilyBeheer extends HTMLElement {
       const l = s.leden.find((x) => x.id === b.dataset.id);
       return this._open({ soort: 'bewerk', id: l.id, naam: l.naam, rol: l.rol, emoji: l.emoji, kleur: l.kleur, weergave: l.weergave, lamp: l.lamp, notify: l.notify || '',
         geboortedatum: l.geboortedatum || '', geslacht: l.geslacht || null, interesses: [...(l.interesses || [])],
-        apparaten: { beperkt: false, zien: [], bedienen: [], ...(l.apparaten || {}) } }), this._ws('ha_family/huis').then((h) => { this._huisApp = h; if (this._dlg && this._dlg.soort === 'bewerk') this._herteken(); });
+        apparaten: { beperkt: false, zien: [], bedienen: [], ...(l.apparaten || {}) }, kamers: Array.isArray(l.kamers) ? [...l.kamers] : null }), this._ws('ha_family/huis').then((h) => { this._huisApp = h; if (this._dlg && this._dlg.soort === 'bewerk') this._herteken(); });
     }
     if (a === 'account-start') { d.account = { gebruikersnaam: slug(d.naam), wachtwoord: (await this._ws('ha_family/voorstel')).wachtwoord }; return this._herteken(); }
     if (a === 'account-maak') {
@@ -1061,7 +1078,7 @@ class HaFamilyBeheer extends HTMLElement {
       const l = s.leden.find((x) => x.id === d.id);
       this._leesOver(d);
       const data = { lid: d.id, naam: d.naam, rol: d.rol, emoji: d.emoji, kleur: d.kleur, lamp: d.lamp || null, notify: d.notify || null,
-        geboortedatum: d.geboortedatum || null, geslacht: d.geslacht || null, interesses: d.interesses, apparaten: d.apparaten };
+        geboortedatum: d.geboortedatum || null, geslacht: d.geslacht || null, interesses: d.interesses, apparaten: d.apparaten, ...(Array.isArray(d.kamers) ? { kamers: d.kamers } : {}) };
       if (l.kan_inloggen) data.weergave = d.weergave;
       if (await this._doe('ha_family/lid/bijwerken', data)) this._sluit();
       return;
@@ -1221,6 +1238,7 @@ const STIJL = `
   @media (max-width: 600px) { .gegevens, .keuzes.twee { grid-template-columns: 1fr; } .inhoud { padding: 12px; } .tabs button { padding: 0 10px; } }
 `;
 
+const JAARDAG_ICOON = { verjaardag: '🎂', trouwdag: '💍', samen: '❤️', jubileum: '🎉', gedenkdag: '🕯️' };
 const INTERESSES = ['voetbal', 'sport', 'gamen', 'lezen', 'muziek', 'tekenen', 'knutselen', 'koken', 'bakken', 'tuinieren', 'techniek', 'lego', 'dieren',
   'paarden', 'dansen', 'mode', 'make-up', 'film', 'series', 'reizen', 'fotografie', 'puzzels', 'spelletjes', 'buiten', 'fietsen', 'wellness', 'koffie', 'wijn', '3D-printen', "auto's"];
 const ICOON_VOOR = { Woonkamer: 'mdi:sofa', 'Living room': 'mdi:sofa', Keuken: 'mdi:silverware-fork-knife', Kitchen: 'mdi:silverware-fork-knife', Slaapkamer: 'mdi:bed-king',
