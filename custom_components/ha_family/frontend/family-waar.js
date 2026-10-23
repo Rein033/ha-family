@@ -5,7 +5,7 @@
  *   compact: true                            alleen "ik kom eraan", wie er onderweg is en de seintjes (voor Thuis)
  *
  * Plaatsen komen uit Home Assistant (Thuis, Weg of een zone, bijv. via Life360 of de app). Nooit coördinaten. */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.13.0';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.13.1';
 
 const TEKST = {
   nl: { titel: 'Waar is iedereen', kom: 'Ik kom eraan', over: 'Over hoeveel minuten ben je thuis?', bericht: 'Berichtje erbij (mag leeg)', sturen: 'Laat het weten',

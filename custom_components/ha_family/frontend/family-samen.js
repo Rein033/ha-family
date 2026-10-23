@@ -3,7 +3,7 @@
  *   type: custom:family-samen-card    stemming van vandaag, een knuffel sturen en de date-pot
  *
  * Alleen de twee van het stel zien dit (ook een beheerder niet, en ook niet met 'Bekijk als'). */
-import { CSS, alsLid, avatar, esc, leden } from './family-ui.js?v=0.13.0';
+import { CSS, alsLid, avatar, esc, leden } from './family-ui.js?v=0.13.1';
 
 const TEKST = {
   nl: { titel: 'Samen', sinds: 'samen sinds {x}', jaar: '{x} jaar', kies: 'Kies je partner', kiesUitleg: 'Samen is voor stellen: jullie stemming, knuffels en een date-pot. Alleen jullie twee zien het.',

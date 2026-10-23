@@ -3,7 +3,7 @@
  * Wie op de weergave 'Expert' staat, houdt een rustige zijbalk (Familie, Gezin beheren, Admin). Hier staat de rest:
  * Home Assistant zelf (automatiseringen, apparaten, instellingen …), je eigen dashboards, HACS en alle andere plugins
  * en add-ons, en de AI. Alles wordt uit de echte zijbalk van HA gehaald, dus wat je later installeert komt er vanzelf bij. */
-import { CSS, esc } from './family-ui.js?v=0.13.0';
+import { CSS, esc } from './family-ui.js?v=0.13.1';
 
 const NL = {
   titel: 'Admin', zoek: 'Zoeken…', ha: 'Home Assistant', dashboards: 'Mijn dashboards', plugins: 'Plugins, HACS en add-ons', ai: 'AI',

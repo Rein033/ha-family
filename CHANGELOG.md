@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.1 — grote, overzichtelijke knoppen op het muurscherm
+
+- Op het muurscherm eerst grote kamertegels (twee naast elkaar) met hoeveel lampen er aan zijn en de temperatuur.
+- Tik op een kamer: die kamer vult het hele scherm met grote knoppen, een grote knop *Alles uit* en *← Alle kamers*.
+  Na een minuut niets aanraken gaat hij vanzelf terug naar het overzicht.
+
 ## 0.13.0 — waar is iedereen, kinderen en samen
 
 - **Waar is iedereen** (kaart `family-waar-card`, op Thuis): "🚗 Ik kom eraan" met over hoeveel minuten en een berichtje;

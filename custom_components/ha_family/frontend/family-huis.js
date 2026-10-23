@@ -5,19 +5,19 @@
  *     kamer: <ruimte-id>                alleen deze kamer
  *
  * Kamers zijn de ruimtes van Home Assistant; instellen in Gezin beheren → Huis. Tikken = aan/uit. */
-import { CSS, esc, ikLid } from './family-ui.js?v=0.13.0';
+import { CSS, esc, ikLid } from './family-ui.js?v=0.13.1';
 
 const TEKST = {
   nl: { kamers: 'Huis', aan: 'Aan', uit: 'Uit', open: 'Open', dicht: 'Dicht', speelt: 'Speelt', alleUit: 'Alles uit', geen: 'Nog geen kamers met apparaten.',
     instellen: 'Kamers instellen', nuBinnen: 'nu', modus: { off: 'Uit', heat: 'Verwarmen', cool: 'Koelen', heat_cool: 'Automatisch', auto: 'Automatisch', dry: 'Drogen', fan_only: 'Ventileren' },
-    lampenAan: '{x} aan', zonder: 'Zonder kamer', geenMijn: 'Nog geen eigen kamer. Kies je kamer in Gezin beheren → Bewerken → Mijn kamers.', overig: 'Overig', aanpassen: 'Aanpassen', geenKamer: '— geen kamer —', offline: 'offline', instelling: 'instelling', verberg: 'Niet op het dashboard', toon: 'Op het dashboard', zekerUit: '{x} echt uitzetten?', bewerkUitleg: 'Met het oogje bepaal je wat op het dashboard staat (voor iedereen). Kies bij een apparaat een kamer om het te verplaatsen.', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
+    lampenAan: '{x} aan', terug: 'Alle kamers', allesUit: 'Alles uit', vanAan: '{x} aan', allesIsUit: 'Alles uit', zonder: 'Zonder kamer', geenMijn: 'Nog geen eigen kamer. Kies je kamer in Gezin beheren → Bewerken → Mijn kamers.', overig: 'Overig', aanpassen: 'Aanpassen', geenKamer: '— geen kamer —', offline: 'offline', instelling: 'instelling', verberg: 'Niet op het dashboard', toon: 'Op het dashboard', zekerUit: '{x} echt uitzetten?', bewerkUitleg: 'Met het oogje bepaal je wat op het dashboard staat (voor iedereen). Kies bij een apparaat een kamer om het te verplaatsen.', meer: 'Meer instellingen', aanUit: 'Aan/uit', stand: 'Stand', ventilator: 'Ventilator', voorkeur: 'Voorkeur', zwenken: 'Zwenken',
     helderheid: 'Helderheid', licht: 'Licht', kleur: 'Kleur', volume: 'Volume', snelheidLbl: 'Snelheid', klaar: 'Klaar',
     snelheid: { auto: 'Auto', low: 'Laag', medium: 'Middel', mid: 'Middel', middle: 'Middel', high: 'Hoog', silent: 'Stil', quiet: 'Stil', turbo: 'Turbo', strong: 'Sterk', mute: 'Stil' },
     presets: { none: 'Geen', eco: 'Eco', comfort: 'Comfort', away: 'Weg', home: 'Thuis', sleep: 'Slapen', boost: 'Boost', activity: 'Actief', on: 'Aan', off: 'Uit', vertical: 'Verticaal', horizontal: 'Horizontaal', both: 'Beide' },
     kleurtemp: { 2700: '🕯️ Warm', 4000: '☀️ Neutraal', 6000: '❄️ Koel' }, slot: 'Dit mag je bekijken, maar niet bedienen.' },
   en: { kamers: 'Home', aan: 'On', uit: 'Off', open: 'Open', dicht: 'Closed', speelt: 'Playing', alleUit: 'All off', geen: 'No rooms with devices yet.',
     instellen: 'Set up rooms', nuBinnen: 'now', modus: { off: 'Off', heat: 'Heating', cool: 'Cooling', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' },
-    lampenAan: '{x} on', zonder: 'No room', geenMijn: 'No room of your own yet. Pick it in Family management → Edit → My rooms.', overig: 'Other', aanpassen: 'Edit', geenKamer: '— no room —', offline: 'offline', instelling: 'setting', verberg: 'Not on the dashboard', toon: 'On the dashboard', zekerUit: 'Really turn off {x}?', bewerkUitleg: 'Use the eye to choose what is on the dashboard (for everyone). Pick a room for a device to move it.', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
+    lampenAan: '{x} on', terug: 'All rooms', allesUit: 'All off', vanAan: '{x} on', allesIsUit: 'All off', zonder: 'No room', geenMijn: 'No room of your own yet. Pick it in Family management → Edit → My rooms.', overig: 'Other', aanpassen: 'Edit', geenKamer: '— no room —', offline: 'offline', instelling: 'setting', verberg: 'Not on the dashboard', toon: 'On the dashboard', zekerUit: 'Really turn off {x}?', bewerkUitleg: 'Use the eye to choose what is on the dashboard (for everyone). Pick a room for a device to move it.', meer: 'More settings', aanUit: 'On/off', stand: 'Mode', ventilator: 'Fan', voorkeur: 'Preset', zwenken: 'Swing',
     helderheid: 'Brightness', licht: 'Light', kleur: 'Colour', volume: 'Volume', snelheidLbl: 'Speed', klaar: 'Done',
     snelheid: { auto: 'Auto', low: 'Low', medium: 'Medium', mid: 'Medium', middle: 'Medium', high: 'High', silent: 'Silent', quiet: 'Quiet', turbo: 'Turbo', strong: 'Strong', mute: 'Silent' },
     presets: { none: 'None', eco: 'Eco', comfort: 'Comfort', away: 'Away', home: 'Home', sleep: 'Sleep', boost: 'Boost', activity: 'Activity', on: 'On', off: 'Off', vertical: 'Vertical', horizontal: 'Horizontal', both: 'Both' },
@@ -121,6 +121,38 @@ const STIJL = `
   :host([muur]) .pil small.st { display: block; color: var(--secondary-text-color); }
   :host([muur]) .pil.aan small.st { color: inherit; opacity: .8; }
   :host([muur]) .pil:active { transform: scale(.97); }
+  /* muurscherm: eerst grote kamertegels; tik op een kamer = volledig scherm met grote knoppen */
+  .ktegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .ktegel { border: 0; cursor: pointer; font: inherit; color: var(--primary-text-color); text-align: left; background: var(--secondary-background-color);
+    border-radius: 22px; padding: 12px 14px; min-height: 108px; display: grid; grid-template-rows: auto 1fr auto; gap: 4px; position: relative; }
+  .ktegel ha-icon { --mdc-icon-size: 34px; color: var(--primary-color); }
+  .ktegel b { font-size: 1.12rem; line-height: 1.2; align-self: end; }
+  .ktegel small { color: var(--secondary-text-color); font-size: .92rem; }
+  .ktegel .tmp { position: absolute; top: 14px; right: 16px; font-weight: 600; color: var(--secondary-text-color); }
+  .ktegel.aan { background: color-mix(in srgb, #ffb300 24%, var(--card-background-color)); }
+  .ktegel.aan ha-icon { color: #f59f00; } .ktegel.aan small { color: var(--primary-text-color); font-weight: 600; }
+  .ktegel:active, .kscherm .tegel:active { transform: scale(.97); }
+  .kscherm { position: fixed; inset: 0; z-index: 20; background: var(--primary-background-color, #fafafa); display: flex; flex-direction: column; padding: 20px 24px; box-sizing: border-box; }
+  .kscherm .kkop { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+  .kscherm .kkop h2 { margin: 0; font-size: 2rem; flex: 1; display: flex; align-items: center; gap: 12px; }
+  .kscherm .kkop h2 ha-icon { --mdc-icon-size: 40px; color: var(--primary-color); }
+  .kscherm .kkop .tmp { font-size: 1.4rem; color: var(--secondary-text-color); font-weight: 500; }
+  .groot { border: 0; cursor: pointer; font: inherit; font-weight: 600; font-size: 1.15rem; min-height: 64px; padding: 0 26px; border-radius: 32px;
+    display: inline-flex; align-items: center; gap: 10px; background: var(--card-background-color); color: var(--primary-text-color); box-shadow: inset 0 0 0 2px var(--divider-color); }
+  .groot ha-icon { --mdc-icon-size: 28px; }
+  .groot.uit { background: color-mix(in srgb, var(--error-color, #db4437) 12%, var(--card-background-color)); color: var(--error-color, #db4437); box-shadow: none; }
+  .kscherm .tegels { flex: 1; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; align-content: start; padding-bottom: 12px; }
+  .kscherm .tegel { min-height: 150px; border-radius: 26px; padding: 18px; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .kscherm .tegel ha-icon { --mdc-icon-size: 48px; }
+  .kscherm .tegel b { font-size: 1.3rem; }
+  .kscherm .tegel small { font-size: 1.05rem; }
+  .kscherm .tegel .meer { font-size: 1.6rem; width: 48px; height: 48px; top: 8px; right: 8px; }
+  .kscherm .tegel input[type=range] { height: 34px; }
+  .kscherm .klimaat .doel { font-size: 2.2rem; }
+  .kscherm .rond { width: 56px; height: 56px; font-size: 1.6rem; }
+  .kscherm .rond ha-icon { --mdc-icon-size: 28px; }
+  @media (max-width: 700px) { .kscherm { padding: 14px; } .kscherm .tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .kscherm .tegel { min-height: 128px; padding: 14px; }
+    .kscherm .kkop h2 { font-size: 1.5rem; } .kscherm .tegel b { font-size: 1.1rem; } }
   .pil small.st { display: none; }
   @media (max-width: 700px) {
     /* telefoon: ook grote knoppen, twee naast elkaar */
@@ -256,7 +288,8 @@ export class FamilyKamersCard extends HTMLElement {
         if (c.mijn) { this.style.display = ''; binnen = `<div class="leeg">${esc(this.t('geenMijn'))}</div>`; }
         else
         binnen = `<div class="leeg">${esc(this.t('geen'))}${this._hass.user && this._hass.user.is_admin ? `<button class="naar" data-a="instellen">${esc(this.t('instellen'))} →</button>` : ''}</div>`;
-      } else binnen = c.compact ? kamers.map((k) => this._rij(k)).join('') : `<div class="raster">${kamers.map((k) => this._kamer(k)).join('')}</div>`;
+      } else binnen = c.muur ? this._muurTegels(kamers) : c.compact ? kamers.map((k) => this._rij(k)).join('') : `<div class="raster">${kamers.map((k) => this._kamer(k)).join('')}</div>`;
+      if (c.muur && this._open != null) { const k = kamers.find((x) => x.kamer === this._open); if (k) binnen += this._muurKamer(k); else this._open = null; }
     }
     this.style.display = '';
     const knop = this._beheerder() && this._d ? `<button class="fam-knop ${this._bewerk ? '' : 'rand'} klein" data-a="bewerkmodus" style="min-height:32px">${this._bewerk ? '✓ ' + esc(this.t('klaar')) : '✏️ ' + esc(this.t('aanpassen'))}</button>` : '';
@@ -271,6 +304,25 @@ export class FamilyKamersCard extends HTMLElement {
     }
   }
 
+  /* ── muurscherm ── */
+  _muurTegels(kamers) {
+    const h = this._hass;
+    return `<div class="ktegels">${kamers.map((k) => {
+      const aan = k.apps.filter((a) => a.domein !== 'climate' && isAan(h.states[a.entity])).length, klimaat = k.apps.some((a) => a.domein === 'climate' && isAan(h.states[a.entity]));
+      return `<button class="ktegel ${aan ? 'aan' : ''}" data-a="kamer" data-k="${esc(k.kamer)}"><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon>
+        ${this._temp(k) ? `<span class="tmp">${esc(this._temp(k))}</span>` : ''}<b>${esc(k.naam)}</b>
+        <small>${aan ? `💡 ${esc(this.t('vanAan', aan))}` : esc(this.t('allesIsUit'))}${klimaat ? ' · ❄️' : ''}</small></button>`;
+    }).join('')}</div>`;
+  }
+  _muurKamer(k) {
+    const h = this._hass, aan = k.apps.filter((a) => (a.domein === 'light' || a.domein === 'switch') && isAan(h.states[a.entity]));
+    clearTimeout(this._dichtT);                       // niemand tikt meer: na een minuut terug naar het overzicht
+    this._dichtT = setTimeout(() => { this._open = null; this._paneel = null; this._teken(); }, 60000);
+    return `<div class="kscherm"><div class="kkop"><button class="groot" data-a="kamer-dicht"><ha-icon icon="mdi:arrow-left"></ha-icon>${esc(this.t('terug'))}</button>
+        <h2><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon>${esc(k.naam)} <span class="tmp">${esc(this._temp(k))}</span></h2>
+        ${aan.length ? `<button class="groot uit" data-a="alles-uit" data-k="${esc(k.kamer)}"><ha-icon icon="mdi:power"></ha-icon>${esc(this.t('allesUit'))}</button>` : ''}</div>
+      <div class="tegels">${k.apps.map((a) => this._tegel(a, k)).join('')}</div></div>`;
+  }
   _kamer(k) {
     const h = this._hass, lampenAan = k.apps.filter((a) => (a.domein === 'light' || a.domein === 'switch') && isAan(h.states[a.entity]));
     return `<div class="kamer"><h3><ha-icon icon="${esc(k.icoon || 'mdi:home')}"></ha-icon>${esc(k.naam)}
@@ -377,6 +429,8 @@ export class FamilyKamersCard extends HTMLElement {
     }
     if (a === 'sluit') { if (e.target === b || b.tagName === 'BUTTON') { this._paneel = null; this._teken(); } return; }
     if (a === 'open') { this._paneel = id; return this._teken(); }
+    if (a === 'kamer') { this._open = b.dataset.k; return this._teken(); }
+    if (a === 'kamer-dicht') { this._open = null; clearTimeout(this._dichtT); return this._teken(); }
     if (a === 'hvac') return this._dienst('climate', 'set_hvac_mode', { entity_id: id, hvac_mode: b.dataset.v });
     if (a === 'fanmode') return this._dienst('climate', 'set_fan_mode', { entity_id: id, fan_mode: b.dataset.v });
     if (a === 'preset') return this._dienst('climate', 'set_preset_mode', { entity_id: id, preset_mode: b.dataset.v });
