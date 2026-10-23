@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.2 — automatisch aan en uit, zonder klok in te typen
+
+- Nieuw tabblad **⏰ Automatisch** (voor ouders en beheerders, kaart `family-regels-card`): regels als "Elke werkdag om
+  07:00 → Keukenlamp aan" of "Als het donker wordt → Buitenlamp aan", stap voor stap met grote knoppen:
+  1. wanneer: een tijd met grote ▲/▼-knoppen of een veelgebruikte tijd, of als het donker/licht wordt (met minuten ervoor of erna);
+  2. welke dagen (elke dag, werkdagen, weekend of losse dagen);
+  3. welke lampen en apparaten (per kamer tegels aantikken);
+  4. aan of uit (lampen ook 100/50/20%), met de regel in gewone woorden ter controle.
+- Elke regel kun je met één schakelaar aan/uit zetten; je ziet wanneer hij de volgende keer gaat. HA Family voert de
+  regels zelf uit, de automatiseringen van Home Assistant blijven onaangeroerd.
+
 ## 0.13.1 — grote, overzichtelijke knoppen op het muurscherm
 
 - Op het muurscherm eerst grote kamertegels (twee naast elkaar) met hoeveel lampen er aan zijn en de temperatuur.

@@ -311,6 +311,7 @@ type: custom:family-cadeaus-card   # verlanglijstjes, stiekem afvinken en cadeau
 type: custom:family-waar-card      # wie is waar, "ik kom eraan" en een seintje bij thuiskomst (compact: true voor Thuis)
 type: custom:family-kinderen-card  # ochtend- en avondroutines en zakgeld (mijn: true = alleen van wie kijkt)
 type: custom:family-samen-card     # voor stellen: stemming, knuffels en de date-pot (alleen voor jullie twee)
+type: custom:family-regels-card    # automatisch aan en uit: op een tijd of als het donker wordt, stap voor stap
 weergave: maand                    # standaard voor wie nog niets koos: maand of weken
 weken: 6                           # aantal weken in de weekplanner
 ```

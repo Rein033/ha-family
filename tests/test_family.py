@@ -866,3 +866,38 @@ async def test_samen_alleen_voor_het_stel(hass: HomeAssistant, gezin) -> None:
     assert (await s.ai_ideeen(ua, None))["bron"] == "lijst"
     s.stel_weg(ub)
     assert s.overzicht(ua)["stel"] is None
+
+
+async def test_regels_automatisch_aan_en_uit(hass: HomeAssistant, gezin) -> None:
+    import datetime as dt
+    from homeassistant.util import dt as dt_util
+
+    g = gezin.runtime_data
+    hass.states.async_set("light.keuken", "off", {"friendly_name": "Keuken"})
+    hass.states.async_set("switch.kerst", "on", {"friendly_name": "Kerst"})
+    aan, uit = [], []
+    hass.services.async_register("light", "turn_on", lambda c: aan.append(dict(c.data)))
+    hass.services.async_register("switch", "turn_off", lambda c: uit.append(dict(c.data)))
+    with pytest.raises(FamilyFout):
+        g.regels.bewaren({"wanneer": {"soort": "tijd", "tijd": "25:00"}, "dagen": [0], "wat": [{"entity": "light.keuken", "actie": "aan"}]}, None, None)
+    with pytest.raises(FamilyFout):
+        g.regels.bewaren({"wanneer": {"soort": "tijd", "tijd": "07:00"}, "dagen": [0], "wat": [{"entity": "light.bestaat_niet", "actie": "aan"}]}, None, None)
+    r = g.regels.bewaren({"wanneer": {"soort": "tijd", "tijd": "07:00"}, "dagen": [0, 1, 2, 3, 4],
+                          "wat": [{"entity": "light.keuken", "actie": "aan", "helderheid": 60}, {"entity": "switch.kerst", "actie": "uit"}]}, None, None)
+    tz = dt_util.get_default_time_zone()
+    maandag7 = dt.datetime(2026, 10, 26, 7, 0, tzinfo=tz)
+    assert await g.regels.elke_minuut(maandag7 - dt.timedelta(minutes=1)) == 0
+    assert await g.regels.elke_minuut(maandag7) == 2
+    await hass.async_block_till_done()
+    assert aan == [{"entity_id": "light.keuken", "brightness_pct": 60}] and uit == [{"entity_id": "switch.kerst"}]
+    assert await g.regels.elke_minuut(maandag7) == 0                         # niet twee keer in dezelfde minuut
+    assert await g.regels.elke_minuut(maandag7 + dt.timedelta(days=5)) == 0  # zaterdag: niet
+    assert g.regels.volgende(r, maandag7)[:16] == "2026-10-27T07:00"
+    g.regels.aan_uit(r["id"], False)
+    assert await g.regels.elke_minuut(maandag7 + dt.timedelta(days=1)) == 0
+    # zonsondergang met een kwartier ervoor
+    z = g.regels.bewaren({"wanneer": {"soort": "zonsondergang", "offset": -15}, "dagen": list(range(7)), "wat": [{"entity": "light.keuken", "actie": "aan"}]}, None, None)
+    t = g.regels.tijdstip(z, dt.date(2026, 10, 26))
+    assert t is not None and await g.regels.elke_minuut(t) == 1
+    g.regels.weg(r["id"])
+    assert [x["id"] for x in g.regels.overzicht()] == [z["id"]]

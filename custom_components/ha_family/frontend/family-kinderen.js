@@ -5,7 +5,7 @@
  *   mijn: true                               alleen van wie kijkt (voor het eigen tabblad; verdwijnt bij volwassenen)
  *
  * Kinderen vinken met grote knoppen af (ook op de muur). Ouders passen de stappen aan en regelen het zakgeld. */
-import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.13.1';
+import { CSS, alsAntwoord, avatar, esc, leden } from './family-ui.js?v=0.13.2';
 
 const TEKST = {
   nl: { titel: 'Kinderen', ochtend: '☀️ Ochtend', avond: '🌙 Avond', klaar: 'Helemaal klaar! 🎉', van: '{x} van {y}', punten: '+{x} punten als alles af is',

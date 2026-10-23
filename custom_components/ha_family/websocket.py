@@ -54,7 +54,8 @@ def async_registreer(hass: HomeAssistant) -> None:
                 ws_beloning, ws_beloning_weg, ws_inwisselen, ws_beloning_goedkeuren, ws_klusjes_instellingen,
                 ws_waar, ws_onderweg, ws_thuis, ws_volgen,
                 ws_kinderen, ws_routine, ws_routine_af, ws_zakgeld, ws_zakgeld_boeking,
-                ws_samen, ws_stel, ws_stel_weg, ws_stemming, ws_knuffel, ws_date_idee, ws_date_weg, ws_date_gedaan, ws_date_trek, ws_date_ai):
+                ws_samen, ws_stel, ws_stel_weg, ws_stemming, ws_knuffel, ws_date_idee, ws_date_weg, ws_date_gedaan, ws_date_trek, ws_date_ai,
+                ws_regels, ws_regel, ws_regel_aan, ws_regel_weg, ws_regel_nu):
         websocket_api.async_register_command(hass, cmd)
 
 
@@ -1122,3 +1123,52 @@ async def ws_date_trek(hass, connection, msg):
 @_antwoord
 async def ws_date_ai(hass, connection, msg):
     return await _gezin(hass).samen.ai_ideeen(connection.user.id, msg.get("wens"))
+
+
+# ── ⏰ automatisch aan en uit ──
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/regels"})
+@websocket_api.async_response
+@_antwoord
+async def ws_regels(hass, connection, msg):
+    g = _gezin(hass)
+    return {"regels": g.regels.overzicht(), "mag": await g.taken.is_ouder(connection.user.id)}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/regel", vol.Optional("regel"): vol.Any(None, cv.string), vol.Required("wanneer"): dict,
+                                  vol.Required("dagen"): [vol.Coerce(int)], vol.Required("wat"): [dict]})
+@websocket_api.async_response
+@_antwoord
+async def ws_regel(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    ik = g.lid_van_user(connection.user.id)
+    return g.regels.bewaren({"wanneer": msg["wanneer"], "dagen": msg["dagen"], "wat": msg["wat"]}, msg.get("regel"), ik["id"] if ik else None)
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/regel/aan", vol.Required("regel"): cv.string, vol.Required("aan"): bool})
+@websocket_api.async_response
+@_antwoord
+async def ws_regel_aan(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    return g.regels.aan_uit(msg["regel"], msg["aan"])
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/regel/weg", vol.Required("regel"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_regel_weg(hass, connection, msg):
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    g.regels.weg(msg["regel"])
+    return {}
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ha_family/regel/nu", vol.Required("regel"): cv.string})
+@websocket_api.async_response
+@_antwoord
+async def ws_regel_nu(hass, connection, msg):
+    """Uitproberen: de regel nu meteen uitvoeren."""
+    g = _gezin(hass)
+    await _ouder(g, connection)
+    return {"gedaan": await g.regels.doen(g.regels._zoek(msg["regel"]))}  # noqa: SLF001

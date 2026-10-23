@@ -27,6 +27,7 @@ from .cadeaus import Cadeaus
 from .kinderen import Kinderen
 from .samen import Samen
 from .waar import Waar
+from .regels import Regels
 from .taken import Taken, volg_meldingknoppen
 from .const import (ADMIN_COMPONENT, ADMIN_URL, BEHEER_COMPONENT, BEHEER_URL, CARDS_JS, CONF_DASHBOARD, CONF_STARTSCHERM, DASHBOARD_URL, DOMAIN, FRONTEND_URL, MUUR_COMPONENT,
                     MUUR_URL, PLATFORMS)
@@ -132,6 +133,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FamilyEntry) -> bool:
     gezin.kinderen = Kinderen(gezin)
     gezin.samen = Samen(gezin)
     gezin.waar = Waar(gezin)
+    gezin.regels = Regels(gezin)
     entry.runtime_data = gezin
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(herinnering.start(hass, gezin.agenda))

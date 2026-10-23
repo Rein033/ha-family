@@ -107,6 +107,11 @@ def start(hass: HomeAssistant, agenda: Agenda) -> CALLBACK_TYPE:
             verstuurd["eten"] = vandaag
             agenda.gezin.opslaan()
             await eten_herinnering(agenda.gezin, nu)
+        if hasattr(agenda.gezin, "regels"):              # automatisch aan en uit (de regels van Gezin → Automatisch)
+            try:
+                await agenda.gezin.regels.elke_minuut(nu)
+            except Exception:  # noqa: BLE001 - één kapotte regel mag de rest niet stoppen
+                _LOGGER.exception("Regels uitvoeren mislukt")
         from .kinderen import ZAKGELD_TIJD
         if klok >= ZAKGELD_TIJD and hasattr(agenda.gezin, "kinderen"):   # zakgeld op de vaste dag (één keer, ook als HA om 7 uur uit stond)
             await agenda.gezin.kinderen.uitbetalen(nu)

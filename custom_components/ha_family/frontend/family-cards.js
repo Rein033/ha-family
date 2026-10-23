@@ -4,16 +4,17 @@
  *   strategy: { type: custom:ha-family }   het gezinsdashboard (staat na installatie in de zijbalk)
  *
  * Elke nieuwe functie (agenda, taken, boodschappen, …) komt hier als eigen kaart bij en krijgt een plek in de strategie. */
-import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.13.1';
-import { AGENDA_KAARTEN } from './family-agenda.js?v=0.13.1';
-import { TAKEN_KAARTEN } from './family-taken.js?v=0.13.1';
-import { ETEN_KAARTEN } from './family-eten.js?v=0.13.1';
-import { HUIS_KAARTEN } from './family-huis.js?v=0.13.1';
-import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.13.1';
-import { WAAR_KAARTEN } from './family-waar.js?v=0.13.1';
-import { KINDER_KAARTEN } from './family-kinderen.js?v=0.13.1';
-import { SAMEN_KAARTEN } from './family-samen.js?v=0.13.1';
-import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.13.1';
+import { CSS, VERSIE, alsBalk, avatar, esc, gezinState, groet, ikLid, leden, locatie, registreer, t, taal } from './family-ui.js?v=0.13.2';
+import { AGENDA_KAARTEN } from './family-agenda.js?v=0.13.2';
+import { TAKEN_KAARTEN } from './family-taken.js?v=0.13.2';
+import { ETEN_KAARTEN } from './family-eten.js?v=0.13.2';
+import { HUIS_KAARTEN } from './family-huis.js?v=0.13.2';
+import { CADEAU_KAARTEN } from './family-cadeaus.js?v=0.13.2';
+import { WAAR_KAARTEN } from './family-waar.js?v=0.13.2';
+import { KINDER_KAARTEN } from './family-kinderen.js?v=0.13.2';
+import { SAMEN_KAARTEN } from './family-samen.js?v=0.13.2';
+import { REGEL_KAARTEN } from './family-regels.js?v=0.13.2';
+import { FamilyKaartEditor, FamilyStrategieEditor, metEditor } from './family-editor.js?v=0.13.2';
 
 const WEER = { 'clear-night': '🌙', cloudy: '☁️', fog: '🌫️', hail: '🌨️', lightning: '🌩️', 'lightning-rainy': '⛈️', partlycloudy: '⛅', pouring: '🌧️',
   rainy: '🌦️', snowy: '❄️', 'snowy-rainy': '🌨️', sunny: '☀️', windy: '💨', 'windy-variant': '💨', exceptional: '⚠️' };
@@ -84,7 +85,7 @@ class FamilyGezinCard extends HTMLElement {
 
 /* ── Dashboard-strategie: custom:ha-family ── */
 // Tabbladen en kaarten op Thuis die je in de dashboard-editor aan/uit zet (de volgorde hier is de volgorde op het scherm)
-export const TABS = ['thuis', 'mijn', 'agenda', 'taken', 'kinderen', 'eten', 'huis', 'cadeaus', 'boodschappen', 'samen'];
+export const TABS = ['thuis', 'mijn', 'agenda', 'taken', 'kinderen', 'eten', 'huis', 'cadeaus', 'boodschappen', 'automatisch', 'samen'];
 export const THUIS = ['gezin', 'waar', 'klusjes', 'vandaag', 'eten', 'boodschappen', 'kamers', 'taken', 'afval'];
 
 export class FamilyStrategie extends HTMLElement {
@@ -121,6 +122,7 @@ export class FamilyStrategie extends HTMLElement {
       taken: { title: nl ? '✅ Taken' : '✅ Tasks', path: 'taken', type: 'sections', max_columns: 2,
         sections: [{ type: 'grid', cards: [{ type: 'custom:family-klusjes-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-taken-card' }] }] },
       kinderen: { title: nl ? '🧒 Kinderen' : '🧒 Kids', path: 'kinderen', type: 'panel', cards: [{ type: 'custom:family-kinderen-card' }] },
+      automatisch: { title: nl ? '⏰ Automatisch' : '⏰ Automatic', path: 'automatisch', type: 'panel', cards: [{ type: 'custom:family-regels-card' }] },
       samen: { title: nl ? '❤️ Samen' : '❤️ Together', path: 'samen', type: 'panel', cards: [{ type: 'custom:family-samen-card' }] },
       eten: { title: nl ? '🍝 Eten' : '🍝 Meals', path: 'eten', type: 'sections', max_columns: 2,
         sections: [{ type: 'grid', cards: [{ type: 'custom:family-eten-card' }] }, { type: 'grid', cards: [{ type: 'custom:family-recepten-card' }] }] },
@@ -131,7 +133,7 @@ export class FamilyStrategie extends HTMLElement {
     };
     // Kinderen alleen als er kinderen zijn; Samen alleen voor wie een partner heeft (dat tabblad is privé)
     const volw = (l) => ['ouder', 'huisgenoot'].includes(l.rol);
-    const heeft = { kinderen: leden(hass).some((l) => l.rol === 'kind'),
+    const heeft = { kinderen: leden(hass).some((l) => l.rol === 'kind'), automatisch: !!((ik && volw(ik)) || (hass.user && hass.user.is_admin)),
       samen: !!(ik && (ik.partner || (volw(ik) && leden(hass).some((l) => l.id !== ik.id && volw(l) && !l.partner)))) };
     const views = tabs.filter((t) => VIEWS[t] && heeft[t] !== false).map((t) => {
       const v = VIEWS[t], extra = c.extra && Array.isArray(c.extra[t]) ? c.extra[t] : [];
@@ -144,7 +146,7 @@ export class FamilyStrategie extends HTMLElement {
   }
 }
 
-const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN, ...CADEAU_KAARTEN, ...WAAR_KAARTEN, ...KINDER_KAARTEN, ...SAMEN_KAARTEN];
+const KAARTEN = [['family-gezin-card', FamilyGezinCard, 'HA Family: gezin', 'Groet, datum en wie er thuis is.'], ...AGENDA_KAARTEN, ...TAKEN_KAARTEN, ...ETEN_KAARTEN, ...HUIS_KAARTEN, ...CADEAU_KAARTEN, ...WAAR_KAARTEN, ...KINDER_KAARTEN, ...SAMEN_KAARTEN, ...REGEL_KAARTEN];
 metEditor(KAARTEN);
 registreer([['ll-strategy-dashboard-ha-family', FamilyStrategie], ['family-kaart-editor', FamilyKaartEditor], ['family-strategie-editor', FamilyStrategieEditor], ...KAARTEN.map(([n, c]) => [n, c])]);
 window.customCards = window.customCards || [];
